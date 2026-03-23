@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "SFL Digging Helper",
+  "version": "11.0",
+  "description": "Grid overlay with 3-mode Phaser camera tracking for Sunflower Land digging.",
+  "permissions": [
+    "storage",
+    "sidePanel",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://api.sunflower-land.com/*",
+    "https://sunflower-land.com/play/*",
+    "<all_urls>"
+  ],
+  "action": {
+    "default_title": "Open SFL Digging Helper"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://sunflower-land.com/play/*"],
+      "js": ["content.js"],
+      "css": ["overlay.css"],
+      "all_frames": true,
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["bridge.js"],
+      "matches": ["https://sunflower-land.com/*"]
+    }
+  ]
+}

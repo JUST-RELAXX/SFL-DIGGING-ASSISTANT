@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SFL Digging Helper</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: linear-gradient(160deg, #0c1222 0%, #162032 50%, #0c1222 100%);
+            color: #cbd5e1; margin: 0; padding: 0; min-height: 100vh;
+        }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: rgba(30,41,59,0.5); }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+
+        .panel { padding: 16px; }
+
+        .header {
+            text-align: center; padding: 18px 16px 14px;
+            border-bottom: 1px solid rgba(99,102,241,0.15);
+            background: linear-gradient(180deg, rgba(99,102,241,0.08) 0%, transparent 100%);
+        }
+        .header h1 { font-size: 15px; font-weight: 700; letter-spacing: 2px; color: #e2e8f0; text-transform: uppercase; }
+        .header .version { font-size: 10px; color: #6366f1; font-weight: 600; margin-top: 2px; }
+
+        .input-group { margin-bottom: 12px; }
+        .input-group label { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .input-field {
+            width: 100%; padding: 10px 12px; margin-top: 5px;
+            background: rgba(30,41,59,0.8); border: 1px solid #334155; color: #f1f5f9;
+            border-radius: 8px; font-size: 13px; font-weight: 500; transition: border-color 0.2s;
+        }
+        .input-field:focus { outline: none; border-color: #6366f1; }
+
+        .btn {
+            width: 100%; padding: 10px; margin-bottom: 6px; font-weight: 600;
+            cursor: pointer; border-radius: 8px; border: none;
+            transition: all 0.15s ease; font-size: 12px;
+            letter-spacing: 0.6px; text-transform: uppercase;
+        }
+        .btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
+        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; }
+        .btn-success { background: linear-gradient(135deg, #22c55e, #16a34a); color: #0f172a; }
+        .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+        .btn-muted { background: rgba(51,65,85,0.6); color: #94a3b8; font-size: 11px; padding: 8px; }
+
+        .card {
+            background: rgba(30,41,59,0.5); padding: 12px; border-radius: 10px;
+            margin-bottom: 10px; border: 1px solid rgba(51,65,85,0.6);
+        }
+        .card-label { font-weight: 600; font-size: 12px; color: #e2e8f0; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .card-hint { font-size: 10px; color: #64748b; margin-top: 5px; line-height: 1.5; }
+
+        .howto {
+            background: rgba(34,197,94,0.06); padding: 12px; border-radius: 10px;
+            font-size: 11px; color: #94a3b8; border: 1px solid rgba(34,197,94,0.15);
+            margin-bottom: 12px; line-height: 1.7;
+        }
+        .howto-title { text-align: center; font-weight: 700; color: #4ade80; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
+        .key { color: #818cf8; font-weight: 700; }
+        .ok { color: #4ade80; font-weight: 600; }
+        .auto-badge {
+            display: inline-block; background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: #0f172a; font-size: 9px; font-weight: 800; padding: 2px 6px;
+            border-radius: 4px; letter-spacing: 0.5px; vertical-align: middle;
+        }
+
+        .settings-divider { text-align: center; margin: 16px 0 10px; position: relative; }
+        .settings-divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #334155; }
+        .settings-divider span { position: relative; background: #0f172a; padding: 0 12px; font-size: 10px; font-weight: 700; color: #64748b; letter-spacing: 1.5px; text-transform: uppercase; }
+
+        .mode-group { display: flex; gap: 6px; margin-bottom: 12px; }
+        .mode-btn {
+            flex: 1; padding: 10px 4px; border-radius: 8px; cursor: pointer;
+            border: 2px solid #334155; background: rgba(30,41,59,0.4);
+            text-align: center; transition: all 0.2s;
+        }
+        .mode-btn:hover { border-color: #475569; }
+        .mode-btn.active { border-color: #6366f1; background: rgba(99,102,241,0.12); }
+        .mode-btn .mode-icon { font-size: 16px; display: block; margin-bottom: 3px; }
+        .mode-btn .mode-name { font-size: 10px; font-weight: 700; color: #e2e8f0; letter-spacing: 0.5px; }
+        .mode-btn .mode-desc { font-size: 9px; color: #64748b; margin-top: 2px; }
+        .mode-btn.active .mode-name { color: #a5b4fc; }
+        .mode-btn.active .mode-desc { color: #818cf8; }
+
+        .advanced-toggle {
+            width: 100%; padding: 8px; background: rgba(30,41,59,0.3);
+            border: 1px dashed #334155; border-radius: 6px; cursor: pointer;
+            text-align: center; font-size: 10px; font-weight: 600; color: #64748b;
+            letter-spacing: 0.5px; transition: all 0.2s; margin-bottom: 10px;
+        }
+        .advanced-toggle:hover { border-color: #6366f1; color: #a5b4fc; }
+        .advanced-toggle.open { border-style: solid; border-color: #6366f1; color: #a5b4fc; }
+        .advanced-content { display: none; }
+        .advanced-content.visible { display: block; }
+
+        .slider-group { margin-bottom: 14px; }
+        .slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .slider-label { font-size: 11px; color: #94a3b8; font-weight: 500; }
+        .slider-value {
+            font-size: 14px; font-weight: 700; color: #a5b4fc;
+            font-family: 'Consolas', 'Courier New', monospace;
+            min-width: 50px; text-align: right; cursor: default;
+            padding: 2px 6px; border-radius: 4px; border: 1px solid transparent; transition: all 0.2s;
+        }
+        .slider-value:hover { border-color: rgba(99,102,241,0.3); background: rgba(99,102,241,0.08); }
+        .slider-value.editing { border-color: #6366f1; background: rgba(99,102,241,0.15); outline: none; cursor: text; color: #e2e8f0; }
+        input[type="range"] {
+            width: 100%; height: 5px; -webkit-appearance: none; appearance: none;
+            background: #1e293b; border-radius: 3px; outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 16px; height: 16px; border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            cursor: pointer; box-shadow: 0 0 8px rgba(99,102,241,0.4);
+        }
+        .slider-hint { font-size: 9px; color: #475569; margin-top: 4px; line-height: 1.4; }
+
+        .info-card {
+            background: rgba(99,102,241,0.06); padding: 14px; border-radius: 10px;
+            border: 1px solid rgba(99,102,241,0.15); margin-bottom: 10px;
+            text-align: center; display: none;
+        }
+        .info-card .info-icon { font-size: 22px; margin-bottom: 6px; }
+        .info-card .info-title { font-size: 12px; font-weight: 700; color: #a5b4fc; }
+        .info-card .info-desc { font-size: 10px; color: #64748b; margin-top: 4px; line-height: 1.5; }
+
+        #status { text-align: center; margin-top: 14px; font-size: 11px; font-weight: 600; color: #475569; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>SFL Digging Helper</h1>
+    <div class="version">v11.0 — Auto-Align Engine</div>
+</div>
+
+<div class="panel">
+
+    <div class="input-group">
+        <label>Farm ID</label>
+        <input type="text" id="farmIdInput" class="input-field" placeholder="Enter your Farm ID">
+    </div>
+
+    <button id="btnSync" class="btn btn-success">Sync Live API Data</button>
+
+    <div class="card">
+        <label class="card-label">
+            <input type="checkbox" id="lockToggle" checked>
+            Lock Grid (Dig Mode)
+        </label>
+        <div class="card-hint">Uncheck to drag and fine-tune grid position manually.</div>
+    </div>
+
+    <!-- How To Use — Updated for auto-alignment -->
+    <div class="howto">
+        <div class="howto-title">&#10024; One-Press Setup</div>
+        1. Open the game and go to the <strong>Desert dig site</strong>.<br>
+        2. Press <span class="key">Alt+1</span> — grid auto-aligns to dig tiles. <span class="auto-badge">AUTO</span><br>
+        3. <span class="ok">Walk around — grid follows perfectly.</span><br>
+        4. Press <span class="key">Alt+1</span> to re-snap, <span class="key">E</span> to stop tracking.
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="settings-divider"><span>Settings</span></div>
+
+    <div class="mode-group">
+        <div class="mode-btn" data-mode="low">
+            <span class="mode-icon">&#9889;</span>
+            <span class="mode-name">Low-End</span>
+            <span class="mode-desc">WASD + periodic sync</span>
+        </div>
+        <div class="mode-btn active" data-mode="mid">
+            <span class="mode-icon">&#9878;</span>
+            <span class="mode-name">Mid-Range</span>
+            <span class="mode-desc">WASD + live sync</span>
+        </div>
+        <div class="mode-btn" data-mode="high">
+            <span class="mode-icon">&#128640;</span>
+            <span class="mode-name">High-End</span>
+            <span class="mode-desc">Pure camera sync</span>
+        </div>
+    </div>
+
+    <div class="info-card" id="highEndInfo">
+        <div class="info-icon">&#128640;</div>
+        <div class="info-title">Full Camera Tracking Active</div>
+        <div class="info-desc">
+            Grid is synced to the game camera every frame at 60fps.
+            No manual speed tuning needed.
+        </div>
+    </div>
+
+    <div class="advanced-toggle" id="advancedToggle">Advanced Settings (Dev-Level)</div>
+
+    <div class="advanced-content" id="advancedContent">
+        <div class="slider-group">
+            <div class="slider-header">
+                <span class="slider-label">Walk Speed (px / frame)</span>
+                <span class="slider-value" id="speedDisplay">3.300</span>
+            </div>
+            <input type="range" id="speedSlider" min="0" max="10" step="0.001" value="3.3">
+            <div class="slider-hint">
+                Fine-tune to match character walk speed.
+                Applies to Low-End and Mid-Range modes.
+                Double-click the value to type manually.
+            </div>
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-header">
+                <span class="slider-label">Camera Sync Interval (seconds)</span>
+                <span class="slider-value" id="domIntervalDisplay">Live</span>
+            </div>
+            <input type="range" id="domIntervalSlider" min="0" max="10" step="0.5" value="0">
+            <div class="slider-hint">
+                How often camera position is checked for drift correction.
+                0 = live (every frame). Higher = less CPU.
+                Double-click the value to type manually.
+            </div>
+        </div>
+    </div>
+
+    <button id="btnHide" class="btn btn-danger">Hide All</button>
+
+    <div id="status">Ready. Press Alt+1 in the desert to start.</div>
+</div>
+
+<script src="sidepanel.js"></script>
+</body>
+</html>
