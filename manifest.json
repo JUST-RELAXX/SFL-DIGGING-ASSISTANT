@@ -1,40 +1,38 @@
 {
   "manifest_version": 3,
-  "name": "SFL Digging Helper",
-  "version": "11.0",
-  "description": "Grid overlay with 3-mode Phaser camera tracking for Sunflower Land digging.",
-  "permissions": [
-    "storage",
-    "sidePanel",
-    "activeTab"
-  ],
+  "name": "Sunflower Land Game Assistant",
+  "version": "12.0",
+  "description": "A comprehensive game assistant for Sunflower Land — deliveries, digging grid, farm stats & more.",
+  "permissions": ["sidePanel", "activeTab", "storage", "scripting"],
   "host_permissions": [
+    "https://sunflower-land.com/*",
+    "https://*.sunflower-land.com/*",
     "https://api.sunflower-land.com/*",
-    "https://sunflower-land.com/play/*",
-    "<all_urls>"
+    "https://sfl.world/*",
+    "https://api.coingecko.com/*"
   ],
-  "action": {
-    "default_title": "Open SFL Digging Helper"
-  },
   "side_panel": {
     "default_path": "sidepanel.html"
   },
+  "action": {
+    "default_title": "SFL Game Assistant"
+  },
+  "icons": {
+    "48": "images/tokens/sfl.webp",
+    "128": "images/tokens/sfl.webp"
+  },
   "content_scripts": [
     {
-      "matches": ["https://sunflower-land.com/play/*"],
+      "matches": ["https://sunflower-land.com/*", "https://*.sunflower-land.com/*"],
       "js": ["content.js"],
       "css": ["overlay.css"],
-      "all_frames": true,
       "run_at": "document_idle"
     }
   ],
-  "background": {
-    "service_worker": "background.js"
-  },
   "web_accessible_resources": [
     {
-      "resources": ["bridge.js"],
-      "matches": ["https://sunflower-land.com/*"]
+      "resources": ["bridge.js", "images/*"],
+      "matches": ["https://sunflower-land.com/*", "https://*.sunflower-land.com/*"]
     }
   ]
 }
