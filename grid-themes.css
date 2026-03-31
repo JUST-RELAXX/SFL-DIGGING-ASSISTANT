@@ -1,0 +1,5599 @@
+/* ==========================================================================
+   SFL Grid Themes — 30 Premium Presets (scoped to #sfl-grid-wrapper)
+   Extracted from Maingridesignpresets.html
+   ========================================================================== */
+
+/* CSS Custom Properties for animation timing */
+#sfl-grid-wrapper {
+    --transition-speed-fast: 0.2s;
+    --transition-speed-medium: 0.5s;
+    --transition-speed-slow: 0.8s;
+    --ease-bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    --ease-smooth: cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Quality Scalers */
+#sfl-grid-wrapper[data-quality="ultra"] { --jp-scale: 1; --jp-shadow: 1; --jp-blur: 1; --jp-text: 1; }
+#sfl-grid-wrapper[data-quality="high"] { --jp-scale: 0.8; --jp-shadow: 0.6; --jp-blur: 0.7; --jp-text: 0.8; }
+#sfl-grid-wrapper[data-quality="medium"] { --jp-scale: 0.4; --jp-shadow: 0.3; --jp-blur: 0.3; --jp-text: 0.6; }
+#sfl-grid-wrapper[data-quality="low"] { --jp-scale: 0.15; --jp-shadow: 0.05; --jp-blur: 0; --jp-text: 0.35; }
+
+        /* ==========================================================================
+           3. BASE GRID ARCHITECTURE (only when a theme is active)
+           ========================================================================== */
+        #sfl-grid-wrapper[data-theme] {
+            transform-style: preserve-3d;
+            opacity: 0.65;
+            mix-blend-mode: screen;
+            transition: opacity 0.3s ease;
+        }
+
+        #sfl-grid-wrapper[data-theme]:hover {
+            opacity: 0.9;
+        }
+
+        #sfl-grid-wrapper[data-theme]::before,
+        #sfl-grid-wrapper[data-theme]::after {
+            will-change: transform, filter, opacity;
+        }
+
+        #sfl-grid-wrapper[data-theme] #sfl-master-grid {
+            gap: 4px;
+            background-color: rgba(5, 5, 8, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 6px;
+            transition: all var(--transition-speed-medium) ease;
+            transform-style: preserve-3d;
+
+            /* Mouse tracking variables updated by JS */
+            --mouse-x: 50%;
+            --mouse-y: 50%;
+        }
+
+        /* Ambient Global Spotlight Overlay */
+        #sfl-grid-wrapper[data-theme] #sfl-master-grid::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            z-index: 10;
+            background: radial-gradient(600px circle at var(--mouse-x) var(--mouse-y),
+                    rgba(255, 255, 255, 0.08),
+                    transparent 40%);
+            transition: opacity var(--transition-speed-fast);
+        }
+
+        /* ==========================================================================
+           4. BASE TILE ARCHITECTURE & INITIAL STATE (only when a theme is active)
+           ========================================================================== */
+        #sfl-grid-wrapper[data-theme] .sfl-grid-cell {
+            position: relative;
+            border-radius: 6px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: crosshair;
+            transition: all var(--transition-speed-fast) var(--ease-smooth);
+            overflow: visible;
+            transform-style: preserve-3d;
+            will-change: transform, filter, box-shadow, background-color, opacity;
+            contain: layout style;
+
+            /* Entry Animation Initial State */
+            opacity: 0;
+            transform: scale(0.1) translateY(50px) translateZ(0);
+            animation: popIn 0.8s var(--ease-bounce) forwards;
+        }
+
+        @keyframes popIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.1) translateY(50px) translateZ(-50px);
+            }
+
+            50% {
+                opacity: 0.8;
+                transform: scale(1.1) translateY(-10px) translateZ(20px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0) translateZ(0);
+            }
+        }
+
+        /* Base Tile Types — RGB vars for thematic hooking (only when themed) */
+        #sfl-grid-wrapper[data-theme] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 0;
+            --base-g: 255;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 255;
+            --base-g: 230;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme] .sfl-grid-cell[data-type="red"] {
+            --base-r: 255;
+            --base-g: 50;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 150;
+            --base-g: 150;
+            --base-b: 150;
+        }
+
+        /* Default fallback coloring for themed tiles */
+        #sfl-grid-wrapper[data-theme] .sfl-grid-cell {
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.15);
+            border-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.3);
+            box-shadow: inset 0 0 15px rgba(var(--base-r), var(--base-g), var(--base-b), 0.2);
+        }
+
+        /* Base Hover State (only themed, overridden per-theme) */
+        #sfl-grid-wrapper[data-theme] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: scale(1.15) translateZ(20px);
+            z-index: 20;
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.4);
+            border-color: #ffffff;
+            box-shadow:
+                0 0 25px rgba(var(--base-r), var(--base-g), var(--base-b), 1),
+                0 0 50px rgba(var(--base-r), var(--base-g), var(--base-b), 0.6),
+                inset 0 0 30px rgba(var(--base-r), var(--base-g), var(--base-b), 0.8);
+        }
+
+        /* ==========================================================================
+           5. GLOBAL DIGGING SYSTEM & PARTICLE ENGINE CLASSES
+           ========================================================================== */
+
+        /* The container for internal tile effects during dig */
+        .dig-fx-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 5;
+            border-radius: inherit;
+            /* PERFORMANCE OPTIMIZATIONS */
+            will-change: transform, opacity, filter, box-shadow;
+        }
+
+        /* When a tile enters the 2.5s digging phase */
+        .sfl-grid-cell.digging {
+            pointer-events: none;
+            z-index: 100;
+            /* Themes will attach their specific 2.5s animations here */
+        }
+
+        /* The Final DUG state (Crater / Dead Tile) */
+        .sfl-grid-cell.dug {
+            background-color: rgba(0, 0, 0, 0.85) !important;
+            border: 1px solid rgba(0, 0, 0, 0.95) !important;
+            box-shadow:
+                inset 0 10px 20px rgba(0, 0, 0, 1),
+                inset 0 -2px 5px rgba(255, 255, 255, 0.05) !important;
+            transform: scale(0.95) translateZ(-10px) !important;
+            pointer-events: none !important;
+            filter: grayscale(1) brightness(0.2) contrast(1.5) !important;
+            animation: none !important;
+        }
+
+        /* Inner crater depth effect */
+        .sfl-grid-cell.dug::after {
+            content: '';
+            position: absolute;
+            top: 25%;
+            left: 25%;
+            right: 25%;
+            bottom: 25%;
+            border-radius: 50%;
+            background-color: #000000;
+            box-shadow:
+                0 0 15px 5px #000000,
+                inset 0 5px 10px rgba(0, 0, 0, 1);
+            opacity: 0.8;
+        }
+
+        /* --- Particle DOM Elements (Spawned by JS) --- */
+        .dig-particle {
+            position: absolute;
+            pointer-events: none;
+            border-radius: 50%;
+            z-index: 200;
+            opacity: 1;
+            /* PERFORMANCE OPTIMIZATIONS */
+            will-change: transform, opacity;
+            /* Will be animated via Web Animations API in JS */
+        }
+
+
+        /* ==========================================================================
+           6. THEMES BATCH 1: CORE EFFECTS (Unrestricted & Heavy)
+           ========================================================================== */
+
+        /* ------------------------------------------------------------------
+           THEME 01: HELLFIRE EDGE
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="hellfire"] {
+            background-color: #070000;
+        }
+
+        #sfl-grid-wrapper[data-theme="hellfire"] {
+            padding: 16px;
+        }
+
+        #sfl-grid-wrapper[data-theme="hellfire"] #sfl-master-grid {
+            border-top: 2px solid #5a0000;
+            border-right: 2px solid #5a0000;
+            border-bottom: 2px solid #5a0000;
+            border-left: 2px solid #5a0000;
+            background-color: rgba(20, 0, 0, 0.8);
+            box-shadow:
+                inset 0 0 60px rgba(255, 0, 0, 0.4),
+                inset 0 0 120px rgba(100, 0, 0, 0.5);
+        }
+
+        /* Layered Chaotic Burning Edges */
+        #sfl-grid-wrapper[data-theme="hellfire"]::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            bottom: -6px;
+            left: -6px;
+            border-radius: 18px;
+            background: linear-gradient(45deg, #ff0000, #ff5e00, #8b0000, #ff0000);
+            background-size: 400% 400%;
+            z-index: -1;
+            filter: blur(20px);
+            animation:
+                hellfireBurnPrimary 3s infinite alternate ease-in-out,
+                hellfireMove 5s linear infinite;
+        }
+
+        #sfl-grid-wrapper[data-theme="hellfire"]::after {
+            content: '';
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            bottom: -20px;
+            left: -20px;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #cc0000, #ff2a00, #4a0000, #ff5e00);
+            background-size: 300% 300%;
+            z-index: -2;
+            filter: blur(40px);
+            animation:
+                hellfireBurnSecondary 2.5s infinite alternate-reverse ease-in-out,
+                hellfireMove 7s linear infinite reverse;
+            opacity: 0.8;
+        }
+
+        @keyframes hellfireBurnPrimary {
+            0% {
+                transform: scale(0.98);
+                filter: blur(15px) brightness(1);
+            }
+
+            100% {
+                transform: scale(1.02);
+                filter: blur(30px) brightness(1.6);
+            }
+        }
+
+        @keyframes hellfireBurnSecondary {
+            0% {
+                transform: scale(0.95);
+                filter: blur(30px) brightness(0.8);
+            }
+
+            100% {
+                transform: scale(1.05);
+                filter: blur(50px) brightness(1.3);
+            }
+        }
+
+        @keyframes hellfireMove {
+            0% {
+                background-position: 0% 0%;
+            }
+
+            50% {
+                background-position: 100% 100%;
+            }
+
+            100% {
+                background-position: 0% 0%;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="hellfire"] #sfl-master-grid::after {
+            background: radial-gradient(700px circle at var(--mouse-x) var(--mouse-y),
+                    rgba(255, 50, 0, 0.2),
+                    transparent 50%);
+        }
+
+        /* Hellfire Tiles */
+        #sfl-grid-wrapper[data-theme="hellfire"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 100;
+            --base-g: 20;
+            --base-b: 20;
+        }
+
+        #sfl-grid-wrapper[data-theme="hellfire"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.7);
+            border-color: #ffffff;
+            box-shadow:
+                0 0 30px rgba(var(--base-r), var(--base-g), var(--base-b), 1),
+                0 0 60px rgba(255, 0, 0, 0.8),
+                inset 0 0 40px rgba(255, 100, 0, 0.9);
+            transform: scale(1.15) translateZ(30px);
+            animation: hellfireHoverShake 0.1s infinite alternate linear;
+        }
+
+        @keyframes hellfireHoverShake {
+            0% {
+                transform: scale(1.15) translateZ(30px) translateX(-1px) rotate(-0.5deg);
+            }
+
+            100% {
+                transform: scale(1.15) translateZ(30px) translateX(1px) rotate(0.5deg);
+            }
+        }
+
+        /* Hellfire Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="hellfire"] .sfl-grid-cell.digging {
+            animation: hellfireDigSequence 2.5s forwards;
+            z-index: 50;
+        }
+
+        #sfl-grid-wrapper[data-theme="hellfire"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background: radial-gradient(circle, #ffffff, #ff4500, #8b0000);
+            box-shadow: 0 0 80px #ff0000, 0 0 120px #ff5e00;
+            animation: hellfireDigFx 2.5s forwards;
+        }
+
+        @keyframes hellfireDigSequence {
+            0% {
+                transform: scale(1);
+                border-color: #ff0000;
+            }
+
+            10% {
+                transform: scale(0.9) translateY(5px);
+                background-color: #5a0000;
+            }
+
+            30% {
+                transform: scale(1.2) translateY(-10px);
+                background-color: #ff0000;
+            }
+
+            50% {
+                transform: scale(1.4) translateY(-20px);
+                border-radius: 50%;
+            }
+
+            80% {
+                transform: scale(1.8) translateY(-30px);
+                opacity: 1;
+                filter: brightness(2);
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes hellfireDigFx {
+            0% {
+                opacity: 0;
+                transform: scale(0);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.5);
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(2);
+                filter: blur(20px);
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 02: ELECTRIC CRACKLE
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="electric"] {
+            background-color: #020205;
+        }
+
+        #sfl-grid-wrapper[data-theme="electric"] {
+            padding: 12px;
+        }
+
+        #sfl-grid-wrapper[data-theme="electric"] #sfl-master-grid {
+            border-top: 4px solid #ff6a00;
+            border-right: 4px solid #ff6a00;
+            border-bottom: 4px solid #ff6a00;
+            border-left: 4px solid #ff6a00;
+            background-color: rgba(10, 10, 20, 0.8);
+            box-shadow:
+                0 0 20px 5px rgba(255, 106, 0, 0.9),
+                0 0 50px 15px rgba(255, 0, 0, 0.7),
+                0 0 90px 25px rgba(138, 43, 226, 0.5),
+                inset 0 0 35px 10px rgba(255, 166, 0, 0.7);
+            animation: electricCrackleBorder 1.5s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes electricCrackleBorder {
+            0% {
+                border-color: #ff6a00;
+                box-shadow:
+                    0 0 20px 5px rgba(255, 106, 0, 0.9),
+                    0 0 40px 15px rgba(255, 0, 0, 0.6),
+                    inset 0 0 25px 5px rgba(255, 166, 0, 0.6);
+            }
+
+            15% {
+                border-color: #ffd000;
+                box-shadow:
+                    0 0 35px 10px rgba(255, 208, 0, 1),
+                    0 0 70px 20px rgba(255, 60, 0, 0.8),
+                    inset 0 0 40px 15px rgba(255, 208, 0, 0.8);
+            }
+
+            30% {
+                border-color: #ff6a00;
+            }
+
+            45% {
+                border-color: #ffffff;
+                box-shadow:
+                    0 0 60px 15px rgba(255, 255, 255, 1),
+                    0 0 100px 30px rgba(0, 255, 255, 0.8),
+                    inset 0 0 60px 20px rgba(255, 255, 255, 0.9);
+            }
+
+            60% {
+                border-color: #ff6a00;
+            }
+
+            100% {
+                border-color: #ff0055;
+                box-shadow:
+                    0 0 30px 10px rgba(255, 0, 85, 0.9),
+                    0 0 60px 20px rgba(255, 106, 0, 0.7),
+                    inset 0 0 35px 10px rgba(255, 0, 85, 0.7);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="electric"] #sfl-master-grid::after {
+            background: radial-gradient(900px circle at var(--mouse-x) var(--mouse-y),
+                    rgba(255, 255, 255, 0.15),
+                    transparent 45%);
+        }
+
+        /* Electric Tiles */
+        #sfl-grid-wrapper[data-theme="electric"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: scale(1.15) translateZ(15px);
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.5);
+            border-color: #ffffff;
+            box-shadow:
+                0 0 25px rgba(var(--base-r), var(--base-g), var(--base-b), 1),
+                0 0 50px rgba(255, 255, 255, 0.8),
+                inset 0 0 30px #ffffff;
+            animation: electricHoverPulse 0.08s infinite alternate;
+        }
+
+        @keyframes electricHoverPulse {
+            0% {
+                filter: brightness(1) drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+            }
+
+            100% {
+                filter: brightness(1.5) drop-shadow(0 0 15px rgba(255, 255, 255, 1));
+            }
+        }
+
+        /* Electric Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="electric"] .sfl-grid-cell.digging {
+            animation: electricDigSequence 2.5s forwards steps(10);
+        }
+
+        #sfl-grid-wrapper[data-theme="electric"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background-color: #ffffff;
+            box-shadow: 0 0 100px #00ffff, 0 0 200px #ffffff;
+            animation: electricDigFx 2.5s forwards;
+        }
+
+        @keyframes electricDigSequence {
+            0% {
+                transform: scale(1) skewX(0);
+            }
+
+            20% {
+                transform: scale(1.1) skewX(20deg) translateX(15px);
+                border-color: #00ffff;
+            }
+
+            40% {
+                transform: scale(0.9) skewX(-20deg) translateX(-15px);
+                border-color: #ff00ff;
+            }
+
+            60% {
+                transform: scale(1.3) skewY(15deg) translateY(10px);
+                border-color: #ffff00;
+            }
+
+            80% {
+                transform: scale(1.5) skewY(-15deg);
+                border-color: #ffffff;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes electricDigFx {
+            0% {
+                opacity: 0.5;
+                filter: hue-rotate(0deg);
+            }
+
+            50% {
+                opacity: 1;
+                filter: hue-rotate(180deg);
+                transform: scale(1.2);
+            }
+
+            100% {
+                opacity: 0;
+                filter: hue-rotate(360deg);
+                transform: scale(0.5);
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 03: SPINNING FIRE
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="spinning"] {
+            padding: 10px;
+            border-radius: 20px;
+            box-shadow:
+                0 0 80px rgba(255, 69, 0, 0.4),
+                0 0 200px rgba(255, 215, 0, 0.2);
+        }
+
+        #sfl-grid-wrapper[data-theme="spinning"]::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            bottom: -6px;
+            left: -6px;
+            border-radius: 24px;
+            background: conic-gradient(from 0deg,
+                    #ff4500, #ff8c00, #ffd700, #ff4500,
+                    transparent 40%,
+                    transparent 60%,
+                    #ff4500);
+            filter: blur(18px);
+            animation: spinFireRing 3s linear infinite;
+            z-index: -1;
+            opacity: 0.9;
+        }
+
+        @keyframes spinFireRing {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="spinning"] #sfl-master-grid {
+            border-top: 2px solid rgba(255, 255, 255, 0.15);
+            border-right: 2px solid rgba(255, 255, 255, 0.15);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+            border-left: 2px solid rgba(255, 255, 255, 0.15);
+            background-color: rgba(20, 10, 5, 0.7);
+        }
+
+        /* Spinning Fire Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="spinning"] .sfl-grid-cell.digging {
+            animation: spinDigSequence 2.5s ease-in forwards;
+        }
+
+        #sfl-grid-wrapper[data-theme="spinning"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background: radial-gradient(circle, #ffaa00, #ff0000, transparent);
+            box-shadow: 0 0 50px #ff4500;
+            animation: spinDigFx 2.5s linear forwards;
+        }
+
+        @keyframes spinDigSequence {
+            0% {
+                transform: scale(1) rotate(0deg);
+                border-radius: 6px;
+            }
+
+            30% {
+                transform: scale(0.8) rotate(180deg);
+                border-radius: 50%;
+            }
+
+            70% {
+                transform: scale(1.5) rotate(720deg);
+                border-radius: 50%;
+            }
+
+            100% {
+                transform: scale(0) rotate(1080deg);
+                opacity: 0;
+            }
+        }
+
+        @keyframes spinDigFx {
+            0% {
+                opacity: 0;
+                transform: scale(0);
+            }
+
+            70% {
+                opacity: 1;
+                transform: scale(1.5);
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(3);
+                filter: blur(15px);
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 04: CYBERPUNK NEON
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="cyberpunk"] {
+            background-color: #000510;
+        }
+
+        #sfl-grid-wrapper[data-theme="cyberpunk"] {
+            padding: 8px;
+        }
+
+        #sfl-grid-wrapper[data-theme="cyberpunk"] #sfl-master-grid {
+            border-top: 3px solid #00ffff;
+            border-right: 3px solid #00ffff;
+            border-bottom: 3px solid #00ffff;
+            border-left: 3px solid #00ffff;
+            background-color: rgba(0, 15, 30, 0.85);
+            box-shadow:
+                0 0 15px #00ffff,
+                0 0 30px #00ffff,
+                inset 0 0 25px #00ffff,
+                6px 6px 0px rgba(255, 0, 255, 0.7),
+                -6px -6px 0px rgba(0, 255, 255, 0.7);
+        }
+
+        #sfl-grid-wrapper[data-theme="cyberpunk"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 0;
+            --base-g: 255;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="cyberpunk"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 255;
+            --base-g: 0;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="cyberpunk"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 57;
+            --base-g: 255;
+            --base-b: 20;
+        }
+
+        #sfl-grid-wrapper[data-theme="cyberpunk"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 20;
+            --base-g: 20;
+            --base-b: 50;
+        }
+
+        #sfl-grid-wrapper[data-theme="cyberpunk"] .sfl-grid-cell {
+            border-radius: 0;
+            border-width: 2px;
+        }
+
+        #sfl-grid-wrapper[data-theme="cyberpunk"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            border-radius: 0;
+            transform: scale(1.1) skewX(-10deg) translateZ(10px);
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.6);
+            box-shadow:
+                8px 8px 0px rgba(255, 0, 255, 0.6),
+                -8px -8px 0px rgba(0, 255, 255, 0.6);
+            border-color: #ffffff;
+        }
+
+        /* Cyberpunk Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="cyberpunk"] .sfl-grid-cell.digging {
+            animation: cyberDigSequence 2.5s linear forwards;
+            background-color: #ffffff;
+        }
+
+        #sfl-grid-wrapper[data-theme="cyberpunk"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background: linear-gradient(90deg, #00ffff, #ff00ff, #00ffff);
+            background-size: 200% 100%;
+            animation: cyberDigFx 2.5s linear forwards;
+        }
+
+        @keyframes cyberDigSequence {
+            0% {
+                transform: scale(1) skew(0);
+                opacity: 1;
+            }
+
+            10% {
+                transform: scale(1.1) skew(30deg) translateX(20px);
+                opacity: 0.8;
+            }
+
+            20% {
+                transform: scale(0.9) skew(-30deg) translateX(-20px);
+                opacity: 0.9;
+            }
+
+            30% {
+                transform: scale(1.2) skew(10deg) translateY(10px);
+                opacity: 0.5;
+            }
+
+            40% {
+                transform: scale(0.8) skew(-10deg) translateY(-10px);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.5);
+                filter: invert(1);
+            }
+
+            60% {
+                transform: scale(1.5);
+                filter: invert(0);
+            }
+
+            70% {
+                transform: scale(1.5);
+                filter: invert(1);
+            }
+
+            80% {
+                transform: scale(2) scaleY(0.1);
+                opacity: 1;
+            }
+
+            /* Squashes flat */
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes cyberDigFx {
+            0% {
+                background-position: 0% 0;
+            }
+
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+
+        /* ==========================================================================
+           7. THEMES BATCH 2: HEAVY MUTATORS
+           ========================================================================== */
+
+        /* ------------------------------------------------------------------
+           THEME 05: TOXIC SLIME / RADIOACTIVE
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="toxic"] {
+            background-color: #030a03;
+        }
+
+        #sfl-grid-wrapper[data-theme="toxic"] {
+            padding: 15px;
+        }
+
+        #sfl-grid-wrapper[data-theme="toxic"] #sfl-master-grid {
+            border-top: 5px solid #39ff14;
+            border-right: 5px solid #39ff14;
+            border-bottom: 5px solid #39ff14;
+            border-left: 5px solid #39ff14;
+            background-color: rgba(5, 25, 5, 0.75);
+            border-radius: 25px;
+            box-shadow:
+                0 0 30px #39ff14,
+                inset 0 0 60px #228b22;
+            animation: toxicSlimePulse 4s infinite alternate ease-in-out;
+        }
+
+        @keyframes toxicSlimePulse {
+            0% {
+                box-shadow: 0 0 20px #39ff14, inset 0 0 30px #228b22;
+            }
+
+            100% {
+                box-shadow: 0 0 60px #39ff14, inset 0 0 100px #32cd32;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="toxic"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 0;
+            --base-g: 255;
+            --base-b: 128;
+        }
+
+        #sfl-grid-wrapper[data-theme="toxic"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 173;
+            --base-g: 255;
+            --base-b: 47;
+        }
+
+        #sfl-grid-wrapper[data-theme="toxic"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 255;
+            --base-g: 140;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="toxic"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 30;
+            --base-g: 60;
+            --base-b: 30;
+        }
+
+        #sfl-grid-wrapper[data-theme="toxic"] .sfl-grid-cell {
+            border-radius: 50% 50% 15% 15%;
+            /* Droplet shape */
+            border-top-width: 0;
+            border-bottom-width: 3px;
+        }
+
+        #sfl-grid-wrapper[data-theme="toxic"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: scale(1.2) translateY(-8px) translateZ(10px);
+            border-radius: 50%;
+            /* Bubbles up */
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.7);
+            box-shadow:
+                0 -15px 30px rgba(var(--base-r), var(--base-g), var(--base-b), 1),
+                inset 0 0 40px rgba(var(--base-r), var(--base-g), var(--base-b), 0.9);
+            border: 2px solid #ffffff;
+        }
+
+        /* Toxic Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="toxic"] .sfl-grid-cell.digging {
+            animation: toxicDigSequence 2.5s ease-in forwards;
+        }
+
+        #sfl-grid-wrapper[data-theme="toxic"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background-color: #39ff14;
+            border-radius: 50%;
+            box-shadow: 0 0 50px #39ff14, 0 0 100px #228b22;
+            animation: toxicDigFx 2.5s ease-in forwards;
+        }
+
+        @keyframes toxicDigSequence {
+            0% {
+                transform: scale(1) translateY(0);
+                border-radius: 50% 50% 15% 15%;
+            }
+
+            20% {
+                transform: scale(1.3) translateY(-15px);
+                border-radius: 50%;
+            }
+
+            40% {
+                transform: scale(1.5) translateY(-5px);
+                border-radius: 50%;
+            }
+
+            60% {
+                transform: scale(1.8) translateY(10px);
+                border-radius: 40% 60% 70% 30%;
+            }
+
+            /* starts melting */
+            80% {
+                transform: scale(2) translateY(30px) scaleY(0.3);
+                border-radius: 20% 80% 80% 20%;
+                opacity: 1;
+            }
+
+            /* puddles */
+            100% {
+                transform: scale(0) translateY(50px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes toxicDigFx {
+            0% {
+                opacity: 0;
+                filter: hue-rotate(0deg);
+            }
+
+            50% {
+                opacity: 1;
+                filter: hue-rotate(90deg);
+            }
+
+            100% {
+                opacity: 0;
+                filter: hue-rotate(180deg);
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 06: QUANTUM VOID / BLACK HOLE
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="void"] {
+            background-color: #000000;
+        }
+
+        #sfl-grid-wrapper[data-theme="void"] {
+            padding: 10px;
+        }
+
+        #sfl-grid-wrapper[data-theme="void"] #sfl-master-grid {
+            border-top: 2px solid #2a004d;
+            border-right: 2px solid #2a004d;
+            border-bottom: 2px solid #2a004d;
+            border-left: 2px solid #2a004d;
+            background: radial-gradient(circle at center, #000000 20%, #1a0033 100%);
+            border-radius: 35px;
+            box-shadow:
+                0 0 100px 40px #000000,
+                inset 0 0 120px 20px #4b0082,
+                inset 0 0 180px 40px #000000;
+        }
+
+        #sfl-grid-wrapper[data-theme="void"]::before {
+            content: '';
+            position: absolute;
+            top: -25px;
+            right: -25px;
+            bottom: -25px;
+            left: -25px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg,
+                    transparent 0%,
+                    rgba(138, 43, 226, 0.5) 25%,
+                    transparent 50%,
+                    rgba(0, 191, 255, 0.5) 75%,
+                    transparent 100%);
+            animation: voidSpin 12s linear infinite reverse;
+            z-index: -1;
+            filter: blur(25px);
+        }
+
+        @keyframes voidSpin {
+            0% {
+                transform: rotate(0deg) scale(1);
+            }
+
+            50% {
+                transform: rotate(-180deg) scale(1.05);
+            }
+
+            100% {
+                transform: rotate(-360deg) scale(1);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="void"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 75;
+            --base-g: 0;
+            --base-b: 130;
+        }
+
+        #sfl-grid-wrapper[data-theme="void"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 138;
+            --base-g: 43;
+            --base-b: 226;
+        }
+
+        #sfl-grid-wrapper[data-theme="void"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 0;
+            --base-g: 0;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="void"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 15;
+            --base-g: 15;
+            --base-b: 25;
+        }
+
+        #sfl-grid-wrapper[data-theme="void"] .sfl-grid-cell {
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+        }
+
+        /* INWARD pull on hover */
+        #sfl-grid-wrapper[data-theme="void"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: scale(0.6) translateZ(-20px);
+            border-radius: 50%;
+            background-color: #ffffff;
+            border-color: #ffffff;
+            box-shadow:
+                0 0 40px 15px rgba(var(--base-r), var(--base-g), var(--base-b), 1),
+                0 0 100px 30px #ffffff,
+                inset 0 0 20px #000000;
+        }
+
+        /* Void Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="void"] .sfl-grid-cell.digging {
+            animation: voidDigSequence 2.5s cubic-bezier(0.5, 0, 1, 0.5) forwards;
+            background-color: #ffffff;
+            border-radius: 50%;
+        }
+
+        #sfl-grid-wrapper[data-theme="void"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background-color: #000000;
+            border-radius: 50%;
+            animation: voidDigFx 2.5s ease-in forwards;
+        }
+
+        @keyframes voidDigSequence {
+            0% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+
+            30% {
+                transform: scale(1.5);
+                filter: brightness(2);
+                box-shadow: 0 0 50px #fff;
+            }
+
+            50% {
+                transform: scale(0.2) rotate(180deg);
+                filter: brightness(5);
+            }
+
+            80% {
+                transform: scale(0.05) rotate(720deg);
+                filter: brightness(10);
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes voidDigFx {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            40% {
+                transform: scale(0.5);
+                opacity: 1;
+                box-shadow: 0 0 20px #4b0082;
+            }
+
+            100% {
+                transform: scale(2);
+                opacity: 1;
+                box-shadow: 0 0 100px #000000;
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 07: AURORA BOREALIS
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="aurora"] {
+            background-color: #000a14;
+        }
+
+        #sfl-grid-wrapper[data-theme="aurora"] {
+            padding: 12px;
+        }
+
+        #sfl-grid-wrapper[data-theme="aurora"] #sfl-master-grid {
+            border-top: 1px solid rgba(255, 255, 255, 0.25);
+            border-right: 1px solid rgba(255, 255, 255, 0.25);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+            border-left: 1px solid rgba(255, 255, 255, 0.25);
+            background-color: rgba(10, 20, 35, 0.4);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            box-shadow:
+                inset 0 0 40px rgba(255, 255, 255, 0.15),
+                0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        #sfl-grid-wrapper[data-theme="aurora"]::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            bottom: -15px;
+            left: -15px;
+            border-radius: 25px;
+            background: linear-gradient(90deg, #00ffcc, #7b2cbf, #ff0055, #00ffcc);
+            background-size: 300% 300%;
+            filter: blur(30px);
+            z-index: -1;
+            opacity: 0.85;
+            animation: auroraFlowBg 8s ease infinite;
+        }
+
+        @keyframes auroraFlowBg {
+            0% {
+                background-position: 0% 50%;
+                transform: scale(0.98);
+            }
+
+            50% {
+                background-position: 100% 50%;
+                transform: scale(1.02);
+            }
+
+            100% {
+                background-position: 0% 50%;
+                transform: scale(0.98);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="aurora"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 0;
+            --base-g: 255;
+            --base-b: 204;
+        }
+
+        #sfl-grid-wrapper[data-theme="aurora"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 255;
+            --base-g: 105;
+            --base-b: 180;
+        }
+
+        #sfl-grid-wrapper[data-theme="aurora"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 153;
+            --base-g: 50;
+            --base-b: 204;
+        }
+
+        #sfl-grid-wrapper[data-theme="aurora"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 50;
+            --base-g: 70;
+            --base-b: 90;
+        }
+
+        #sfl-grid-wrapper[data-theme="aurora"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: scale(1.15) translateZ(10px);
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.6);
+            box-shadow:
+                0 0 50px rgba(var(--base-r), var(--base-g), var(--base-b), 0.9),
+                inset 0 0 20px #ffffff;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            border-radius: 50% 10% 50% 10%;
+            /* Leaf shape */
+        }
+
+        /* Aurora Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="aurora"] .sfl-grid-cell.digging {
+            animation: auroraDigSequence 2.5s ease-out forwards;
+        }
+
+        #sfl-grid-wrapper[data-theme="aurora"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background: linear-gradient(45deg, #00ffcc, #ff0055);
+            border-radius: inherit;
+            animation: auroraDigFx 2.5s linear forwards;
+        }
+
+        @keyframes auroraDigSequence {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            20% {
+                transform: scale(1.3) rotate(45deg);
+                border-radius: 50%;
+            }
+
+            50% {
+                transform: scale(1.6) rotate(90deg);
+                filter: hue-rotate(90deg) brightness(2);
+                box-shadow: 0 0 100px #ffffff;
+            }
+
+            80% {
+                transform: scale(2) rotate(180deg);
+                filter: hue-rotate(180deg) brightness(3);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(0) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        @keyframes auroraDigFx {
+            0% {
+                opacity: 0;
+                filter: blur(0px);
+            }
+
+            50% {
+                opacity: 1;
+                filter: blur(10px);
+            }
+
+            100% {
+                opacity: 0;
+                filter: blur(30px);
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 08: GLITCH MATRIX
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="matrix"] {
+            background-color: #000000;
+        }
+
+        #sfl-grid-wrapper[data-theme="matrix"] {
+            padding: 6px;
+        }
+
+        #sfl-grid-wrapper[data-theme="matrix"] #sfl-master-grid {
+            border-top: 4px solid #00ff00;
+            border-right: 4px solid #00ff00;
+            border-bottom: 4px solid #00ff00;
+            border-left: 4px solid #00ff00;
+            border-radius: 0;
+            background-color: #000500;
+            box-shadow:
+                0 0 25px #00ff00,
+                inset 0 0 30px #003300;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            animation: matrixGridFlicker 5s infinite;
+        }
+
+        @keyframes matrixGridFlicker {
+
+            0%,
+            96%,
+            98%,
+            100% {
+                opacity: 1;
+                transform: skewX(0deg);
+                filter: none;
+            }
+
+            97% {
+                opacity: 0.4;
+                transform: skewX(5deg);
+                filter: contrast(200%) hue-rotate(90deg);
+            }
+
+            99% {
+                opacity: 0.8;
+                transform: skewX(-5deg) translateY(2px);
+                filter: contrast(200%) invert(1);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="matrix"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 0;
+            --base-g: 255;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="matrix"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 173;
+            --base-g: 255;
+            --base-b: 47;
+        }
+
+        #sfl-grid-wrapper[data-theme="matrix"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 0;
+            --base-g: 150;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="matrix"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 0;
+            --base-g: 30;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="matrix"] .sfl-grid-cell {
+            border-radius: 0;
+            border: 1px solid rgba(0, 255, 0, 0.25);
+            font-family: monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: rgba(0, 255, 0, 0.5);
+            font-size: 10px;
+        }
+
+        #sfl-grid-wrapper[data-theme="matrix"] .sfl-grid-cell::before {
+            content: '10';
+            position: absolute;
+            opacity: 0.1;
+        }
+
+        /* Glitchy RGB Split on Hover */
+        #sfl-grid-wrapper[data-theme="matrix"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: scale(1.25) translateZ(10px);
+            border-radius: 0;
+            background-color: #00ff00;
+            border: none;
+            box-shadow:
+                6px 0 0 rgba(255, 0, 0, 0.9),
+                -6px 0 0 rgba(0, 255, 255, 0.9),
+                0 6px 0 rgba(0, 0, 255, 0.9),
+                0 0 30px #00ff00;
+            z-index: 30;
+        }
+
+        #sfl-grid-wrapper[data-theme="matrix"] .sfl-grid-cell:hover::before {
+            content: 'ERROR';
+            color: #000;
+            font-weight: bold;
+            opacity: 1;
+            font-size: 14px;
+            z-index: 2;
+        }
+
+        /* Matrix Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="matrix"] .sfl-grid-cell.digging {
+            animation: matrixDigSequence 2.5s steps(10) forwards;
+            background-color: #00ff00;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        #sfl-grid-wrapper[data-theme="matrix"] .sfl-grid-cell.digging::before {
+            content: '010110';
+            opacity: 1;
+            animation: matrixTextRandomize 0.1s infinite;
+        }
+
+        #sfl-grid-wrapper[data-theme="matrix"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background: repeating-linear-gradient(0deg, rgba(0, 255, 0, 0.2) 0px, rgba(0, 255, 0, 0.2) 1px, transparent 1px, transparent 2px);
+            animation: matrixDigFx 2.5s linear forwards;
+        }
+
+        @keyframes matrixTextRandomize {
+            0% {
+                content: '0x1A';
+            }
+
+            25% {
+                content: 'NULL';
+            }
+
+            50% {
+                content: 'SYS_ERR';
+            }
+
+            75% {
+                content: '11001';
+            }
+
+            100% {
+                content: '0x00';
+            }
+        }
+
+        @keyframes matrixDigSequence {
+            0% {
+                transform: scale(1);
+                box-shadow: none;
+            }
+
+            20% {
+                transform: scale(1.5) translateX(10px);
+                box-shadow: 10px 0 0 red;
+            }
+
+            40% {
+                transform: scale(0.8) translateY(-10px);
+                box-shadow: -10px 0 0 blue;
+            }
+
+            60% {
+                transform: scale(2) skewX(20deg);
+                filter: invert(1);
+            }
+
+            80% {
+                transform: scale(1.5) skewY(-20deg);
+                filter: hue-rotate(180deg);
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes matrixDigFx {
+            0% {
+                background-position: 0 0;
+                opacity: 0;
+            }
+
+            50% {
+                background-position: 0 50px;
+                opacity: 1;
+            }
+
+            100% {
+                background-position: 0 100px;
+                opacity: 0;
+            }
+        }
+
+
+        /* ==========================================================================
+           8. THEMES BATCH 3: ETHEREAL & DARK
+           ========================================================================== */
+
+        /* ------------------------------------------------------------------
+           THEME 09: HOLY LIGHT / SERAPHIM
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="holy"] {
+            background-color: #1a1a14;
+        }
+
+        #sfl-grid-wrapper[data-theme="holy"] {
+            padding: 20px;
+        }
+
+        #sfl-grid-wrapper[data-theme="holy"] #sfl-master-grid {
+            border-top: 3px solid #ffffff;
+            border-right: 3px solid #ffffff;
+            border-bottom: 3px solid #ffffff;
+            border-left: 3px solid #ffffff;
+            background-color: rgba(255, 255, 230, 0.15);
+            box-shadow:
+                0 0 50px rgba(255, 255, 255, 0.9),
+                inset 0 0 80px rgba(255, 215, 0, 0.6);
+            animation: holyGridBreathe 6s infinite alternate ease-in-out;
+        }
+
+        @keyframes holyGridBreathe {
+            0% {
+                box-shadow: 0 0 40px rgba(255, 255, 255, 0.7), inset 0 0 50px rgba(255, 215, 0, 0.4);
+            }
+
+            100% {
+                box-shadow: 0 0 100px rgba(255, 255, 255, 1), inset 0 0 150px rgba(255, 215, 0, 0.9);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="holy"]::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            bottom: -40px;
+            left: -40px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 215, 0, 0.5) 40%, transparent 70%);
+            z-index: -1;
+            filter: blur(35px);
+            animation: holyAuraSpin 20s linear infinite;
+        }
+
+        @keyframes holyAuraSpin {
+            0% {
+                transform: rotate(0deg) scale(1);
+            }
+
+            50% {
+                transform: rotate(180deg) scale(1.1);
+            }
+
+            100% {
+                transform: rotate(360deg) scale(1);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="holy"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 135;
+            --base-g: 206;
+            --base-b: 235;
+        }
+
+        #sfl-grid-wrapper[data-theme="holy"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 255;
+            --base-g: 255;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="holy"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 255;
+            --base-g: 215;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="holy"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 220;
+            --base-g: 220;
+            --base-b: 200;
+        }
+
+        #sfl-grid-wrapper[data-theme="holy"] .sfl-grid-cell {
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            /* Circle tiles */
+            transform: scale(0.85);
+        }
+
+        #sfl-grid-wrapper[data-theme="holy"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: scale(1.4) translateY(-15px) translateZ(20px);
+            background-color: #ffffff;
+            border-color: #ffd700;
+            box-shadow:
+                0 15px 50px #ffffff,
+                0 0 80px #ffd700,
+                inset 0 0 30px #ffffff;
+            z-index: 40;
+        }
+
+        /* Holy Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="holy"] .sfl-grid-cell.digging {
+            animation: holyDigSequence 2.5s ease-in forwards;
+        }
+
+        #sfl-grid-wrapper[data-theme="holy"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background: radial-gradient(circle, #ffffff, #ffd700);
+            box-shadow: 0 0 150px #ffffff;
+            border-radius: 50%;
+            animation: holyDigFx 2.5s ease-out forwards;
+        }
+
+        @keyframes holyDigSequence {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            30% {
+                transform: scale(1.5) translateY(-20px);
+                opacity: 1;
+            }
+
+            60% {
+                transform: scale(2) translateY(-40px);
+                background-color: #fff;
+                box-shadow: 0 0 100px #fff;
+            }
+
+            80% {
+                transform: scale(3) translateY(-60px);
+                opacity: 0.8;
+                filter: brightness(2);
+            }
+
+            100% {
+                transform: scale(5) translateY(-100px);
+                opacity: 0;
+            }
+
+            /* Ascends to heaven */
+        }
+
+        @keyframes holyDigFx {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(2);
+                opacity: 0;
+                filter: blur(20px);
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 10: BLOOD MOON / CRIMSON
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="blood"] {
+            background-color: #050000;
+        }
+
+        #sfl-grid-wrapper[data-theme="blood"] {
+            padding: 10px;
+        }
+
+        #sfl-grid-wrapper[data-theme="blood"] #sfl-master-grid {
+            border-top: 4px solid #8a0303;
+            border-right: 4px solid #8a0303;
+            border-bottom: 4px solid #8a0303;
+            border-left: 4px solid #8a0303;
+            background-color: rgba(25, 0, 0, 0.95);
+            box-shadow:
+                0 0 70px #660000,
+                inset 0 0 100px #330000;
+            /* Accurate human heartbeat timing */
+            animation: heartbeatPulse 1.2s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+        }
+
+        @keyframes heartbeatPulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 40px #8a0303;
+            }
+
+            15% {
+                transform: scale(1.04);
+                box-shadow: 0 0 120px #ff0000;
+            }
+
+            30% {
+                transform: scale(1);
+                box-shadow: 0 0 40px #8a0303;
+            }
+
+            45% {
+                transform: scale(1.02);
+                box-shadow: 0 0 80px #cc0000;
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 40px #8a0303;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="blood"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 138;
+            --base-g: 3;
+            --base-b: 3;
+        }
+
+        #sfl-grid-wrapper[data-theme="blood"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 255;
+            --base-g: 0;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="blood"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 90;
+            --base-g: 0;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="blood"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 20;
+            --base-g: 0;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="blood"] .sfl-grid-cell {
+            border-radius: 2px;
+            border: 1px solid rgba(255, 0, 0, 0.15);
+        }
+
+        #sfl-grid-wrapper[data-theme="blood"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            background-color: #ff0000;
+            border-color: #ffaaaa;
+            box-shadow:
+                0 15px 30px #8a0303,
+                0 -15px 30px #8a0303,
+                0 0 80px #ff0000;
+            transform: scale(1.2) skew(3deg, 3deg) translateZ(10px);
+        }
+
+        /* Blood Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="blood"] .sfl-grid-cell.digging {
+            animation: bloodDigSequence 2.5s forwards cubic-bezier(0.6, -0.28, 0.735, 0.045);
+        }
+
+        #sfl-grid-wrapper[data-theme="blood"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background-color: #ff0000;
+            border-radius: 50%;
+            animation: bloodDigFx 2.5s forwards;
+        }
+
+        @keyframes bloodDigSequence {
+            0% {
+                transform: scale(1);
+                background-color: #8a0303;
+            }
+
+            20% {
+                transform: scale(0.8);
+                background-color: #330000;
+            }
+
+            /* Contraction */
+            40% {
+                transform: scale(1.5);
+                background-color: #ff0000;
+                box-shadow: 0 0 80px #ff0000;
+                border-radius: 50%;
+            }
+
+            /* Burst */
+            60% {
+                transform: scale(2);
+                opacity: 0.8;
+                filter: blur(5px);
+            }
+
+            80% {
+                transform: scale(2.5) translateY(20px);
+                opacity: 0.4;
+                filter: blur(10px);
+            }
+
+            /* Splatter down */
+            100% {
+                transform: scale(3) translateY(40px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes bloodDigFx {
+            0% {
+                transform: scale(0);
+                box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7);
+            }
+
+            40% {
+                transform: scale(1);
+                box-shadow: 0 0 0 50px rgba(255, 0, 0, 0);
+            }
+
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 11: ABYSSAL BIOLUMINESCENCE
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="abyss"] {
+            background-color: #000408;
+        }
+
+        #sfl-grid-wrapper[data-theme="abyss"] {
+            padding: 15px;
+        }
+
+        #sfl-grid-wrapper[data-theme="abyss"] #sfl-master-grid {
+            border-top: 2px solid #001a33;
+            border-right: 2px solid #001a33;
+            border-bottom: 2px solid #001a33;
+            border-left: 2px solid #001a33;
+            background-color: rgba(0, 10, 20, 0.85);
+            /* Extreme organic liquid blob shape */
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+            animation: abyssLiquidWobble 10s ease-in-out infinite alternate;
+            box-shadow:
+                inset 0 0 80px #000000,
+                0 0 40px rgba(0, 100, 255, 0.2);
+        }
+
+        @keyframes abyssLiquidWobble {
+            0% {
+                border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+                box-shadow: inset 0 0 60px #001a33, 0 0 30px rgba(0, 255, 255, 0.15);
+            }
+
+            100% {
+                border-radius: 60% 40% 30% 70% / 60% 50% 40% 50%;
+                box-shadow: inset 0 0 60px #003366, 0 0 60px rgba(0, 255, 255, 0.3);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="abyss"] .sfl-grid-cell {
+            opacity: 0.15;
+            /* Nearly invisible until hovered */
+            transition: all 0.8s ease;
+            border-radius: 50%;
+            border: none;
+        }
+
+        #sfl-grid-wrapper[data-theme="abyss"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 0;
+            --base-g: 255;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="abyss"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 0;
+            --base-g: 255;
+            --base-b: 128;
+        }
+
+        #sfl-grid-wrapper[data-theme="abyss"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 138;
+            --base-g: 43;
+            --base-b: 226;
+        }
+
+        #sfl-grid-wrapper[data-theme="abyss"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 0;
+            --base-g: 30;
+            --base-b: 60;
+        }
+
+        #sfl-grid-wrapper[data-theme="abyss"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            opacity: 1;
+            transform: scale(1.6) translateZ(10px);
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.95);
+            box-shadow:
+                0 0 40px rgba(var(--base-r), var(--base-g), var(--base-b), 1),
+                0 0 100px rgba(var(--base-r), var(--base-g), var(--base-b), 0.7);
+            transition: all 0.1s var(--ease-bounce);
+            /* Snaps on instantly, fades off slowly */
+        }
+
+        /* Abyss Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="abyss"] .sfl-grid-cell.digging {
+            animation: abyssDigSequence 2.5s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background-color: #00ffff;
+            opacity: 1;
+        }
+
+        #sfl-grid-wrapper[data-theme="abyss"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background: radial-gradient(circle, #ffffff, #00ffff, transparent);
+            animation: abyssDigFx 2.5s forwards;
+        }
+
+        @keyframes abyssDigSequence {
+            0% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+
+            20% {
+                transform: scale(1.8);
+                filter: brightness(2);
+                box-shadow: 0 0 80px #00ffff;
+            }
+
+            40% {
+                transform: scale(0.5);
+                filter: brightness(3);
+            }
+
+            /* Implodes */
+            60% {
+                transform: scale(2.5);
+                filter: brightness(1.5) blur(2px);
+                opacity: 0.8;
+            }
+
+            /* Explodes like a depth charge */
+            80% {
+                transform: scale(3);
+                filter: blur(10px);
+                opacity: 0.4;
+            }
+
+            100% {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        @keyframes abyssDigFx {
+            0% {
+                opacity: 0;
+                transform: scale(0);
+            }
+
+            60% {
+                opacity: 1;
+                transform: scale(1.5);
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(2.5);
+                filter: blur(20px);
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 12: ARCANE RUNE FORGE
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="arcane"] {
+            background-color: #0c0014;
+        }
+
+        #sfl-grid-wrapper[data-theme="arcane"] {
+            padding: 35px;
+        }
+
+        /* Massive rotating magic circles */
+        #sfl-grid-wrapper[data-theme="arcane"]::before,
+        #sfl-grid-wrapper[data-theme="arcane"]::after {
+            content: '';
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            bottom: -15px;
+            left: -15px;
+            border-radius: 50%;
+            border-top: 3px solid #00ffff;
+            border-right: 2px dashed #ff00ff;
+            border-bottom: 3px solid #b100ff;
+            border-left: 2px dashed #ff00ff;
+            animation: arcaneSpinMagicOuter 12s linear infinite;
+            z-index: -1;
+            box-shadow: 0 0 40px #ff00ff;
+        }
+
+        #sfl-grid-wrapper[data-theme="arcane"]::after {
+            top: -35px;
+            right: -35px;
+            bottom: -35px;
+            left: -35px;
+            border-top: 2px dotted #00ffff;
+            border-right: 3px solid #b100ff;
+            border-bottom: 2px dotted #00ffff;
+            border-left: 3px solid #ff00ff;
+            animation: arcaneSpinMagicInner 18s linear infinite reverse;
+            box-shadow: 0 0 40px #00ffff;
+        }
+
+        @keyframes arcaneSpinMagicOuter {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes arcaneSpinMagicInner {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="arcane"] #sfl-master-grid {
+            border-top: 3px solid #b100ff;
+            border-right: 3px solid #b100ff;
+            border-bottom: 3px solid #b100ff;
+            border-left: 3px solid #b100ff;
+            background-color: rgba(20, 0, 35, 0.85);
+            border-radius: 50%;
+            /* Perfect circle grid container */
+            box-shadow:
+                inset 0 0 100px #b100ff,
+                0 0 60px #ff00ff;
+            padding: 25px;
+        }
+
+        #sfl-grid-wrapper[data-theme="arcane"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 0;
+            --base-g: 255;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="arcane"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 255;
+            --base-g: 0;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="arcane"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 177;
+            --base-g: 0;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="arcane"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 40;
+            --base-g: 0;
+            --base-b: 60;
+        }
+
+        #sfl-grid-wrapper[data-theme="arcane"] .sfl-grid-cell {
+            border-radius: 50%;
+            background-color: transparent;
+            border: 1px solid rgba(var(--base-r), var(--base-g), var(--base-b), 0.4);
+            box-shadow: inset 0 0 15px rgba(var(--base-r), var(--base-g), var(--base-b), 0.6);
+        }
+
+        #sfl-grid-wrapper[data-theme="arcane"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: scale(1.35) rotate(90deg) translateZ(15px);
+            /* Runes spin as you touch them */
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.3);
+            border-color: #ffffff;
+            box-shadow:
+                0 0 50px rgba(var(--base-r), var(--base-g), var(--base-b), 1),
+                inset 0 0 25px #ffffff;
+            transition: all 0.3s var(--ease-bounce);
+        }
+
+        /* Arcane Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="arcane"] .sfl-grid-cell.digging {
+            animation: arcaneDigSequence 2.5s forwards linear;
+        }
+
+        #sfl-grid-wrapper[data-theme="arcane"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            border: 2px dashed #ffffff;
+            border-radius: 50%;
+            animation: arcaneDigFx 2.5s forwards linear;
+        }
+
+        @keyframes arcaneDigSequence {
+            0% {
+                transform: rotate(0deg) scale(1);
+                border-color: #ffffff;
+            }
+
+            30% {
+                transform: rotate(180deg) scale(1.5);
+                border-width: 4px;
+                box-shadow: 0 0 60px #ff00ff;
+                background-color: rgba(255, 0, 255, 0.5);
+            }
+
+            60% {
+                transform: rotate(540deg) scale(2);
+                border-width: 6px;
+                box-shadow: 0 0 100px #00ffff;
+                background-color: rgba(0, 255, 255, 0.5);
+                opacity: 1;
+            }
+
+            80% {
+                transform: rotate(900deg) scale(2.5);
+                opacity: 0.5;
+                filter: blur(5px);
+            }
+
+            100% {
+                transform: rotate(1440deg) scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes arcaneDigFx {
+            0% {
+                transform: scale(1) rotate(0deg);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(2) rotate(-180deg);
+                opacity: 1;
+                box-shadow: 0 0 30px #ffffff;
+            }
+
+            100% {
+                transform: scale(4) rotate(-360deg);
+                opacity: 0;
+            }
+        }
+
+
+        /* ==========================================================================
+           9. THEMES BATCH 4: HARD EDGES & GEOMETRY
+           ========================================================================== */
+
+        /* ------------------------------------------------------------------
+           THEME 13: SYNTHWAVE OVERDRIVE
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="synthwave"] {
+            background-color: #050011;
+        }
+
+        #sfl-grid-wrapper[data-theme="synthwave"] {
+            padding: 6px;
+        }
+
+        #sfl-grid-wrapper[data-theme="synthwave"] #sfl-master-grid {
+            border-top: 5px solid #ff007f;
+            border-right: 5px solid #ff007f;
+            border-bottom: 5px solid #ff007f;
+            border-left: 5px solid #ff007f;
+            border-radius: 0;
+            /* Strictly square */
+            background-color: rgba(15, 0, 30, 0.95);
+            box-shadow:
+                0 0 30px #ff007f,
+                inset 0 0 60px #ff007f;
+            overflow: hidden;
+            /* Contains the scanline */
+        }
+
+        /* Holographic Scanline crossing the strict square */
+        #sfl-grid-wrapper[data-theme="synthwave"] #sfl-master-grid::before {
+            content: '';
+            position: absolute;
+            top: -100%;
+            left: 0;
+            width: 100%;
+            height: 25%;
+            background: linear-gradient(to bottom,
+                    transparent,
+                    rgba(0, 255, 255, 0.5),
+                    #00ffff,
+                    rgba(0, 255, 255, 0.5),
+                    transparent);
+            animation: synthwaveScan 3s linear infinite;
+            z-index: 5;
+            pointer-events: none;
+            box-shadow: 0 0 20px #00ffff;
+        }
+
+        @keyframes synthwaveScan {
+            0% {
+                top: -25%;
+            }
+
+            100% {
+                top: 125%;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="synthwave"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 0;
+            --base-g: 255;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="synthwave"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 255;
+            --base-g: 255;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="synthwave"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 255;
+            --base-g: 0;
+            --base-b: 127;
+        }
+
+        #sfl-grid-wrapper[data-theme="synthwave"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 30;
+            --base-g: 15;
+            --base-b: 50;
+        }
+
+        #sfl-grid-wrapper[data-theme="synthwave"] .sfl-grid-cell {
+            border-radius: 0;
+            border: 2px solid rgba(var(--base-r), var(--base-g), var(--base-b), 0.5);
+        }
+
+        #sfl-grid-wrapper[data-theme="synthwave"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: scale(1.15) translateZ(10px);
+            border-radius: 0;
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.9);
+            border: 3px solid #ffffff;
+            box-shadow:
+                0 0 25px rgba(var(--base-r), var(--base-g), var(--base-b), 1),
+                0 0 50px #ffffff;
+        }
+
+        /* Synthwave Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="synthwave"] .sfl-grid-cell.digging {
+            animation: synthwaveDigSequence 2.5s steps(8) forwards;
+            border-color: #00ffff;
+            background-color: #ff007f;
+        }
+
+        #sfl-grid-wrapper[data-theme="synthwave"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background: repeating-linear-gradient(90deg, #ff007f 0px, #ff007f 2px, transparent 2px, transparent 4px);
+            animation: synthwaveDigFx 2.5s linear forwards;
+        }
+
+        @keyframes synthwaveDigSequence {
+            0% {
+                transform: scale(1) skewX(0deg);
+                opacity: 1;
+            }
+
+            20% {
+                transform: scale(1.2) skewX(20deg) translateX(10px);
+                opacity: 0.8;
+                box-shadow: 10px 0 0 #00ffff;
+            }
+
+            40% {
+                transform: scale(0.9) skewX(-20deg) translateX(-10px);
+                opacity: 0.9;
+                box-shadow: -10px 0 0 #ff007f;
+            }
+
+            60% {
+                transform: scale(1.5) scaleY(0.2);
+                filter: invert(1);
+            }
+
+            /* Squashes into a line */
+            80% {
+                transform: scale(2) scaleY(0.1);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes synthwaveDigFx {
+            0% {
+                background-position: 0 0;
+            }
+
+            100% {
+                background-position: 100px 0;
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 14: MECHA VAULT
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="mecha"] {
+            background-color: #0a0a0a;
+        }
+
+        #sfl-grid-wrapper[data-theme="mecha"] {
+            padding: 16px;
+        }
+
+        /* Animated Caution Tape border rotating strictly around the square */
+        #sfl-grid-wrapper[data-theme="mecha"]::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            border-radius: 6px;
+            background: repeating-linear-gradient(45deg,
+                    #ffcc00,
+                    #ffcc00 25px,
+                    #111111 25px,
+                    #111111 50px);
+            background-size: 70px 70px;
+            animation: mechaCautionTape 2s linear infinite;
+            z-index: -1;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9);
+        }
+
+        @keyframes mechaCautionTape {
+            0% {
+                background-position: 0 0;
+            }
+
+            100% {
+                background-position: -70px 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="mecha"] #sfl-master-grid {
+            border-top: 10px solid #555555;
+            border-right: 10px solid #555555;
+            border-bottom: 10px solid #555555;
+            border-left: 10px solid #555555;
+            border-radius: 0;
+            background-color: #222222;
+            /* Manipulating the edges: Chamfered (cut) corners while remaining a square box */
+            clip-path: polygon(5% 0, 95% 0, 100% 5%, 100% 95%, 95% 100%, 5% 100%, 0 95%, 0 5%);
+            -webkit-clip-path: polygon(5% 0, 95% 0, 100% 5%, 100% 95%, 95% 100%, 5% 100%, 0 95%, 0 5%);
+            box-shadow: inset 0 0 30px #000000;
+            padding: 12px;
+        }
+
+        #sfl-grid-wrapper[data-theme="mecha"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 0;
+            --base-g: 150;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="mecha"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 255;
+            --base-g: 204;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="mecha"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 255;
+            --base-g: 50;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="mecha"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 60;
+            --base-g: 60;
+            --base-b: 60;
+        }
+
+        #sfl-grid-wrapper[data-theme="mecha"] .sfl-grid-cell {
+            border-radius: 3px;
+            border: 2px solid #444444;
+            box-shadow:
+                inset 2px 2px 6px rgba(255, 255, 255, 0.15),
+                inset -2px -2px 6px rgba(0, 0, 0, 0.6);
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.3);
+        }
+
+        #sfl-grid-wrapper[data-theme="mecha"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: translateY(-6px) scale(1.08) translateZ(10px);
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.9);
+            border-color: rgba(var(--base-r), var(--base-g), var(--base-b), 1);
+            box-shadow:
+                0 12px 20px rgba(0, 0, 0, 0.9),
+                inset 0 0 15px rgba(255, 255, 255, 0.6);
+        }
+
+        /* Mecha Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="mecha"] .sfl-grid-cell.digging {
+            animation: mechaDigSequence 2.5s linear forwards;
+            background-color: #ffcc00;
+            box-shadow: inset 0 0 30px #000000;
+        }
+
+        #sfl-grid-wrapper[data-theme="mecha"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.5) 0px, rgba(0, 0, 0, 0.5) 5px, transparent 5px, transparent 10px);
+            animation: mechaDigFx 2.5s linear forwards;
+        }
+
+        @keyframes mechaDigSequence {
+            0% {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+
+            10%,
+            30%,
+            50%,
+            70%,
+            90% {
+                transform: scale(0.95) translateY(2px) translateX(-2px);
+                opacity: 0.8;
+            }
+
+            20%,
+            40%,
+            60%,
+            80% {
+                transform: scale(0.95) translateY(2px) translateX(2px);
+                opacity: 0.9;
+            }
+
+            95% {
+                transform: scale(1.2);
+                opacity: 1;
+                filter: brightness(2);
+                background-color: #ff0000;
+            }
+
+            /* Overheat */
+            100% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+        }
+
+        @keyframes mechaDigFx {
+            0% {
+                background-position: 0 0;
+            }
+
+            100% {
+                background-position: 50px 0;
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 15: CURSED OBSIDIAN
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="obsidian"] {
+            background-color: #06000d;
+        }
+
+        #sfl-grid-wrapper[data-theme="obsidian"] {
+            padding: 0;
+        }
+
+        /* Layered Geometric Spikes bursting out of the perfect square */
+        #sfl-grid-wrapper[data-theme="obsidian"]::before,
+        #sfl-grid-wrapper[data-theme="obsidian"]::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-color: #1a0033;
+            box-shadow: 0 0 50px #8a2be2;
+            z-index: -1;
+            transition: all var(--transition-speed-medium);
+            animation: obsidianSpikePulse 5s infinite alternate ease-in-out;
+        }
+
+        #sfl-grid-wrapper[data-theme="obsidian"]::before {
+            transform: rotate(15deg) scale(1.08);
+        }
+
+        #sfl-grid-wrapper[data-theme="obsidian"]::after {
+            transform: rotate(-15deg) scale(1.08);
+            background-color: #330066;
+        }
+
+        @keyframes obsidianSpikePulse {
+            0% {
+                transform: rotate(12deg) scale(1.04);
+                filter: brightness(0.7);
+            }
+
+            100% {
+                transform: rotate(22deg) scale(1.12);
+                filter: brightness(1.6);
+                box-shadow: 0 0 80px #b100ff;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="obsidian"] #sfl-master-grid {
+            border-top: 5px solid #8a2be2;
+            border-right: 5px solid #8a2be2;
+            border-bottom: 5px solid #8a2be2;
+            border-left: 5px solid #8a2be2;
+            border-radius: 0;
+            /* Strictly square core */
+            background-color: #0d001a;
+            box-shadow:
+                inset 0 0 80px #4b0082,
+                0 0 40px #000000;
+        }
+
+        #sfl-grid-wrapper[data-theme="obsidian"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 138;
+            --base-g: 43;
+            --base-b: 226;
+        }
+
+        #sfl-grid-wrapper[data-theme="obsidian"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 255;
+            --base-g: 0;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="obsidian"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 75;
+            --base-g: 0;
+            --base-b: 130;
+        }
+
+        #sfl-grid-wrapper[data-theme="obsidian"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 30;
+            --base-g: 0;
+            --base-b: 45;
+        }
+
+        #sfl-grid-wrapper[data-theme="obsidian"] .sfl-grid-cell {
+            border-radius: 0;
+            /* Diamond tiles inside the square */
+            transform: rotate(45deg) scale(0.65);
+            border: 2px solid rgba(var(--base-r), var(--base-g), var(--base-b), 0.6);
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.2);
+        }
+
+        #sfl-grid-wrapper[data-theme="obsidian"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: rotate(0deg) scale(1.25) translateZ(15px);
+            /* Snaps to square on hover */
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 1);
+            border-color: #ffffff;
+            box-shadow:
+                0 0 50px rgba(var(--base-r), var(--base-g), var(--base-b), 1),
+                0 0 100px #ffffff;
+        }
+
+        /* Obsidian Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="obsidian"] .sfl-grid-cell.digging {
+            animation: obsidianDigSequence 2.5s ease-out forwards;
+        }
+
+        #sfl-grid-wrapper[data-theme="obsidian"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            box-shadow: inset 0 0 40px #ffffff, 0 0 60px #8a2be2;
+            animation: obsidianDigFx 2.5s forwards;
+        }
+
+        @keyframes obsidianDigSequence {
+            0% {
+                transform: rotate(45deg) scale(0.65);
+                opacity: 1;
+            }
+
+            20% {
+                transform: rotate(135deg) scale(1.2);
+                background-color: #ffffff;
+                border-color: #8a2be2;
+            }
+
+            40% {
+                transform: rotate(225deg) scale(1.5);
+                box-shadow: 0 0 100px #8a2be2;
+            }
+
+            60% {
+                transform: rotate(315deg) scale(2) scaleX(0.2);
+                filter: brightness(2);
+            }
+
+            /* Shard stretch */
+            80% {
+                transform: rotate(405deg) scale(2.5) scaleX(0.1);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: rotate(495deg) scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes obsidianDigFx {
+            0% {
+                transform: scale(1);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(1.5);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(3);
+                opacity: 0;
+                filter: blur(10px);
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 16: PRISMATIC SHARDS
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="prismatic"] {
+            background-color: #05101a;
+        }
+
+        #sfl-grid-wrapper[data-theme="prismatic"] {
+            padding: 12px;
+        }
+
+        #sfl-grid-wrapper[data-theme="prismatic"] #sfl-master-grid {
+            border-top: 4px solid #ffffff;
+            border-right: 4px solid #ffffff;
+            border-bottom: 4px solid #ffffff;
+            border-left: 4px solid #ffffff;
+            border-radius: 0;
+            background-color: rgba(200, 230, 255, 0.15);
+            /* Jagged clipped square edges */
+            clip-path: polygon(0% 0%, 15% 5%, 30% 0%, 50% 8%, 70% 0%, 85% 5%, 100% 0%,
+                    95% 15%, 100% 30%, 92% 50%, 100% 70%, 95% 85%, 100% 100%,
+                    85% 95%, 70% 100%, 50% 92%, 30% 100%, 15% 95%, 0% 100%,
+                    5% 85%, 0% 70%, 8% 50%, 0% 30%, 5% 15%);
+            -webkit-clip-path: polygon(0% 0%, 15% 5%, 30% 0%, 50% 8%, 70% 0%, 85% 5%, 100% 0%,
+                    95% 15%, 100% 30%, 92% 50%, 100% 70%, 95% 85%, 100% 100%,
+                    85% 95%, 70% 100%, 50% 92%, 30% 100%, 15% 95%, 0% 100%,
+                    5% 85%, 0% 70%, 8% 50%, 0% 30%, 5% 15%);
+            box-shadow: inset 0 0 70px rgba(255, 255, 255, 0.6);
+        }
+
+        #sfl-grid-wrapper[data-theme="prismatic"]::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            bottom: -15px;
+            left: -15px;
+            background-color: #ffffff;
+            filter: blur(25px);
+            z-index: -1;
+            animation: prismaticIceGlare 2.5s infinite alternate cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+
+        @keyframes prismaticIceGlare {
+            0% {
+                opacity: 0.3;
+                transform: scale(0.97);
+            }
+
+            100% {
+                opacity: 0.8;
+                transform: scale(1.03);
+                box-shadow: 0 0 50px #00ffff;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="prismatic"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 0;
+            --base-g: 255;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="prismatic"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 255;
+            --base-g: 255;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="prismatic"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 0;
+            --base-g: 150;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="prismatic"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 100;
+            --base-g: 150;
+            --base-b: 200;
+        }
+
+        #sfl-grid-wrapper[data-theme="prismatic"] .sfl-grid-cell {
+            border-radius: 0;
+            background-color: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            backdrop-filter: brightness(1.3) contrast(1.2);
+            -webkit-backdrop-filter: brightness(1.3) contrast(1.2);
+        }
+
+        #sfl-grid-wrapper[data-theme="prismatic"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: scale(1.25) rotate(4deg) translateZ(15px);
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.95);
+            border: 2px solid #ffffff;
+            box-shadow:
+                12px -12px 0px rgba(var(--base-r), var(--base-g), var(--base-b), 0.6),
+                -12px 12px 0px rgba(255, 255, 255, 0.6),
+                0 0 50px #ffffff;
+        }
+
+        /* Prismatic Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="prismatic"] .sfl-grid-cell.digging {
+            animation: prismaticDigSequence 2.5s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #sfl-grid-wrapper[data-theme="prismatic"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background-color: #ffffff;
+            box-shadow: 0 0 80px #ffffff, 0 0 150px #00ffff;
+            animation: prismaticDigFx 2.5s forwards;
+        }
+
+        @keyframes prismaticDigSequence {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            20% {
+                transform: scale(1.1) skew(15deg);
+                background-color: #ffffff;
+            }
+
+            40% {
+                transform: scale(1.2) skew(-15deg);
+                filter: brightness(2);
+            }
+
+            60% {
+                transform: scale(1.5) rotate(45deg);
+                opacity: 0.9;
+            }
+
+            80% {
+                transform: scale(0.5) rotate(90deg);
+                filter: blur(5px);
+            }
+
+            /* Shatter prep */
+            100% {
+                transform: scale(0) rotate(180deg) skew(50deg);
+                opacity: 0;
+            }
+
+            /* Shatters to nothing */
+        }
+
+        @keyframes prismaticDigFx {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            40% {
+                transform: scale(1.5);
+                opacity: 1;
+                border-radius: 0;
+            }
+
+            100% {
+                transform: scale(3) rotate(45deg);
+                opacity: 0;
+                border-radius: 50%;
+                filter: blur(20px);
+            }
+        }
+
+
+        /* ==========================================================================
+           10. THEMES BATCH 5: ELEMENTAL & SCI-FI
+           ========================================================================== */
+
+        /* ------------------------------------------------------------------
+           THEME 17: PERMAFROST BLOCK
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="frost"] {
+            background-color: #050a14;
+        }
+
+        #sfl-grid-wrapper[data-theme="frost"] {
+            padding: 12px 12px 40px 12px;
+            /* Extra padding for hanging icicles */
+        }
+
+        #sfl-grid-wrapper[data-theme="frost"] #sfl-master-grid {
+            border-top: 5px solid rgba(255, 255, 255, 0.8);
+            border-right: 5px solid rgba(255, 255, 255, 0.8);
+            border-bottom: 5px solid rgba(255, 255, 255, 0.8);
+            border-left: 5px solid rgba(255, 255, 255, 0.8);
+            border-radius: 0;
+            /* Strict square block */
+            background-color: rgba(150, 200, 255, 0.2);
+            box-shadow:
+                0 0 40px rgba(100, 200, 255, 0.5),
+                inset 0 0 60px rgba(255, 255, 255, 0.6);
+        }
+
+        /* Heavy jagged icicles hanging directly off the bottom of the square */
+        #sfl-grid-wrapper[data-theme="frost"]::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 12px;
+            right: 12px;
+            height: 45px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.9), transparent);
+            clip-path: polygon(0% 0%, 5% 85%, 10% 0%, 15% 55%, 20% 0%, 25% 100%,
+                    30% 0%, 35% 45%, 40% 0%, 50% 95%, 60% 0%, 65% 65%,
+                    70% 0%, 80% 85%, 85% 0%, 90% 55%, 95% 0%, 100% 75%, 100% 0%);
+            -webkit-clip-path: polygon(0% 0%, 5% 85%, 10% 0%, 15% 55%, 20% 0%, 25% 100%,
+                    30% 0%, 35% 45%, 40% 0%, 50% 95%, 60% 0%, 65% 65%,
+                    70% 0%, 80% 85%, 85% 0%, 90% 55%, 95% 0%, 100% 75%, 100% 0%);
+            z-index: 2;
+            pointer-events: none;
+            filter: drop-shadow(0 5px 10px rgba(0, 255, 255, 0.5));
+        }
+
+        #sfl-grid-wrapper[data-theme="frost"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 100;
+            --base-g: 200;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="frost"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 200;
+            --base-g: 255;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="frost"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 150;
+            --base-g: 150;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="frost"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 50;
+            --base-g: 100;
+            --base-b: 150;
+        }
+
+        #sfl-grid-wrapper[data-theme="frost"] .sfl-grid-cell {
+            border-radius: 0;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+
+        #sfl-grid-wrapper[data-theme="frost"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: scale(1.1) translateZ(10px);
+            background-color: rgba(255, 255, 255, 0.9);
+            box-shadow:
+                0 0 30px rgba(var(--base-r), var(--base-g), var(--base-b), 1),
+                inset 0 0 20px #ffffff;
+            border-color: #ffffff;
+        }
+
+        /* Frost Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="frost"] .sfl-grid-cell.digging {
+            animation: frostDigSequence 2.5s forwards;
+        }
+
+        #sfl-grid-wrapper[data-theme="frost"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background-color: #ffffff;
+            box-shadow: 0 0 100px #00ffff;
+            animation: frostDigFx 2.5s forwards;
+        }
+
+        @keyframes frostDigSequence {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            30% {
+                transform: scale(1.1) skew(10deg);
+                background-color: #ffffff;
+            }
+
+            60% {
+                transform: scale(1.5) rotate(15deg);
+                filter: brightness(2);
+            }
+
+            80% {
+                transform: scale(1.8) rotate(-15deg);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(0) skew(50deg);
+                opacity: 0;
+            }
+        }
+
+        @keyframes frostDigFx {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            60% {
+                transform: scale(2);
+                opacity: 1;
+                border-radius: 0;
+            }
+
+            100% {
+                transform: scale(3);
+                opacity: 0;
+                border-radius: 50%;
+                filter: blur(15px);
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 18: MOLTEN CORE
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="molten"] {
+            background-color: #0a0300;
+        }
+
+        #sfl-grid-wrapper[data-theme="molten"] {
+            padding: 12px;
+        }
+
+        #sfl-grid-wrapper[data-theme="molten"] #sfl-master-grid {
+            border-top: 10px solid #1a0a00;
+            border-right: 10px solid #1a0a00;
+            border-bottom: 10px solid #1a0a00;
+            border-left: 10px solid #1a0a00;
+            border-radius: 0;
+            background-color: #2a1000;
+            /* Strict dark iron square */
+            box-shadow:
+                0 0 70px #ff3300,
+                inset 0 0 60px #cc2200,
+                0 0 150px #ff0000;
+            animation: moltenMagmaBreathe 3.5s infinite alternate ease-in-out;
+        }
+
+        @keyframes moltenMagmaBreathe {
+            0% {
+                box-shadow: 0 0 40px #ff3300, inset 0 0 30px #cc2200, 0 0 80px #ff0000;
+            }
+
+            100% {
+                box-shadow: 0 0 100px #ff5500, inset 0 0 80px #ff2200, 0 0 200px #ff5500;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="molten"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 255;
+            --base-g: 100;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="molten"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 255;
+            --base-g: 200;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="molten"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 255;
+            --base-g: 0;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="molten"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 50;
+            --base-g: 20;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="molten"] .sfl-grid-cell {
+            border-radius: 0;
+            border: 2px solid #1a0a00;
+            background-color: #1a0a00;
+            /* Looks like solid dark rock initially */
+            box-shadow: inset 0 0 5px #000000;
+        }
+
+        #sfl-grid-wrapper[data-theme="molten"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: scale(1.15) translateZ(15px);
+            background-color: #ffaa00;
+            border-color: #ffff00;
+            /* Ignites instantly */
+            box-shadow:
+                0 0 40px #ffaa00,
+                0 0 80px #ff3300,
+                inset 0 0 30px #ffff00;
+            z-index: 30;
+        }
+
+        /* Molten Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="molten"] .sfl-grid-cell.digging {
+            animation: moltenDigSequence 2.5s forwards ease-in;
+            background-color: #ffaa00;
+            box-shadow: 0 0 60px #ff0000;
+        }
+
+        #sfl-grid-wrapper[data-theme="molten"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background: radial-gradient(circle, #ffff00, #ff0000);
+            border-radius: 50%;
+            animation: moltenDigFx 2.5s forwards ease-in;
+        }
+
+        @keyframes moltenDigSequence {
+            0% {
+                transform: scale(1) translateY(0);
+                border-radius: 0;
+                opacity: 1;
+            }
+
+            20% {
+                transform: scale(1.2) translateY(-5px);
+                border-radius: 10%;
+                background-color: #ffff00;
+            }
+
+            40% {
+                transform: scale(1.3) translateY(-10px);
+                border-radius: 30%;
+                background-color: #ff5500;
+            }
+
+            60% {
+                transform: scale(1.1) translateY(10px);
+                border-radius: 50%;
+                background-color: #ff0000;
+            }
+
+            /* Starts melting down */
+            80% {
+                transform: scale(1.5) translateY(30px) scaleY(0.4);
+                opacity: 0.8;
+            }
+
+            /* Puddles */
+            100% {
+                transform: scale(0) translateY(50px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes moltenDigFx {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            40% {
+                transform: scale(1.5);
+                opacity: 1;
+                box-shadow: 0 0 50px #ffff00;
+            }
+
+            100% {
+                transform: scale(2.5);
+                opacity: 0;
+                filter: blur(15px);
+                box-shadow: 0 0 100px #ff0000;
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 19: DISCO FLOOR
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="disco"] {
+            background-color: #050505;
+        }
+
+        #sfl-grid-wrapper[data-theme="disco"] {
+            padding: 8px;
+        }
+
+        #sfl-grid-wrapper[data-theme="disco"] #sfl-master-grid {
+            border-top: 6px solid #ffffff;
+            border-right: 6px solid #ffffff;
+            border-bottom: 6px solid #ffffff;
+            border-left: 6px solid #ffffff;
+            border-radius: 0;
+            background-color: #000000;
+            animation: discoRainbowBorder 1.5s linear infinite;
+            /* Strict square border flashing RGB */
+        }
+
+        @keyframes discoRainbowBorder {
+            0% {
+                border-color: #ff0000;
+                box-shadow: 0 0 40px #ff0000, inset 0 0 20px #ff0000;
+            }
+
+            33% {
+                border-color: #00ff00;
+                box-shadow: 0 0 40px #00ff00, inset 0 0 20px #00ff00;
+            }
+
+            66% {
+                border-color: #0000ff;
+                box-shadow: 0 0 40px #0000ff, inset 0 0 20px #0000ff;
+            }
+
+            100% {
+                border-color: #ff0000;
+                box-shadow: 0 0 40px #ff0000, inset 0 0 20px #ff0000;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="disco"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 0;
+            --base-g: 255;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="disco"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 255;
+            --base-g: 255;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="disco"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 255;
+            --base-g: 0;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="disco"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 60;
+            --base-g: 60;
+            --base-b: 60;
+        }
+
+        #sfl-grid-wrapper[data-theme="disco"] .sfl-grid-cell {
+            border-radius: 0;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        #sfl-grid-wrapper[data-theme="disco"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: scale(1) translateZ(0);
+            /* Floor doesn't pop up, it flashes aggressively */
+            background-color: #ffffff;
+            box-shadow:
+                0 0 50px rgba(var(--base-r), var(--base-g), var(--base-b), 1),
+                inset 0 0 30px rgba(var(--base-r), var(--base-g), var(--base-b), 1);
+            animation: discoFlashTile 0.15s infinite alternate;
+            z-index: 10;
+        }
+
+        @keyframes discoFlashTile {
+            0% {
+                filter: invert(0) hue-rotate(0deg);
+            }
+
+            100% {
+                filter: invert(1) hue-rotate(180deg);
+            }
+        }
+
+        /* Disco Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="disco"] .sfl-grid-cell.digging {
+            animation: discoDigSequence 2.5s steps(15) forwards;
+            background-color: #ff00ff;
+        }
+
+        #sfl-grid-wrapper[data-theme="disco"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background-color: #00ffff;
+            animation: discoDigFx 2.5s steps(10) forwards;
+        }
+
+        @keyframes discoDigSequence {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+                background-color: #ff0000;
+            }
+
+            20% {
+                transform: scale(1.2) rotate(15deg);
+                background-color: #00ff00;
+            }
+
+            40% {
+                transform: scale(1.4) rotate(-15deg);
+                background-color: #0000ff;
+            }
+
+            60% {
+                transform: scale(1.6) rotate(30deg);
+                background-color: #ffff00;
+            }
+
+            80% {
+                transform: scale(2) rotate(-30deg);
+                background-color: #00ffff;
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes discoDigFx {
+            0% {
+                transform: scale(0);
+                filter: invert(0);
+            }
+
+            50% {
+                transform: scale(1.5);
+                filter: invert(1);
+                box-shadow: 0 0 50px #ffffff;
+            }
+
+            100% {
+                transform: scale(3);
+                filter: invert(0);
+                opacity: 0;
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 20: ALIEN BIO-SHIP
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="alien"] {
+            background-color: #020a05;
+        }
+
+        #sfl-grid-wrapper[data-theme="alien"] {
+            padding: 18px;
+        }
+
+        #sfl-grid-wrapper[data-theme="alien"] #sfl-master-grid {
+            border-top: 5px solid #00ff66;
+            border-right: 5px solid #00ff66;
+            border-bottom: 5px solid #00ff66;
+            border-left: 5px solid #00ff66;
+            border-radius: 0;
+            background-color: #051a05;
+            /* Strict square core */
+            box-shadow:
+                inset 0 0 70px #003311,
+                0 0 40px #00ff66;
+            animation: alienShipBreathe 4s infinite alternate ease-in-out;
+        }
+
+        @keyframes alienShipBreathe {
+            0% {
+                transform: scale(0.98);
+                box-shadow: inset 0 0 50px #003311, 0 0 20px #00ff66;
+            }
+
+            100% {
+                transform: scale(1.02);
+                box-shadow: inset 0 0 90px #003311, 0 0 60px #00ff66;
+            }
+        }
+
+        /* Glowing organic nodes floating right outside the 4 square corners */
+        #sfl-grid-wrapper[data-theme="alien"]::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            bottom: -20px;
+            left: -20px;
+            z-index: -1;
+            background:
+                radial-gradient(circle at 0% 0%, #00ff66 0%, transparent 15%),
+                radial-gradient(circle at 100% 0%, #00ff66 0%, transparent 15%),
+                radial-gradient(circle at 0% 100%, #00ff66 0%, transparent 15%),
+                radial-gradient(circle at 100% 100%, #00ff66 0%, transparent 15%);
+            animation: alienPulseNodes 1.5s infinite alternate ease-in-out;
+            filter: blur(6px);
+        }
+
+        @keyframes alienPulseNodes {
+            0% {
+                opacity: 0.4;
+                transform: scale(0.95);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="alien"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 0;
+            --base-g: 255;
+            --base-b: 100;
+        }
+
+        #sfl-grid-wrapper[data-theme="alien"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 150;
+            --base-g: 255;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="alien"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 0;
+            --base-g: 150;
+            --base-b: 50;
+        }
+
+        #sfl-grid-wrapper[data-theme="alien"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 10;
+            --base-g: 40;
+            --base-b: 10;
+        }
+
+        #sfl-grid-wrapper[data-theme="alien"] .sfl-grid-cell {
+            border-radius: 0;
+            border: 1px solid rgba(0, 255, 100, 0.25);
+        }
+
+        #sfl-grid-wrapper[data-theme="alien"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: scale(1.15) rotate(5deg) translateZ(10px);
+            background-color: rgba(0, 255, 100, 0.85);
+            border-radius: 50%;
+            /* Morphs into organic circle on touch! */
+            box-shadow: 0 0 40px #00ff66;
+            border-color: #ffffff;
+            transition: all 0.2s var(--ease-bounce);
+        }
+
+        /* Alien Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="alien"] .sfl-grid-cell.digging {
+            animation: alienDigSequence 2.5s forwards cubic-bezier(0.5, 0, 1, 0.5);
+            background-color: #00ff66;
+            border-radius: 50%;
+        }
+
+        #sfl-grid-wrapper[data-theme="alien"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background-color: #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 0 50px #00ff66;
+            animation: alienDigFx 2.5s forwards;
+        }
+
+        @keyframes alienDigSequence {
+            0% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+
+            30% {
+                transform: scale(1.3);
+                filter: brightness(2);
+                box-shadow: 0 0 30px #00ff66;
+            }
+
+            60% {
+                transform: scale(0.3) rotate(180deg);
+                filter: brightness(4);
+            }
+
+            /* Sucks inward like alien tech */
+            80% {
+                transform: scale(0.1) rotate(360deg);
+                filter: brightness(6);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes alienDigFx {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            60% {
+                transform: scale(1.5);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(3);
+                opacity: 0;
+                filter: blur(10px);
+            }
+        }
+
+
+        /* ==========================================================================
+           11. THEMES BATCH 6: COSMIC & RETRO
+           ========================================================================== */
+
+        /* ------------------------------------------------------------------
+           THEME 21: HEXTECH FORGE
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="hextech"] {
+            background-color: #01050a;
+        }
+
+        #sfl-grid-wrapper[data-theme="hextech"] {
+            padding: 24px;
+        }
+
+        #sfl-grid-wrapper[data-theme="hextech"] #sfl-master-grid {
+            border-top: 4px solid #c89b3c;
+            border-right: 4px solid #c89b3c;
+            border-bottom: 4px solid #c89b3c;
+            border-left: 4px solid #c89b3c;
+            border-radius: 0;
+            background-color: #010a13;
+            box-shadow:
+                inset 0 0 50px #0ac8b9,
+                0 0 30px #0ac8b9;
+        }
+
+        #sfl-grid-wrapper[data-theme="hextech"]::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            border-top: 3px dashed #c89b3c;
+            border-right: 3px dashed #c89b3c;
+            border-bottom: 3px dashed #c89b3c;
+            border-left: 3px dashed #c89b3c;
+            animation: hextechSpinMagic 12s linear infinite;
+        }
+
+        #sfl-grid-wrapper[data-theme="hextech"]::after {
+            content: '';
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            bottom: -12px;
+            left: -12px;
+            border-top: 3px dotted #0ac8b9;
+            border-right: 3px dotted #0ac8b9;
+            border-bottom: 3px dotted #0ac8b9;
+            border-left: 3px dotted #0ac8b9;
+            animation: hextechSpinMagic 18s linear infinite reverse;
+            box-shadow: 0 0 20px rgba(10, 200, 185, 0.5);
+        }
+
+        @keyframes hextechSpinMagic {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="hextech"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 10;
+            --base-g: 200;
+            --base-b: 185;
+        }
+
+        /* Hextech Cyan */
+        #sfl-grid-wrapper[data-theme="hextech"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 200;
+            --base-g: 155;
+            --base-b: 60;
+        }
+
+        /* Hextech Gold */
+        #sfl-grid-wrapper[data-theme="hextech"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 255;
+            --base-g: 80;
+            --base-b: 80;
+        }
+
+        #sfl-grid-wrapper[data-theme="hextech"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 15;
+            --base-g: 40;
+            --base-b: 50;
+        }
+
+        #sfl-grid-wrapper[data-theme="hextech"] .sfl-grid-cell {
+            border: 2px solid rgba(200, 155, 60, 0.4);
+            border-radius: 0;
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.2);
+        }
+
+        #sfl-grid-wrapper[data-theme="hextech"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            background-color: #0ac8b9;
+            border-color: #ffffff;
+            transform: scale(1.15) translateZ(10px);
+            box-shadow:
+                0 0 40px #0ac8b9,
+                inset 0 0 15px #ffffff;
+        }
+
+        /* Hextech Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="hextech"] .sfl-grid-cell.digging {
+            animation: hextechDigSequence 2.5s ease-in forwards;
+            transform-origin: center;
+            background-color: #0ac8b9;
+        }
+
+        #sfl-grid-wrapper[data-theme="hextech"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            border: 2px dashed #ffffff;
+            animation: hextechDigFx 2.5s forwards linear;
+        }
+
+        @keyframes hextechDigSequence {
+            0% {
+                transform: rotate(0deg) scale(1);
+                opacity: 1;
+            }
+
+            40% {
+                transform: rotate(180deg) scale(1.2);
+                box-shadow: 0 0 40px #c89b3c;
+                background-color: #c89b3c;
+            }
+
+            70% {
+                transform: rotate(360deg) scale(1.5);
+                box-shadow: 0 0 80px #0ac8b9;
+                background-color: #0ac8b9;
+                border-radius: 50%;
+            }
+
+            100% {
+                transform: rotate(720deg) scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes hextechDigFx {
+            0% {
+                transform: scale(1) rotate(0deg);
+                opacity: 0;
+            }
+
+            70% {
+                transform: scale(2) rotate(-180deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(3) rotate(-360deg);
+                opacity: 0;
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 22: EL DORADO (GOLD)
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="gold"] {
+            background-color: #1a1500;
+        }
+
+        #sfl-grid-wrapper[data-theme="gold"] {
+            padding: 12px;
+        }
+
+        #sfl-grid-wrapper[data-theme="gold"] #sfl-master-grid {
+            border-top: 5px solid #ffd700;
+            border-right: 5px solid #ffd700;
+            border-bottom: 5px solid #ffd700;
+            border-left: 5px solid #ffd700;
+            border-radius: 0;
+            background-color: #1f1900;
+            box-shadow:
+                0 0 80px rgba(255, 215, 0, 0.5),
+                inset 0 0 60px rgba(255, 215, 0, 0.4);
+        }
+
+        #sfl-grid-wrapper[data-theme="gold"]::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            bottom: -8px;
+            left: -8px;
+            background: linear-gradient(45deg, #ffdf00, #d4af37, #996515, #ffdf00);
+            filter: blur(15px);
+            z-index: -1;
+            animation: goldAuroraFlow 5s linear infinite;
+            background-size: 200% 200%;
+        }
+
+        @keyframes goldAuroraFlow {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="gold"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 255;
+            --base-g: 230;
+            --base-b: 150;
+        }
+
+        #sfl-grid-wrapper[data-theme="gold"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 255;
+            --base-g: 215;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="gold"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 218;
+            --base-g: 165;
+            --base-b: 32;
+        }
+
+        #sfl-grid-wrapper[data-theme="gold"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 60;
+            --base-g: 50;
+            --base-b: 15;
+        }
+
+        #sfl-grid-wrapper[data-theme="gold"] .sfl-grid-cell {
+            border-radius: 2px;
+            border: 1px solid rgba(255, 215, 0, 0.6);
+            box-shadow: inset 0 0 15px rgba(255, 215, 0, 0.3);
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.25);
+        }
+
+        #sfl-grid-wrapper[data-theme="gold"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: scale(1.15) translateY(-6px) translateZ(10px);
+            background-color: #ffd700;
+            box-shadow:
+                0 15px 30px #996515,
+                0 0 60px #ffdf00;
+            border-color: #ffffff;
+        }
+
+        /* Gold Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="gold"] .sfl-grid-cell.digging {
+            animation: goldDigSequence 2.5s forwards ease-in-out;
+            background-color: #ffd700;
+            box-shadow: 0 0 80px #ffdf00;
+        }
+
+        #sfl-grid-wrapper[data-theme="gold"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background: radial-gradient(circle, #ffffff, #ffd700);
+            border-radius: 50%;
+            animation: goldDigFx 2.5s forwards;
+        }
+
+        @keyframes goldDigSequence {
+            0% {
+                transform: scale(1);
+                border-radius: 2px;
+                opacity: 1;
+            }
+
+            30% {
+                transform: scale(1.3) translateY(-10px);
+                border-radius: 20%;
+                background-color: #ffffff;
+            }
+
+            60% {
+                transform: scale(1.5) translateY(-20px);
+                border-radius: 50%;
+                box-shadow: 0 0 100px #ffffff;
+            }
+
+            80% {
+                transform: scale(0.5) translateY(20px);
+                opacity: 0.8;
+                filter: blur(2px);
+            }
+
+            /* Melts down */
+            100% {
+                transform: scale(0) translateY(50px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes goldDigFx {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            60% {
+                transform: scale(2);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(3);
+                opacity: 0;
+                filter: blur(15px);
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 23: COSMIC NEBULA
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="nebula"] {
+            background-color: #030008;
+        }
+
+        #sfl-grid-wrapper[data-theme="nebula"] {
+            padding: 8px;
+        }
+
+        #sfl-grid-wrapper[data-theme="nebula"] #sfl-master-grid {
+            border-top: 3px solid #b100ff;
+            border-right: 3px solid #b100ff;
+            border-bottom: 3px solid #b100ff;
+            border-left: 3px solid #b100ff;
+            border-radius: 0;
+            background-color: rgba(5, 0, 20, 0.85);
+            box-shadow: inset 0 0 100px #330066;
+        }
+
+        #sfl-grid-wrapper[data-theme="nebula"]::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            bottom: -50px;
+            left: -50px;
+            background:
+                radial-gradient(circle at 20% 30%, rgba(255, 0, 255, 0.5) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(0, 255, 255, 0.5) 0%, transparent 50%);
+            filter: blur(35px);
+            z-index: -1;
+            animation: nebulaFloatBg 10s infinite alternate ease-in-out;
+        }
+
+        @keyframes nebulaFloatBg {
+            0% {
+                transform: scale(0.9) rotate(-3deg);
+                opacity: 0.7;
+            }
+
+            100% {
+                transform: scale(1.1) rotate(3deg);
+                opacity: 1;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="nebula"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 0;
+            --base-g: 255;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="nebula"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 255;
+            --base-g: 0;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="nebula"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 138;
+            --base-g: 43;
+            --base-b: 226;
+        }
+
+        #sfl-grid-wrapper[data-theme="nebula"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 15;
+            --base-g: 5;
+            --base-b: 30;
+        }
+
+        #sfl-grid-wrapper[data-theme="nebula"] .sfl-grid-cell {
+            border-radius: 50%;
+            transform: scale(0.4) translateZ(0);
+            /* Shrunk to look like stars */
+            opacity: 0.7;
+            transition: all 1s ease;
+            border: none;
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.8);
+        }
+
+        #sfl-grid-wrapper[data-theme="nebula"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: scale(1.6) translateZ(15px);
+            opacity: 1;
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 1);
+            box-shadow:
+                0 0 60px rgba(var(--base-r), var(--base-g), var(--base-b), 1),
+                0 0 25px #ffffff;
+            transition: all 0.1s var(--ease-bounce);
+            border: 2px solid #ffffff;
+        }
+
+        /* Nebula Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="nebula"] .sfl-grid-cell.digging {
+            animation: nebulaDigSequence 2.5s ease-out forwards;
+            background-color: #ffffff;
+            box-shadow: 0 0 100px #b100ff;
+        }
+
+        #sfl-grid-wrapper[data-theme="nebula"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background: radial-gradient(circle, #ffffff, #00ffff, #ff00ff);
+            border-radius: 50%;
+            animation: nebulaDigFx 2.5s ease-out forwards;
+        }
+
+        @keyframes nebulaDigSequence {
+            0% {
+                transform: scale(0.4);
+                opacity: 1;
+            }
+
+            20% {
+                transform: scale(2);
+                background-color: #00ffff;
+            }
+
+            40% {
+                transform: scale(3);
+                background-color: #ff00ff;
+                box-shadow: 0 0 150px #ffffff;
+            }
+
+            60% {
+                transform: scale(0.1);
+                opacity: 1;
+                filter: brightness(5);
+            }
+
+            /* Supernova collapse */
+            80% {
+                transform: scale(4);
+                opacity: 0.5;
+                filter: blur(5px);
+            }
+
+            /* Shockwave */
+            100% {
+                transform: scale(5);
+                opacity: 0;
+            }
+        }
+
+        @keyframes nebulaDigFx {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            60% {
+                transform: scale(0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(4);
+                opacity: 0;
+                filter: blur(20px);
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 24: CRT ARCADE
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="arcade"] {
+            background-color: #0a0a0a;
+        }
+
+        #sfl-grid-wrapper[data-theme="arcade"] {
+            padding: 20px;
+            background-color: #222222;
+            border-radius: 25px;
+            box-shadow:
+                0 25px 60px rgba(0, 0, 0, 0.9),
+                inset 0 5px 15px rgba(255, 255, 255, 0.1);
+            /* Thick arcade cabinet frame */
+        }
+
+        #sfl-grid-wrapper[data-theme="arcade"] #sfl-master-grid {
+            border-top: 6px solid #33ff00;
+            border-right: 6px solid #33ff00;
+            border-bottom: 6px solid #33ff00;
+            border-left: 6px solid #33ff00;
+            border-radius: 12px;
+            background-color: #001500;
+            box-shadow:
+                0 0 30px #33ff00,
+                inset 0 0 50px #004400;
+            animation: arcadeCrtFlicker 0.12s infinite;
+        }
+
+        @keyframes arcadeCrtFlicker {
+
+            0%,
+            100% {
+                opacity: 1;
+                filter: brightness(1);
+            }
+
+            50% {
+                opacity: 0.92;
+                filter: brightness(0.9);
+            }
+        }
+
+        /* Permanent scanlines */
+        #sfl-grid-wrapper[data-theme="arcade"] #sfl-master-grid::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: repeating-linear-gradient(0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0, 0, 0, 0.5) 3px,
+                    rgba(0, 0, 0, 0.5) 4px);
+            z-index: 10;
+            pointer-events: none;
+            border-radius: inherit;
+        }
+
+        /* Forces monochromatic phosphor greens! */
+        #sfl-grid-wrapper[data-theme="arcade"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 51;
+            --base-g: 255;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="arcade"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 150;
+            --base-g: 255;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="arcade"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 0;
+            --base-g: 255;
+            --base-b: 100;
+        }
+
+        #sfl-grid-wrapper[data-theme="arcade"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 0;
+            --base-g: 40;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="arcade"] .sfl-grid-cell {
+            border-radius: 0;
+            border: 2px solid rgba(51, 255, 0, 0.3);
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.2);
+        }
+
+        #sfl-grid-wrapper[data-theme="arcade"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: scale(1) translateZ(0);
+            /* No 3D scaling for 2D arcade */
+            border-radius: 0;
+            background-color: #33ff00;
+            box-shadow: 0 0 30px #33ff00;
+            z-index: 20;
+        }
+
+        /* Arcade Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="arcade"] .sfl-grid-cell.digging {
+            animation: arcadeDigSequence 2.5s steps(4) forwards;
+            background-color: #33ff00;
+        }
+
+        #sfl-grid-wrapper[data-theme="arcade"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background: repeating-linear-gradient(90deg, #33ff00, #000000 10%, #33ff00 20%);
+            animation: arcadeDigFx 2.5s linear forwards;
+        }
+
+        @keyframes arcadeDigSequence {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            25% {
+                transform: scale(1.1) translateX(5px);
+                filter: invert(1);
+            }
+
+            50% {
+                transform: scale(0.9) translateX(-5px);
+                filter: invert(0);
+            }
+
+            75% {
+                transform: scale(1.5) skewX(20deg);
+                background-color: #ffffff;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes arcadeDigFx {
+            0% {
+                background-position: 0 0;
+            }
+
+            100% {
+                background-position: 200px 0;
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 25: DESERT MIRAGE
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="mirage"] {
+            background-color: #2b1d11;
+        }
+
+        #sfl-grid-wrapper[data-theme="mirage"] {
+            padding: 8px;
+        }
+
+        #sfl-grid-wrapper[data-theme="mirage"] #sfl-master-grid {
+            border-top: 3px solid #d4a373;
+            border-right: 3px solid #d4a373;
+            border-bottom: 3px solid #d4a373;
+            border-left: 3px solid #d4a373;
+            border-radius: 0;
+            background-color: rgba(139, 69, 19, 0.5);
+            box-shadow: 0 0 50px rgba(212, 163, 115, 0.4);
+            animation: mirageWaveBg 4s infinite alternate ease-in-out;
+        }
+
+        @keyframes mirageWaveBg {
+            0% {
+                transform: skewX(-2deg) translateY(-3px);
+                filter: blur(0px);
+            }
+
+            100% {
+                transform: skewX(2deg) translateY(3px);
+                filter: blur(2px);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="mirage"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 250;
+            --base-g: 237;
+            --base-b: 205;
+        }
+
+        #sfl-grid-wrapper[data-theme="mirage"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 212;
+            --base-g: 163;
+            --base-b: 115;
+        }
+
+        #sfl-grid-wrapper[data-theme="mirage"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 204;
+            --base-g: 119;
+            --base-b: 34;
+        }
+
+        #sfl-grid-wrapper[data-theme="mirage"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 70;
+            --base-g: 45;
+            --base-b: 25;
+        }
+
+        #sfl-grid-wrapper[data-theme="mirage"] .sfl-grid-cell {
+            border-radius: 0;
+            transition: all 1s ease;
+            border: 1px solid rgba(212, 163, 115, 0.3);
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.3);
+        }
+
+        #sfl-grid-wrapper[data-theme="mirage"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: scale(1.15) rotate(3deg) translateZ(10px);
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.95);
+            box-shadow:
+                0 15px 25px rgba(0, 0, 0, 0.6),
+                0 0 40px rgba(var(--base-r), var(--base-g), var(--base-b), 0.9);
+            transition: all 0.2s var(--ease-smooth);
+            filter: blur(0);
+        }
+
+        /* Mirage Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="mirage"] .sfl-grid-cell.digging {
+            animation: mirageDigSequence 2.5s ease-in forwards;
+            filter: blur(10px);
+        }
+
+        #sfl-grid-wrapper[data-theme="mirage"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background-color: #d4a373;
+            animation: mirageDigFx 2.5s forwards;
+        }
+
+        @keyframes mirageDigSequence {
+            0% {
+                transform: scale(1) skew(0deg);
+                opacity: 1;
+                filter: blur(0px);
+            }
+
+            30% {
+                transform: scale(1.2) skew(15deg);
+                filter: blur(5px);
+                background-color: #d4a373;
+            }
+
+            60% {
+                transform: scale(1.4) skew(-15deg);
+                filter: blur(15px);
+                opacity: 0.8;
+            }
+
+            80% {
+                transform: scale(0.5);
+                filter: blur(20px);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes mirageDigFx {
+            0% {
+                transform: scale(1);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(2);
+                opacity: 1;
+                border-radius: 50%;
+            }
+
+            100% {
+                transform: scale(4);
+                opacity: 0;
+                filter: blur(30px);
+            }
+        }
+
+
+        /* ==========================================================================
+           12. THEMES BATCH 7: ELDRITCH & ETHEREAL
+           ========================================================================== */
+
+        /* ------------------------------------------------------------------
+           THEME 26: CRYSTAL CAVERN
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="crystal"] {
+            background-color: #000c14;
+        }
+
+        #sfl-grid-wrapper[data-theme="crystal"] {
+            padding: 12px;
+        }
+
+        #sfl-grid-wrapper[data-theme="crystal"] #sfl-master-grid {
+            border-top: 3px solid #00ffff;
+            border-right: 3px solid #00ffff;
+            border-bottom: 3px solid #00ffff;
+            border-left: 3px solid #00ffff;
+            border-radius: 0;
+            background-color: rgba(0, 60, 60, 0.85);
+            box-shadow:
+                inset 0 0 70px #00ffff,
+                0 0 40px #ff00ff;
+        }
+
+        #sfl-grid-wrapper[data-theme="crystal"]::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            bottom: -20px;
+            left: -20px;
+            background: linear-gradient(45deg, #00ffff, #ff00ff);
+            filter: blur(30px);
+            z-index: -1;
+            opacity: 0.7;
+            animation: crystalGlowBg 6s infinite alternate;
+        }
+
+        @keyframes crystalGlowBg {
+            0% {
+                opacity: 0.5;
+                transform: scale(0.98);
+            }
+
+            100% {
+                opacity: 0.9;
+                transform: scale(1.02);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="crystal"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 0;
+            --base-g: 255;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="crystal"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 255;
+            --base-g: 0;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="crystal"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 255;
+            --base-g: 255;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="crystal"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 0;
+            --base-g: 120;
+            --base-b: 180;
+        }
+
+        #sfl-grid-wrapper[data-theme="crystal"] .sfl-grid-cell {
+            border-radius: 0;
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+            -webkit-clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+            border: none;
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.4);
+            box-shadow: none;
+            /* Clip path breaks box-shadow */
+        }
+
+        #sfl-grid-wrapper[data-theme="crystal"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: scale(1.4) translateZ(20px);
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 1);
+            /* Pseudo element for hover shadow on clip-path */
+        }
+
+        #sfl-grid-wrapper[data-theme="crystal"] .sfl-grid-cell:hover:not(.digging):not(.dug)::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-color: #ffffff;
+            filter: blur(10px);
+            z-index: -1;
+        }
+
+        /* Crystal Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="crystal"] .sfl-grid-cell.digging {
+            animation: crystalDigSequence 2.5s forwards;
+            filter: brightness(2.5);
+        }
+
+        #sfl-grid-wrapper[data-theme="crystal"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background-color: #ffffff;
+            animation: crystalDigFx 2.5s forwards;
+        }
+
+        @keyframes crystalDigSequence {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            20% {
+                transform: scale(1.2) rotate(45deg);
+                background-color: #ffffff;
+            }
+
+            40% {
+                transform: scale(1.5) rotate(90deg);
+                filter: brightness(3) hue-rotate(90deg);
+            }
+
+            60% {
+                transform: scale(0.5) rotate(180deg);
+                opacity: 0.8;
+            }
+
+            /* Prep to shatter */
+            80% {
+                transform: scale(2.5) rotate(270deg) skew(30deg);
+                opacity: 0.5;
+            }
+
+            /* Shatters */
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes crystalDigFx {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            40% {
+                transform: scale(1.5);
+                opacity: 1;
+                border-radius: 50%;
+            }
+
+            100% {
+                transform: scale(3);
+                opacity: 0;
+                filter: blur(15px);
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 27: STEAMPUNK GEARS
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="steampunk"] {
+            background-color: #1a1008;
+        }
+
+        #sfl-grid-wrapper[data-theme="steampunk"] {
+            padding: 18px;
+        }
+
+        #sfl-grid-wrapper[data-theme="steampunk"] #sfl-master-grid {
+            border-top: 10px solid #b87333;
+            border-right: 10px solid #b87333;
+            border-bottom: 10px solid #b87333;
+            border-left: 10px solid #b87333;
+            border-radius: 0;
+            background-color: #2b1d11;
+            box-shadow:
+                inset 0 0 50px #000000,
+                0 0 30px #000000;
+        }
+
+        #sfl-grid-wrapper[data-theme="steampunk"]::before {
+            content: '';
+            position: absolute;
+            top: -25px;
+            right: -25px;
+            bottom: -25px;
+            left: -25px;
+            border: 6px dashed #8b4513;
+            border-radius: 50%;
+            animation: steampunkSpinGear 25s linear infinite;
+            z-index: -1;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+        }
+
+        @keyframes steampunkSpinGear {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="steampunk"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 184;
+            --base-g: 115;
+            --base-b: 51;
+        }
+
+        /* Copper */
+        #sfl-grid-wrapper[data-theme="steampunk"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 218;
+            --base-g: 165;
+            --base-b: 32;
+        }
+
+        /* Brass */
+        #sfl-grid-wrapper[data-theme="steampunk"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 139;
+            --base-g: 69;
+            --base-b: 19;
+        }
+
+        /* Rust */
+        #sfl-grid-wrapper[data-theme="steampunk"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 50;
+            --base-g: 40;
+            --base-b: 30;
+        }
+
+        #sfl-grid-wrapper[data-theme="steampunk"] .sfl-grid-cell {
+            border-radius: 50%;
+            border: 3px dashed rgba(var(--base-r), var(--base-g), var(--base-b), 0.7);
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.2);
+        }
+
+        #sfl-grid-wrapper[data-theme="steampunk"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: rotate(180deg) scale(1.15) translateZ(10px);
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.9);
+            border: 3px solid #ffffff;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.8);
+            transition: transform 0.8s linear, background-color 0.2s;
+        }
+
+        /* Steampunk Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="steampunk"] .sfl-grid-cell.digging {
+            animation: steampunkDigSequence 2.5s forwards ease-in;
+        }
+
+        #sfl-grid-wrapper[data-theme="steampunk"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background-color: #ffffff;
+            /* Steam burst */
+            border-radius: 50%;
+            animation: steampunkDigFx 2.5s forwards;
+        }
+
+        @keyframes steampunkDigSequence {
+            0% {
+                transform: rotate(0deg) scale(1);
+                filter: blur(0);
+            }
+
+            30% {
+                transform: rotate(360deg) scale(1.2);
+                filter: blur(0);
+                background-color: #b87333;
+            }
+
+            60% {
+                transform: rotate(1080deg) scale(1.5);
+                background-color: #ffffff;
+                filter: blur(5px);
+                box-shadow: 0 0 50px #ffffff;
+            }
+
+            80% {
+                transform: rotate(1440deg) scale(2);
+                filter: blur(15px);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes steampunkDigFx {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            60% {
+                transform: scale(2);
+                opacity: 0.8;
+                filter: blur(10px);
+            }
+
+            100% {
+                transform: scale(4);
+                opacity: 0;
+                filter: blur(30px);
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 28: NECROPOLIS
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="necro"] {
+            background-color: #050a05;
+        }
+
+        #sfl-grid-wrapper[data-theme="necro"] {
+            padding: 8px;
+        }
+
+        #sfl-grid-wrapper[data-theme="necro"] #sfl-master-grid {
+            border-top: 4px solid #e0e0d1;
+            border-right: 4px solid #e0e0d1;
+            border-bottom: 4px solid #e0e0d1;
+            border-left: 4px solid #e0e0d1;
+            border-radius: 0;
+            background-color: #0a110a;
+            box-shadow:
+                inset 0 0 60px #33ff33,
+                0 0 40px #003300;
+        }
+
+        #sfl-grid-wrapper[data-theme="necro"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 51;
+            --base-g: 255;
+            --base-b: 51;
+        }
+
+        /* Toxic Soul */
+        #sfl-grid-wrapper[data-theme="necro"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 224;
+            --base-g: 224;
+            --base-b: 209;
+        }
+
+        /* Bone */
+        #sfl-grid-wrapper[data-theme="necro"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 0;
+            --base-g: 120;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="necro"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 25;
+            --base-g: 40;
+            --base-b: 25;
+        }
+
+        #sfl-grid-wrapper[data-theme="necro"] .sfl-grid-cell {
+            border-radius: 2px;
+            border: 1px solid rgba(224, 224, 209, 0.25);
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.25);
+        }
+
+        #sfl-grid-wrapper[data-theme="necro"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: translateY(-8px) scale(1.1) translateZ(10px);
+            background-color: #e0e0d1;
+            box-shadow:
+                0 20px 25px rgba(0, 0, 0, 0.8),
+                0 0 30px #33ff33;
+            border-color: #33ff33;
+        }
+
+        /* Necro Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="necro"] .sfl-grid-cell.digging {
+            animation: necroDigSequence 2.5s forwards ease-in;
+            background-color: #33ff33;
+            filter: blur(2px);
+        }
+
+        #sfl-grid-wrapper[data-theme="necro"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background-color: #33ff33;
+            border-radius: 50%;
+            animation: necroDigFx 2.5s forwards;
+        }
+
+        @keyframes necroDigSequence {
+            0% {
+                transform: scale(1);
+                border-radius: 2px;
+                opacity: 1;
+            }
+
+            30% {
+                transform: scale(1.2) translateY(-10px);
+                border-radius: 20%;
+                background-color: #e0e0d1;
+            }
+
+            60% {
+                transform: scale(1.4) translateY(-5px);
+                border-radius: 50%;
+                background-color: #33ff33;
+                box-shadow: 0 0 80px #33ff33;
+            }
+
+            80% {
+                transform: scale(1.5) translateY(20px) scaleY(0.3);
+                opacity: 0.8;
+                filter: blur(5px);
+            }
+
+            /* Melts */
+            100% {
+                transform: scale(0) translateY(40px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes necroDigFx {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            60% {
+                transform: scale(1.8);
+                opacity: 1;
+                box-shadow: 0 0 50px #33ff33;
+            }
+
+            100% {
+                transform: scale(3);
+                opacity: 0;
+                filter: blur(15px);
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 29: QUANTUM SUPERPOSITION
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="quantum"] {
+            background-color: #020202;
+        }
+
+        #sfl-grid-wrapper[data-theme="quantum"] {
+            padding: 10px;
+        }
+
+        #sfl-grid-wrapper[data-theme="quantum"] #sfl-master-grid {
+            border-top: 3px solid #ffffff;
+            border-right: 3px solid #ffffff;
+            border-bottom: 3px solid #ffffff;
+            border-left: 3px solid #ffffff;
+            border-radius: 0;
+            background-color: #000000;
+            box-shadow:
+                -15px 0 30px #ff0000,
+                15px 0 30px #0000ff;
+        }
+
+        #sfl-grid-wrapper[data-theme="quantum"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 0;
+            --base-g: 0;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="quantum"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 255;
+            --base-g: 255;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="quantum"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 255;
+            --base-g: 0;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="quantum"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 60;
+            --base-g: 60;
+            --base-b: 60;
+        }
+
+        #sfl-grid-wrapper[data-theme="quantum"] .sfl-grid-cell {
+            border-radius: 0;
+            animation: quantumStateBlur 0.8s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.5);
+        }
+
+        @keyframes quantumStateBlur {
+            0% {
+                box-shadow: -3px 0 0 #ff0000, 3px 0 0 #0000ff;
+                filter: blur(2px);
+                transform: translateX(-2px);
+            }
+
+            100% {
+                box-shadow: -6px 0 0 #0000ff, 6px 0 0 #ff0000;
+                filter: blur(4px);
+                transform: translateX(2px);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="quantum"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            animation: none;
+            /* Collapses the waveform */
+            transform: scale(1.15) translateZ(10px);
+            filter: blur(0);
+            background-color: #ffffff;
+            box-shadow: 0 0 30px #ffffff;
+            border: 2px solid rgba(var(--base-r), var(--base-g), var(--base-b), 1);
+        }
+
+        /* Quantum Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="quantum"] .sfl-grid-cell.digging {
+            animation: quantumDigSequence 2.5s steps(8) forwards;
+            background-color: #ffffff;
+        }
+
+        #sfl-grid-wrapper[data-theme="quantum"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background-color: #ff00ff;
+            animation: quantumDigFx 2.5s linear forwards;
+        }
+
+        @keyframes quantumDigSequence {
+            0% {
+                transform: scale(1);
+                filter: blur(0);
+                opacity: 1;
+            }
+
+            20% {
+                transform: scale(1.5) translateX(-10px);
+                background-color: #ff0000;
+                filter: blur(2px);
+            }
+
+            40% {
+                transform: scale(1.5) translateX(10px);
+                background-color: #0000ff;
+                filter: blur(2px);
+            }
+
+            60% {
+                transform: scale(2);
+                background-color: #ffffff;
+                box-shadow: 0 0 100px #ffffff;
+                filter: blur(0);
+            }
+
+            80% {
+                transform: scale(0.2) rotate(180deg);
+                opacity: 0.8;
+                filter: blur(10px);
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes quantumDigFx {
+            0% {
+                transform: scale(0);
+                filter: invert(0);
+            }
+
+            50% {
+                transform: scale(2);
+                filter: invert(1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(3);
+                opacity: 0;
+                filter: blur(20px);
+            }
+        }
+
+
+        /* ------------------------------------------------------------------
+           THEME 30: VAPORWAVE SUN
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="vaporwave"] {
+            background: linear-gradient(to bottom, #000033, #ff007f);
+            background-attachment: fixed;
+        }
+
+        #sfl-grid-wrapper[data-theme="vaporwave"] {
+            padding: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="vaporwave"] #sfl-master-grid {
+            border-top: 5px solid #00ffff;
+            border-right: 5px solid #00ffff;
+            border-bottom: 5px solid #00ffff;
+            border-left: 5px solid #00ffff;
+            border-radius: 0;
+            background-color: rgba(0, 0, 20, 0.85);
+            box-shadow:
+                0 0 60px #ff007f,
+                inset 0 0 40px #00ffff;
+        }
+
+        #sfl-grid-wrapper[data-theme="vaporwave"]::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: repeating-linear-gradient(to bottom,
+                    transparent,
+                    transparent 12px,
+                    #ff007f 12px,
+                    #ff007f 15px);
+            pointer-events: none;
+            opacity: 0.6;
+            z-index: 5;
+            box-shadow: 0 0 20px #ff007f;
+        }
+
+        #sfl-grid-wrapper[data-theme="vaporwave"] .sfl-grid-cell[data-type="blue"] {
+            --base-r: 0;
+            --base-g: 255;
+            --base-b: 255;
+        }
+
+        #sfl-grid-wrapper[data-theme="vaporwave"] .sfl-grid-cell[data-type="yellow"] {
+            --base-r: 255;
+            --base-g: 255;
+            --base-b: 0;
+        }
+
+        #sfl-grid-wrapper[data-theme="vaporwave"] .sfl-grid-cell[data-type="red"] {
+            --base-r: 255;
+            --base-g: 0;
+            --base-b: 127;
+        }
+
+        #sfl-grid-wrapper[data-theme="vaporwave"] .sfl-grid-cell[data-type="empty"] {
+            --base-r: 30;
+            --base-g: 0;
+            --base-b: 60;
+        }
+
+        #sfl-grid-wrapper[data-theme="vaporwave"] .sfl-grid-cell {
+            border-radius: 0;
+            border: 2px solid rgba(0, 255, 255, 0.4);
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.3);
+        }
+
+        #sfl-grid-wrapper[data-theme="vaporwave"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+            transform: scale(1.15) translateZ(10px);
+            background-color: #ff007f;
+            box-shadow:
+                0 0 30px #00ffff,
+                inset 0 0 15px #00ffff;
+            border-color: #00ffff;
+            z-index: 10;
+        }
+
+        /* Vaporwave Digging Animation (2.5s) */
+        #sfl-grid-wrapper[data-theme="vaporwave"] .sfl-grid-cell.digging {
+            animation: vaporwaveDigSequence 2.5s linear forwards;
+            border-color: #ff007f;
+        }
+
+        #sfl-grid-wrapper[data-theme="vaporwave"] .sfl-grid-cell.digging .dig-fx-container {
+            opacity: 1;
+            background: linear-gradient(180deg, #00ffff, #ff007f);
+            animation: vaporwaveDigFx 2.5s linear forwards;
+        }
+
+        @keyframes vaporwaveDigSequence {
+            0% {
+                transform: scale(1) skewX(0deg);
+                opacity: 1;
+            }
+
+            20% {
+                transform: scale(1.2) skewX(20deg);
+                filter: hue-rotate(90deg);
+            }
+
+            40% {
+                transform: scale(0.8) skewX(-20deg);
+                filter: hue-rotate(180deg);
+            }
+
+            60% {
+                transform: scale(1.5) translateY(10px);
+                filter: invert(1);
+                background-color: #ffffff;
+            }
+
+            80% {
+                transform: scale(2) scaleY(0.2);
+                opacity: 0.8;
+            }
+
+            /* Squash flat */
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes vaporwaveDigFx {
+            0% {
+                background-position: 0 0;
+                opacity: 0;
+            }
+
+            50% {
+                background-position: 0 50px;
+                opacity: 1;
+            }
+
+            100% {
+                background-position: 0 100px;
+                opacity: 0;
+            }
+        }
+
+        /* ==========================================================================
+           13. DISCOVERY TIERS & JACKPOT ENGINE (MASSIVE OVERHAUL)
+           ========================================================================== */
+
+        /* --- LAYOUT WRAPPER & SIDEBAR --- */
+        .game-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            width: 100%;
+            max-width: 1300px;
+            z-index: 10;
+        }
+
+        @media (max-width: 950px) {
+            .game-container {
+                flex-direction: column;
+            }
+        }
+
+        .discovery-sidebar {
+            background: rgba(10, 10, 15, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 25px;
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-width: 280px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.05);
+            transform-style: preserve-3d;
+        }
+
+        .discovery-sidebar h3 {
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 15px;
+            text-align: center;
+        }
+
+        .tier-label {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .tier-label:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(5px);
+        }
+
+        .tier-label input[type="radio"] {
+            display: none;
+        }
+
+        .custom-radio {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            position: relative;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .tier-label input[type="radio"]:checked+.custom-radio {
+            border-color: #00ffff;
+            box-shadow: 0 0 15px #00ffff;
+        }
+
+        .tier-label input[type="radio"]:checked+.custom-radio::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px;
+            height: 10px;
+            background: #00ffff;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #ffffff;
+        }
+
+        .tier-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .tier-name {
+            color: #fff;
+            font-weight: 700;
+            font-size: 15px;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .tier-desc {
+            color: #aaa;
+            font-size: 12px;
+            font-weight: 400;
+        }
+
+        /* Highlight Active Tiers */
+        .tier-label.tier-1 input:checked~.tier-info .tier-name {
+            color: #ff0055;
+            text-shadow: 0 0 15px #ff0055;
+            font-size: 17px;
+        }
+
+        .tier-label.tier-2 input:checked~.tier-info .tier-name {
+            color: #b100ff;
+            text-shadow: 0 0 10px #b100ff;
+        }
+
+        .tier-label.tier-3 input:checked~.tier-info .tier-name {
+            color: #ffd700;
+            text-shadow: 0 0 10px #ffd700;
+        }
+
+        .tier-label.tier-4 input:checked~.tier-info .tier-name {
+            color: #00ffcc;
+            text-shadow: 0 0 10px #00ffcc;
+        }
+
+        /* --- TIER 5 (SAND): MELANCHOLIC RED OVERRIDE --- */
+        .sfl-grid-cell.tier-5.digging {
+            /* Forces any underlying animation colors into a dark, sad crimson red */
+            filter: sepia(1) hue-rotate(-45deg) saturate(3.5) brightness(0.4) contrast(1.2) !important;
+            /* Adds a dark inner shadow to make it feel empty/bad */
+            box-shadow: inset 0 0 50px rgba(100, 0, 0, 0.9) !important;
+        }
+
+        .sfl-grid-cell.tier-5.digging .dig-fx-container {
+            filter: sepia(1) hue-rotate(-45deg) saturate(3.5) brightness(0.4) !important;
+            box-shadow: 0 0 60px rgba(150, 0, 0, 0.5) !important;
+        }
+
+        /* --- TIER 4 (CRABS): MINOR HINT PULSE --- */
+        .sfl-grid-cell.tier-4.digging {
+            filter: hue-rotate(45deg) saturate(1.5) !important;
+        }
+
+        .sfl-grid-cell.tier-4.digging .dig-fx-container {
+            box-shadow: 0 0 40px #00ffcc !important;
+        }
+
+        /* --- TIER 3 (MISC ITEMS): TREASURE GLOW --- */
+        .sfl-grid-cell.tier-3.digging {
+            filter: brightness(1.5) contrast(1.2) !important;
+        }
+
+        .sfl-grid-cell.tier-3.digging .dig-fx-container {
+            background-color: rgba(255, 215, 0, 0.4) !important;
+            box-shadow: 0 0 80px gold, inset 0 0 40px #ffffff !important;
+            border: 2px solid gold;
+        }
+
+        /* --- TIER 2 (BONES): SPECTRAL RESONANCE --- */
+        .sfl-grid-cell.tier-2.digging {
+            filter: grayscale(0.5) sepia(0.5) hue-rotate(220deg) brightness(2) !important;
+        }
+
+        .sfl-grid-cell.tier-2.digging .dig-fx-container {
+            animation: spectralBones 2.5s infinite alternate !important;
+            background-color: #ffffff !important;
+            box-shadow: 0 0 100px #b100ff, inset 0 0 50px #ffffff !important;
+        }
+
+        @keyframes spectralBones {
+            0% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(3);
+                opacity: 0;
+                filter: blur(10px);
+            }
+        }
+
+        /* ==========================================================================
+           14. TIER 1 (MAIN PUZZLE JACKPOT) - EXTREME ANIMATIONS OVERRIDE
+           ========================================================================== */
+
+        /* Jackpot Global Screen Text */
+        .jackpot-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: calc(8vw * var(--jp-text, 1));
+            font-weight: 900;
+            color: #fff;
+            text-transform: uppercase;
+            z-index: 9999;
+            pointer-events: none;
+            animation: jackpotTextAnim 3.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            text-shadow: 0 0 calc(20px * var(--jp-shadow, 1)) #fff, 0 0 calc(50px * var(--jp-shadow, 1)) gold, 0 0 calc(100px * var(--jp-shadow, 1)) #ff0000;
+            text-align: center;
+            line-height: 1;
+            letter-spacing: 10px;
+        }
+
+        @keyframes jackpotTextAnim {
+            0% {
+                transform: translate(-50%, -50%) scale(0) rotate(-15deg);
+                opacity: 0;
+                filter: blur(calc(20px * var(--jp-blur, 1)));
+            }
+
+            10% {
+                transform: translate(-50%, -50%) scale(calc(1.2 * var(--jp-text, 1))) rotate(5deg);
+                opacity: 1;
+                text-shadow: 0 0 calc(150px * var(--jp-shadow, 1)) #fff, 0 0 calc(300px * var(--jp-shadow, 1)) gold;
+                filter: blur(0px);
+            }
+
+            20% {
+                transform: translate(-50%, -50%) scale(calc(1 * var(--jp-text, 1))) rotate(0deg);
+                opacity: 1;
+            }
+
+            70% {
+                transform: translate(-50%, -50%) scale(calc(1.1 * var(--jp-text, 1))) rotate(0deg);
+                opacity: 1;
+                filter: hue-rotate(360deg);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(calc(4 * var(--jp-text, 1))) rotate(15deg);
+                opacity: 0;
+                filter: blur(calc(30px * var(--jp-blur, 1)));
+            }
+        }
+
+        /* Jackpot Global Grid Overload (Shaking removed for overlay alignment) */
+        .grid.jackpot-active {
+            animation: gridJackpotOverload 3s cubic-bezier(.36, .07, .19, .97) both !important;
+        }
+
+        @keyframes gridJackpotOverload {
+
+            0%,
+            100% {
+                filter: brightness(1);
+                transform: none !important;
+            }
+
+            10%,
+            30%,
+            50%,
+            70%,
+            90% {
+                filter: brightness(1.5) contrast(1.2);
+                box-shadow: 0 0 calc(100px * var(--jp-shadow, 1)) #ff0000;
+                transform: none !important;
+            }
+
+            20%,
+            40%,
+            60%,
+            80% {
+                filter: brightness(2) drop-shadow(0 0 calc(50px * var(--jp-shadow, 1)) #fff);
+                transform: none !important;
+            }
+        }
+
+        /* All Tier 1 Tiles pop OUT of the grid infinitely to shoot their pillars */
+        .sfl-grid-cell.tier-1.digging {
+            z-index: 5000 !important;
+            overflow: visible !important;
+            animation: tileJackpotPop 3s forwards !important;
+            border: none !important;
+        }
+
+        @keyframes tileJackpotPop {
+            0% {
+                transform: scale(1);
+            }
+
+            20% {
+                transform: scale(calc(2 * var(--jp-scale, 1))) translateZ(calc(100px * var(--jp-scale, 1)));
+                background: #fff;
+                box-shadow: 0 0 calc(100px * var(--jp-shadow, 1)) #fff;
+            }
+
+            80% {
+                transform: scale(calc(2 * var(--jp-scale, 1))) translateZ(calc(100px * var(--jp-scale, 1)));
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        /* ------------------------------------------------------------------
+           JACKPOT GROUP 1: MAGMA GAMMA RAY (Hellfire, Spinning, Molten)
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="hellfire"] .sfl-grid-cell.tier-1.digging .dig-fx-container,
+        #sfl-grid-wrapper[data-theme="spinning"] .sfl-grid-cell.tier-1.digging .dig-fx-container,
+        #sfl-grid-wrapper[data-theme="molten"] .sfl-grid-cell.tier-1.digging .dig-fx-container {
+            opacity: 1 !important;
+            animation: none !important;
+        }
+
+        #sfl-grid-wrapper[data-theme="hellfire"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before,
+        #sfl-grid-wrapper[data-theme="spinning"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before,
+        #sfl-grid-wrapper[data-theme="molten"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before {
+            content: '';
+            position: absolute;
+            bottom: 50%;
+            left: calc(-100px * var(--jp-scale, 1));
+            right: calc(-100px * var(--jp-scale, 1));
+            height: calc(2000px * var(--jp-scale, 1));
+            background: linear-gradient(to top, #ffffff, #ffea00, #ff2a00, transparent);
+            transform-origin: bottom center;
+            animation: magmaGammaRay 3s ease-out forwards;
+            border-radius: calc(100px * var(--jp-scale, 1));
+            z-index: 6000;
+        }
+
+        @keyframes magmaGammaRay {
+            0% {
+                transform: scaleY(0) scaleX(0.1);
+                opacity: 0;
+                filter: blur(0px);
+            }
+
+            15% {
+                transform: scaleY(1) scaleX(1);
+                opacity: 1;
+                box-shadow: 0 0 calc(200px * var(--jp-shadow, 1)) #ff0000;
+                filter: blur(calc(5px * var(--jp-blur, 1)));
+            }
+
+            50% {
+                transform: scaleY(1.2) scaleX(3);
+                opacity: 1;
+                box-shadow: 0 0 calc(500px * var(--jp-shadow, 1)) #ffaa00;
+                filter: blur(calc(2px * var(--jp-blur, 1))) contrast(2);
+            }
+
+            85% {
+                transform: scaleY(1.5) scaleX(0.5);
+                opacity: 0.8;
+                filter: hue-rotate(50deg) blur(calc(10px * var(--jp-blur, 1)));
+            }
+
+            100% {
+                transform: scaleY(2) scaleX(0);
+                opacity: 0;
+            }
+        }
+
+        /* ------------------------------------------------------------------
+           JACKPOT GROUP 2: ORBITAL NEON STRIKE (Cyberpunk, Matrix, Alien)
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="cyberpunk"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before,
+        #sfl-grid-wrapper[data-theme="matrix"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before,
+        #sfl-grid-wrapper[data-theme="alien"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before {
+            content: '';
+            position: absolute;
+            top: calc(-3000px * var(--jp-scale, 1));
+            bottom: 50%;
+            left: calc(-20px * var(--jp-scale, 1));
+            right: calc(-20px * var(--jp-scale, 1));
+            background: #00ffff;
+            box-shadow: 0 0 calc(100px * var(--jp-shadow, 1)) #00ffff, 0 0 calc(200px * var(--jp-shadow, 1)) #00ff00, 0 0 calc(300px * var(--jp-shadow, 1)) #ff00ff;
+            transform-origin: top center;
+            animation: orbitalStrike 3s forwards cubic-bezier(0.8, 0, 0.2, 1);
+            z-index: 6000;
+        }
+
+        @keyframes orbitalStrike {
+            0% {
+                transform: scaleY(0) scaleX(5);
+                opacity: 0;
+            }
+
+            10% {
+                transform: scaleY(1) scaleX(1);
+                opacity: 1;
+                background: #ffffff;
+            }
+
+            20%,
+            30%,
+            40%,
+            50%,
+            60%,
+            70%,
+            80% {
+                transform: scaleY(1) scaleX(random(0.5, 2));
+                filter: invert(1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scaleY(0) scaleX(10);
+                opacity: 0;
+                filter: blur(calc(30px * var(--jp-blur, 1)));
+            }
+        }
+
+        /* ------------------------------------------------------------------
+           JACKPOT GROUP 3: EVENT HORIZON (Void, Nebula, Quantum)
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="void"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before,
+        #sfl-grid-wrapper[data-theme="nebula"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before,
+        #sfl-grid-wrapper[data-theme="quantum"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before {
+            content: '';
+            position: absolute;
+            top: calc(-1000px * var(--jp-scale, 1));
+            left: calc(-1000px * var(--jp-scale, 1));
+            right: calc(-1000px * var(--jp-scale, 1));
+            bottom: calc(-1000px * var(--jp-scale, 1));
+            background: radial-gradient(circle, #000000 10%, #b100ff 20%, transparent 60%);
+            border-radius: 50%;
+            animation: blackHoleCollapse 3s forwards cubic-bezier(0.5, 0, 1, 0.5);
+            z-index: 6000;
+            mix-blend-mode: exclusion;
+        }
+
+        @keyframes blackHoleCollapse {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            40% {
+                transform: scale(1);
+                opacity: 1;
+                box-shadow: inset 0 0 500px #000, 0 0 500px #fff;
+            }
+
+            80% {
+                transform: scale(1.5) rotate(1080deg);
+                opacity: 1;
+                filter: contrast(5);
+            }
+
+            100% {
+                transform: scale(0) rotate(2160deg);
+                opacity: 0;
+            }
+        }
+
+        /* ------------------------------------------------------------------
+           JACKPOT GROUP 4: DIVINE ASCENSION (Holy, Aurora, Crystal, Prismatic)
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="holy"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before,
+        #sfl-grid-wrapper[data-theme="aurora"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before,
+        #sfl-grid-wrapper[data-theme="crystal"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before,
+        #sfl-grid-wrapper[data-theme="prismatic"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before {
+            content: '';
+            position: absolute;
+            top: calc(-2000px * var(--jp-scale, 1));
+            bottom: calc(-2000px * var(--jp-scale, 1));
+            left: calc(-500px * var(--jp-scale, 1));
+            right: calc(-500px * var(--jp-scale, 1));
+            background: radial-gradient(ellipse at center, #ffffff 0%, rgba(255, 215, 0, 0.8) 20%, transparent 70%);
+            animation: divineCross 3s forwards ease-in-out;
+            z-index: 6000;
+            mix-blend-mode: screen;
+        }
+
+        @keyframes divineCross {
+            0% {
+                transform: scaleX(0) scaleY(0) rotate(0deg);
+                opacity: 0;
+            }
+
+            30% {
+                transform: scaleX(1) scaleY(1) rotate(90deg);
+                opacity: 1;
+                filter: brightness(3);
+            }
+
+            70% {
+                transform: scaleX(2) scaleY(2) rotate(180deg);
+                opacity: 1;
+                filter: brightness(5) blur(calc(10px * var(--jp-blur, 1)));
+            }
+
+            100% {
+                transform: scaleX(10) scaleY(10) rotate(360deg);
+                opacity: 0;
+                filter: blur(calc(50px * var(--jp-blur, 1)));
+            }
+        }
+
+        /* ------------------------------------------------------------------
+           JACKPOT GROUP 5: ELDRITCH GEYSER (Blood, Abyss, Obsidian, Necro)
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="blood"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before,
+        #sfl-grid-wrapper[data-theme="abyss"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before,
+        #sfl-grid-wrapper[data-theme="obsidian"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before,
+        #sfl-grid-wrapper[data-theme="necro"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before {
+            content: '';
+            position: absolute;
+            bottom: 50%;
+            left: calc(-300px * var(--jp-scale, 1));
+            right: calc(-300px * var(--jp-scale, 1));
+            height: calc(3000px * var(--jp-scale, 1));
+            background: repeating-radial-gradient(circle at bottom center, #ff0000 0%, #000000 10%, #8a0303 20%);
+            transform-origin: bottom center;
+            animation: eldritchGeyser 3s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 6000;
+        }
+
+        @keyframes eldritchGeyser {
+            0% {
+                transform: scale(0) translateY(500px);
+                opacity: 0;
+                border-radius: 50%;
+            }
+
+            50% {
+                transform: scale(1) translateY(0px);
+                opacity: 1;
+                filter: contrast(3);
+                border-radius: 0%;
+            }
+
+            80% {
+                transform: scale(1.5) translateY(-500px);
+                opacity: 0.8;
+                filter: invert(1);
+            }
+
+            100% {
+                transform: scale(3) translateY(-1000px);
+                opacity: 0;
+            }
+        }
+
+        /* ------------------------------------------------------------------
+           JACKPOT GROUP 6: RETRO OVERLOAD (Electric, Synthwave, Arcade, Vaporwave, Disco)
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="electric"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before,
+        #sfl-grid-wrapper[data-theme="synthwave"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before,
+        #sfl-grid-wrapper[data-theme="arcade"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before,
+        #sfl-grid-wrapper[data-theme="vaporwave"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before,
+        #sfl-grid-wrapper[data-theme="disco"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before {
+            content: '';
+            position: absolute;
+            top: calc(-1000px * var(--jp-scale, 1));
+            bottom: calc(-1000px * var(--jp-scale, 1));
+            left: calc(-1000px * var(--jp-scale, 1));
+            right: calc(-1000px * var(--jp-scale, 1));
+            background: conic-gradient(from 0deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
+            animation: retroOverload 3s forwards steps(20);
+            z-index: 6000;
+            mix-blend-mode: hard-light;
+        }
+
+        @keyframes retroOverload {
+            0% {
+                transform: scale(0) rotate(0deg);
+                opacity: 0;
+            }
+
+            30% {
+                transform: scale(1) rotate(180deg);
+                opacity: 1;
+                filter: contrast(5);
+            }
+
+            70% {
+                transform: scale(1.5) rotate(360deg);
+                opacity: 1;
+                filter: invert(1);
+            }
+
+            100% {
+                transform: scale(5) rotate(720deg);
+                opacity: 0;
+                filter: blur(calc(50px * var(--jp-blur, 1)));
+            }
+        }
+
+        /* ------------------------------------------------------------------
+           JACKPOT GROUP 7: INDUSTRIAL MELTDOWN (Toxic, Hextech, Gold, Mecha, Mirage, Steampunk)
+           ------------------------------------------------------------------ */
+        #sfl-grid-wrapper[data-theme="toxic"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before,
+        #sfl-grid-wrapper[data-theme="hextech"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before,
+        #sfl-grid-wrapper[data-theme="gold"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before,
+        #sfl-grid-wrapper[data-theme="mecha"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before,
+        #sfl-grid-wrapper[data-theme="mirage"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before,
+        #sfl-grid-wrapper[data-theme="steampunk"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before {
+            content: '';
+            position: absolute;
+            top: calc(-500px * var(--jp-scale, 1));
+            bottom: calc(-500px * var(--jp-scale, 1));
+            left: calc(-500px * var(--jp-scale, 1));
+            right: calc(-500px * var(--jp-scale, 1));
+            background: repeating-conic-gradient(from 0deg, #ffffff 0deg 10deg, transparent 10deg 20deg);
+            border-radius: 50%;
+            animation: industrialMelt 3s forwards ease-in;
+            z-index: 6000;
+        }
+
+        @keyframes industrialMelt {
+            0% {
+                transform: scale(0) rotate(0deg);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(1.2) rotate(360deg);
+                opacity: 1;
+                box-shadow: inset 0 0 500px #fff;
+                background-color: #ffd700;
+            }
+
+            80% {
+                transform: scale(1.5) rotate(720deg);
+                opacity: 1;
+                filter: brightness(5) blur(calc(10px * var(--jp-blur, 1)));
+            }
+
+            100% {
+                transform: scale(3) rotate(1080deg);
+                opacity: 0;
+            }
+        }
+
+        /* Quality Scaler Override: Kill particle shadows on Potato */
+        #sfl-grid-wrapper[data-quality="low"] .dig-particle {
+            box-shadow: none !important;
+            filter: none !important;
+        }
+    

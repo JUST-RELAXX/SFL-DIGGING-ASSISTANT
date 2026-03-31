@@ -1,9 +1,47 @@
 // =============================================================================
-// SFL Digging Helper - Phaser Bridge (v11)
-// Auto-alignment using hardcoded grid constants from SFL's BeachScene.ts
+// SFL Digging Helper - Phaser Bridge (v11.2)
+// Auto-alignment + live dig interception
 // =============================================================================
 (function() {
     'use strict';
+
+    // =========================================================================
+    // FETCH INTERCEPTOR — Auto-detect grid updates from the game's own API
+    // When user digs, SFL sends a request → response has updated grid → we
+    // post it to content.js so the overlay updates instantly. Zero extra calls.
+    // =========================================================================
+    let lastGridSnapshot = '[]';
+
+    const originalFetch = window.fetch;
+    window.fetch = async function(...args) {
+        const response = await originalFetch.apply(this, args);
+        try {
+            const url = typeof args[0] === 'string' ? args[0] : args[0]?.url;
+            if (url && url.includes('api.sunflower-land.com')) {
+                const clone = response.clone();
+                const data = await clone.json();
+
+                // Dig deep into the response to find desert.digging.grid
+                const state = data?.farm || data?.state || data;
+                const grid = state?.desert?.digging?.grid;
+
+                if (grid) {
+                    const snapshot = JSON.stringify(grid);
+                    // Only post if the grid actually changed (new dig happened)
+                    if (snapshot !== lastGridSnapshot) {
+                        lastGridSnapshot = snapshot;
+                        window.postMessage({
+                            type: 'SFL_GRID_AUTO_UPDATE',
+                            grid: grid,
+                            patterns: state?.desert?.digging?.patterns || []
+                        }, '*');
+                        console.log('[SFL Bridge] Grid auto-updated:', grid.length, 'dug cells');
+                    }
+                }
+            }
+        } catch(e) { /* ignore non-JSON responses */ }
+        return response;
+    };
 
     // =========================================================================
     // KNOWN GAME CONSTANTS (from sunflower-land source code)
@@ -113,6 +151,38 @@
             camEl.dataset.cih = canvas.height;
             camEl.dataset.found = '1';
             camEl.dataset.ts = String(++writeCounter);
+
+            // --- Player position + silhouette tracking ---
+            try {
+                const player = scene.currentPlayer || scene.player;
+                if (player && typeof player.x === 'number') {
+                    const sx = rect.width / canvas.width;
+                    const sy = rect.height / canvas.height;
+                    const screenX = (player.x - cam.worldView.x) * cam.zoom * sx + cam.x * sx + rect.left;
+                    const screenY = (player.y - cam.worldView.y) * cam.zoom * sy + cam.y * sy + rect.top;
+                    camEl.dataset.px = screenX.toFixed(1);
+                    camEl.dataset.py = screenY.toFixed(1);
+                    camEl.dataset.pf = '1';
+                    camEl.dataset.pScale = (cam.zoom * sx).toFixed(4);
+
+                    // Pixel-perfect silhouette
+                    const sil = getPlayerSilhouette(player);
+                    if (sil && sil.polygon.length > 2) {
+                        camEl.dataset.pPoly = JSON.stringify(sil.polygon);
+                        camEl.dataset.pFw = sil.frameW;
+                        camEl.dataset.pFh = sil.frameH;
+                        // Check ALL possible flip methods
+                        const isFlipped = sil.flipX || player.scaleX < 0 || (player.sprite && player.sprite.scaleX < 0) || player.direction === 'left' || player.directionFacing === 'left';
+                        camEl.dataset.pFlip = isFlipped ? '1' : '0';
+                        camEl.dataset.pSil = '1';
+                    } else {
+                        camEl.dataset.pSil = '0';
+                    }
+                } else {
+                    camEl.dataset.pf = '0';
+                    camEl.dataset.pSil = '0';
+                }
+            } catch(pe) { camEl.dataset.pf = '0'; camEl.dataset.pSil = '0'; }
         } catch(e) {
             camEl.dataset.found = '0';
         }
@@ -132,7 +202,7 @@
     function startInterval(intervalMs) {
         stopAll();
         writeCameraToDOM();
-        // Always use rAF — writeCameraToDOM just reads 2 floats from a live
+        // Always use rAF ΓÇö writeCameraToDOM just reads 2 floats from a live
         // Phaser camera, essentially zero overhead. This ensures content.js
         // gets fresh data every frame for instant wall-collision detection.
         activeMode = 'raf';
@@ -188,5 +258,97 @@
         }
     });
 
-    console.log('[SFL Bridge] Bridge loaded. Grid at world(' + GRID_WORLD_X + ',' + GRID_WORLD_Y + ')');
+    // =========================================================================
+    // PIXEL-PERFECT SILHOUETTE ENGINE (Convex Hull)
+    // Extracts character outline from sprite alpha, caches per animation frame
+    // =========================================================================
+    const silhouetteCache = new Map();
+
+    function getPlayerSilhouette(player) {
+        if (!player || !player.sprite || !player.sprite.frame) return null;
+        const sprite = player.sprite;
+        const frame = sprite.frame;
+        const cacheKey = `${sprite.texture.key}-${frame.name}`;
+
+        if (silhouetteCache.has(cacheKey)) {
+            return { polygon: silhouetteCache.get(cacheKey), frameW: frame.cutWidth, frameH: frame.cutHeight, flipX: sprite.flipX };
+        }
+
+        try {
+            const srcImage = sprite.texture.source[0]?.image;
+            if (!srcImage || !srcImage.width) return null;
+
+            const w = frame.cutWidth, h = frame.cutHeight;
+            const c = document.createElement('canvas');
+            c.width = w; c.height = h;
+            const ctx = c.getContext('2d');
+            ctx.drawImage(srcImage, frame.cutX, frame.cutY, w, h, 0, 0, w, h);
+
+            const imgData = ctx.getImageData(0, 0, w, h);
+            const hull = extractSilhouette(imgData.data, w, h);
+
+            silhouetteCache.set(cacheKey, hull);
+            console.log(`[SFL Bridge] Silhouette: ${cacheKey} → ${hull.length} hull pts (frame ${w}x${h})`);
+            return { polygon: hull, frameW: w, frameH: h, flipX: sprite.flipX };
+        } catch(e) {
+            console.warn('[SFL Bridge] Silhouette error:', e.message);
+            silhouetteCache.set(cacheKey, []);
+            return null;
+        }
+    }
+
+    // Radial Sweep — casts rays from centroid, finds outermost opaque pixel per angle
+    function extractSilhouette(pixels, w, h) {
+        const THRESH = 20;
+        const PAD = 1;
+        const NUM_RAYS = 48; // every 7.5°
+
+        // Skip top 15% (name label) and bottom 20% (shadow)
+        const yStart = Math.floor(h * 0.15);
+        const yEnd = Math.ceil(h * 0.80);
+
+        // Build binary alpha map + find centroid
+        const opaque = new Uint8Array(w * h);
+        let cx = 0, cy = 0, count = 0;
+        for (let y = yStart; y < yEnd; y++) {
+            for (let x = 0; x < w; x++) {
+                if (pixels[(y * w + x) * 4 + 3] > THRESH) {
+                    opaque[y * w + x] = 1;
+                    cx += x; cy += y; count++;
+                }
+            }
+        }
+        if (count < 10) return [];
+        cx /= count; cy /= count;
+
+        const maxR = Math.max(w, h);
+        const points = [];
+
+        for (let i = 0; i < NUM_RAYS; i++) {
+            const angle = (i / NUM_RAYS) * Math.PI * 2;
+            const dx = Math.cos(angle), dy = Math.sin(angle);
+            let bestX = cx, bestY = cy, bestDist = 0;
+
+            // Walk outward from center
+            for (let r = 1; r < maxR; r++) {
+                const px = Math.round(cx + dx * r);
+                const py = Math.round(cy + dy * r);
+                if (px < 0 || px >= w || py < yStart || py >= yEnd) break;
+                if (opaque[py * w + px]) {
+                    bestX = px; bestY = py; bestDist = r;
+                }
+            }
+            if (bestDist > 0) {
+                // Add padding outward
+                points.push({
+                    x: bestX + dx * PAD,
+                    y: bestY + dy * PAD
+                });
+            }
+        }
+
+        return points;
+    }
+
+    console.log('[SFL Bridge] Bridge loaded (v11.3 + Silhouette Engine). Grid at world(' + GRID_WORLD_X + ',' + GRID_WORLD_Y + ')');
 })();
