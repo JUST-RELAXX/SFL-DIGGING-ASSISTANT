@@ -599,6 +599,27 @@ function removeGrid() {
 }
 
 // =============================================================================
+// ITEM TIER CLASSIFICATION — determines animation intensity
+// =============================================================================
+function getItemTier(itemName) {
+    const name = (itemName || '').toLowerCase();
+    if (name.includes('sand') || name.includes('seaweed')) return 'sand';
+    if (name.includes('crab')) return 'crab';
+    if (name.includes('bone')) return 'bone';
+    if (name.includes('ammonite') || name.includes('shell') || name.includes('artefact') ||
+        name.includes('hieroglyph') || name.includes('map') || name.includes('puzzle')) return 'rare';
+    return 'misc'; // Coins, wooden compass, old bottle, etc.
+}
+
+const TIER_CONFIG = {
+    sand:  { durationMult: 0.4, particleMult: 0.3 },   // Quick, minimal
+    misc:  { durationMult: 0.7, particleMult: 0.6 },   // Standard
+    crab:  { durationMult: 0.85, particleMult: 1.0 },   // Enhanced
+    bone:  { durationMult: 1.0, particleMult: 1.5 },    // Strong
+    rare:  { durationMult: 1.5, particleMult: 2.5 },    // EPIC
+};
+
+// =============================================================================
 // DIG RESULT HANDLER — plays reveal animation when game confirms a dig
 // =============================================================================
 function handleDigResult(row, col, item) {
@@ -609,31 +630,38 @@ function handleDigResult(row, col, item) {
     if (cell.dataset.tileState === 'revealed') return;
 
     const perf = PERF_CONFIG[perfTier] || PERF_CONFIG.high;
+    const tier = getItemTier(item);
+    const tierConf = TIER_CONFIG[tier];
 
-    // Transition: PENDING → DIGGING (uses theme's native dig animation)
+    // Transition: PENDING → DIGGING (uses theme's native dig animation + tier class)
     cell.dataset.tileState = 'digging';
+    cell.dataset.itemTier = tier;
     cell.classList.remove('tile-pending');
-    cell.classList.add('digging');
+    cell.classList.add('digging', `item-${tier}`);
 
     // Add dig-fx-container for themes that use it
     const fx = document.createElement('div');
     fx.className = 'dig-fx-container';
     cell.appendChild(fx);
 
-    // Spawn reveal particles (scaled by perf tier)
-    if (perf.particles > 0) spawnThemeParticles(cell, currentTheme, perf.particles);
+    // Spawn reveal particles (scaled by perf tier × item tier)
+    const particleCount = Math.round(perf.particles * tierConf.particleMult);
+    if (particleCount > 0) spawnThemeParticles(cell, currentTheme, particleCount);
+
+    // Animation duration scaled by item tier
+    const animDuration = Math.round(perf.animDuration * tierConf.durationMult);
 
     // After animation, mark as REVEALED (transparent — shows real game tile)
     setTimeout(() => {
-        cell.classList.remove('digging');
+        cell.classList.remove('digging', `item-${tier}`);
         cell.classList.add('dug', 'tile-revealed');
         cell.dataset.tileState = 'revealed';
         // Clean up fx container
         const fxEl = cell.querySelector('.dig-fx-container');
         if (fxEl) fxEl.remove();
-    }, perf.animDuration);
+    }, animDuration);
 
-    console.log(`[Grid] Tile (${col},${row}) digging → revealed: ${item}`);
+    console.log(`[Grid] Tile (${col},${row}) digging [${tier}] → revealed: ${item}`);
 }
 
 function applyGridColors(data) {
@@ -751,8 +779,10 @@ function applyTheme(theme) {
     const cells = wrapper.querySelectorAll('.sfl-grid-cell');
     cells.forEach((cell, i) => {
         // Reset tile states on theme switch
-        cell.classList.remove('digging', 'dug', 'tile-pending', 'tile-revealing', 'tile-revealed');
+        cell.classList.remove('digging', 'dug', 'tile-pending', 'tile-revealing', 'tile-revealed',
+            'item-sand', 'item-crab', 'item-bone', 'item-rare', 'item-misc');
         cell.dataset.tileState = '';
+        delete cell.dataset.itemTier;
         // Clean up any FX container children
         const fx = cell.querySelector('.dig-fx-container');
         if (fx) fx.remove();

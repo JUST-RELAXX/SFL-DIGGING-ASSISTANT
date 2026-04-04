@@ -37,6 +37,15 @@
         #sfl-grid-wrapper[data-theme]::before,
         #sfl-grid-wrapper[data-theme]::after {
             will-change: transform, filter, opacity;
+            /* CRITICAL: Only show edge effects at borders, NOT center.
+               Without this, pseudo-elements paint behind transparent tiles,
+               blocking the game from showing through revealed cells. */
+            -webkit-mask-image:
+                linear-gradient(to bottom, black 0, black 10px, transparent 55px, transparent calc(100% - 55px), black calc(100% - 10px), black 100%),
+                linear-gradient(to right, black 0, black 10px, transparent 55px, transparent calc(100% - 55px), black calc(100% - 10px), black 100%);
+            mask-image:
+                linear-gradient(to bottom, black 0, black 10px, transparent 55px, transparent calc(100% - 55px), black calc(100% - 10px), black 100%),
+                linear-gradient(to right, black 0, black 10px, transparent 55px, transparent calc(100% - 55px), black calc(100% - 10px), black 100%);
         }
 
         #sfl-grid-wrapper[data-theme] #sfl-master-grid {
@@ -289,6 +298,107 @@
                 0 0 15px 5px #000000,
                 inset 0 5px 10px rgba(0, 0, 0, 1);
             opacity: 0.8;
+        }
+
+        /* ==========================================================================
+           ITEM TIER ANIMATIONS — different visual intensity by item rarity
+           ========================================================================== */
+
+        /* TIER: SAND — Quick, minimal fade */
+        .sfl-grid-cell.digging.item-sand {
+            animation-duration: 1s !important;
+            filter: brightness(0.8);
+        }
+
+        /* TIER: MISC — Standard animation (coins, compass, bottles) */
+        .sfl-grid-cell.digging.item-misc {
+            animation-duration: 1.8s !important;
+        }
+        .sfl-grid-cell.digging.item-misc .dig-fx-container {
+            box-shadow: 0 0 20px rgba(100, 180, 255, 0.5);
+        }
+
+        /* TIER: CRAB — Enhanced with warm glow */
+        .sfl-grid-cell.digging.item-crab {
+            animation-duration: 2.2s !important;
+        }
+        .sfl-grid-cell.digging.item-crab .dig-fx-container {
+            box-shadow:
+                0 0 30px rgba(234, 179, 8, 0.7),
+                0 0 60px rgba(234, 179, 8, 0.3);
+            animation: tierCrabGlow 0.6s ease-in-out infinite alternate;
+        }
+
+        @keyframes tierCrabGlow {
+            0% { box-shadow: 0 0 30px rgba(234, 179, 8, 0.7), 0 0 60px rgba(234, 179, 8, 0.3); }
+            100% { box-shadow: 0 0 50px rgba(234, 179, 8, 1), 0 0 90px rgba(234, 179, 8, 0.5); }
+        }
+
+        /* TIER: BONE — Strong pulsing green glow */
+        .sfl-grid-cell.digging.item-bone {
+            animation-duration: 2.5s !important;
+            z-index: 150 !important;
+        }
+        .sfl-grid-cell.digging.item-bone .dig-fx-container {
+            box-shadow:
+                0 0 40px rgba(34, 197, 94, 0.8),
+                0 0 80px rgba(34, 197, 94, 0.4),
+                inset 0 0 20px rgba(34, 197, 94, 0.3);
+            animation: tierBoneGlow 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes tierBoneGlow {
+            0% {
+                box-shadow: 0 0 40px rgba(34, 197, 94, 0.8), 0 0 80px rgba(34, 197, 94, 0.4);
+                transform: scale(1);
+            }
+            100% {
+                box-shadow: 0 0 60px rgba(34, 197, 94, 1), 0 0 120px rgba(34, 197, 94, 0.6);
+                transform: scale(1.05);
+            }
+        }
+
+        /* TIER: RARE — EPIC animation (Ammonite Shell, Artefacts, Hieroglyphs) */
+        .sfl-grid-cell.digging.item-rare {
+            animation-duration: 3.5s !important;
+            z-index: 200 !important;
+        }
+        .sfl-grid-cell.digging.item-rare .dig-fx-container {
+            box-shadow:
+                0 0 60px rgba(180, 0, 255, 1),
+                0 0 120px rgba(255, 0, 200, 0.6),
+                0 0 200px rgba(100, 0, 255, 0.3),
+                inset 0 0 30px rgba(255, 255, 255, 0.2);
+            animation: tierRareGlow 0.4s ease-in-out infinite alternate;
+        }
+
+        /* Rare item: entire cell pulses with epic glow */
+        .sfl-grid-cell.digging.item-rare::before {
+            content: '' !important;
+            position: absolute !important;
+            inset: -15px !important;
+            border-radius: 50% !important;
+            background: radial-gradient(circle, rgba(255, 0, 255, 0.3), transparent 70%) !important;
+            animation: tierRarePulse 0.8s ease-in-out infinite alternate !important;
+            z-index: -1 !important;
+            pointer-events: none !important;
+            opacity: 1 !important;
+        }
+
+        @keyframes tierRareGlow {
+            0% {
+                box-shadow: 0 0 60px rgba(180, 0, 255, 1), 0 0 120px rgba(255, 0, 200, 0.6), 0 0 200px rgba(100, 0, 255, 0.3);
+                filter: brightness(1.5) hue-rotate(0deg);
+            }
+            100% {
+                box-shadow: 0 0 80px rgba(255, 0, 200, 1), 0 0 160px rgba(180, 0, 255, 0.8), 0 0 250px rgba(255, 100, 255, 0.5);
+                filter: brightness(2) hue-rotate(30deg);
+            }
+        }
+
+        @keyframes tierRarePulse {
+            0% { transform: scale(1); opacity: 0.6; }
+            100% { transform: scale(1.3); opacity: 1; }
         }
 
         /* --- Particle DOM Elements (Spawned by JS) --- */
