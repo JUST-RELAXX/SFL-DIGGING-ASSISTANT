@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modeBtns = document.querySelectorAll('.mode-btn');
     const themeSelector = document.getElementById('themeSelector');
     const auraToggle = document.getElementById('auraToggle');
+    const perfTuning = document.getElementById('perfTuning');
 
     let currentMode = 'mid';
 
@@ -26,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
         statusDiv.style.color = color;
     }
 
-    chrome.storage.local.get(['sflFarmId', 'walkSpeed', 'deviceMode', 'domIntervalMs', 'gridTheme', 'auraEnabled'], (r) => {
+    chrome.storage.local.get(['sflFarmId', 'walkSpeed', 'deviceMode', 'domIntervalMs', 'gridTheme', 'auraEnabled', 'perfTier'], (r) => {
         if (r.sflFarmId) farmInput.value = r.sflFarmId;
         if (r.walkSpeed !== undefined) {
             speedSlider.value = r.walkSpeed;
@@ -40,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (r.gridTheme) themeSelector.value = r.gridTheme;
         if (r.auraEnabled !== undefined) auraToggle.checked = r.auraEnabled;
+        if (r.perfTier) perfTuning.value = r.perfTier;
         updateModeUI(currentMode);
         updateSettingsVisibility();
     });
@@ -173,6 +175,15 @@ document.addEventListener('DOMContentLoaded', () => {
         sendCommand('setGridTheme', { theme });
         const label = themeSelector.options[themeSelector.selectedIndex].text;
         logStatus(`Theme: ${label}`, '#a5b4fc');
+    });
+
+    // --- Performance Tuning ---
+    perfTuning.addEventListener('change', (e) => {
+        const tier = e.target.value;
+        chrome.storage.local.set({ perfTier: tier });
+        sendCommand('setPerformance', { tier });
+        const label = perfTuning.options[perfTuning.selectedIndex].text;
+        logStatus(`FX: ${label}`, '#a5b4fc');
     });
 
     // --- API Sync ---

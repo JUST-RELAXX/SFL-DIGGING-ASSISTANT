@@ -12,6 +12,7 @@
     transition: box-shadow 0.3s ease, border 0.3s ease;
     transform-style: preserve-3d;
     perspective: 1000px;
+    overflow: visible;
 }
 
 /* --- 10x10 Grid Container (child of wrapper) --- */
@@ -28,9 +29,16 @@
 }
 
 .sfl-mode-locked {
-    pointer-events: none;
+    pointer-events: none; /* Default: let clicks through to game */
     background: rgba(0, 0, 0, 0.1);
     border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+/* When a theme is active, wrapper must accept clicks + clear default styling */
+#sfl-grid-wrapper[data-theme].sfl-mode-locked {
+    pointer-events: auto;
+    background: transparent;
+    border: none;
 }
 
 .sfl-mode-unlocked {
@@ -42,6 +50,13 @@
     backdrop-filter: blur(2px);
 }
 
+#sfl-grid-wrapper[data-theme].sfl-mode-unlocked {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+}
+
 .sfl-mode-unlocked:active {
     cursor: grabbing;
 }
@@ -50,8 +65,14 @@
 .sfl-grid-cell {
     border: 1px solid rgba(255, 255, 255, 0.15);
     box-sizing: border-box;
-    pointer-events: none;
+    pointer-events: none; /* Default: pass clicks through to game */
     transition: background-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+/* Themed mode overrides: cells become interactive */
+#sfl-grid-wrapper[data-theme] .sfl-grid-cell {
+    pointer-events: all;
+    cursor: crosshair;
 }
 
 .sfl-cell-sand {
@@ -82,8 +103,8 @@
     100% { box-shadow: 0 0 25px rgba(34, 197, 94, 0.9), inset 0 0 20px rgba(34, 197, 94, 0.7); }
 }
 
-/* --- Dug Cell (crater look — auto-updated from game) --- */
-.sfl-cell-dug {
+/* --- Dug Cell (crater look — default grid only, not themed) --- */
+#sfl-grid-wrapper:not([data-theme]) .sfl-cell-dug {
     opacity: 0.35 !important;
     background-color: rgba(0, 0, 0, 0.7) !important;
     box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.9) !important;
@@ -91,7 +112,7 @@
     position: relative;
 }
 
-.sfl-cell-dug::after {
+#sfl-grid-wrapper:not([data-theme]) .sfl-cell-dug::after {
     content: '✓';
     position: absolute;
     top: 50%;

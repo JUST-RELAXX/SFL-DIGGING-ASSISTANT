@@ -11,6 +11,7 @@
     // post it to content.js so the overlay updates instantly. Zero extra calls.
     // =========================================================================
     let lastGridSnapshot = '[]';
+    let previousGridLength = -1; // -1 = first load (skip dig results for initial state)
 
     const originalFetch = window.fetch;
     window.fetch = async function(...args) {
@@ -21,14 +22,32 @@
                 const clone = response.clone();
                 const data = await clone.json();
 
-                // Dig deep into the response to find desert.digging.grid
                 const state = data?.farm || data?.state || data;
                 const grid = state?.desert?.digging?.grid;
 
                 if (grid) {
                     const snapshot = JSON.stringify(grid);
-                    // Only post if the grid actually changed (new dig happened)
                     if (snapshot !== lastGridSnapshot) {
+                        // On first load, set baseline — don't fire dig results for existing tiles
+                        if (previousGridLength === -1) {
+                            previousGridLength = grid.length;
+                            console.log(`[SFL Bridge] Initial grid baseline: ${grid.length} tiles already dug`);
+                        } else if (grid.length > previousGridLength) {
+                            // Only fire for truly NEW digs (usually 1 at a time)
+                            const newTiles = grid.slice(previousGridLength);
+                            newTiles.forEach(tile => {
+                                const itemName = tile.name || (tile.items ? Object.keys(tile.items)[0] : 'Sand');
+                                window.postMessage({
+                                    type: 'SFL_DIG_RESULT',
+                                    row: tile.y,
+                                    col: tile.x,
+                                    item: itemName
+                                }, '*');
+                                console.log(`[SFL Bridge] Dig result: (${tile.x},${tile.y}) = ${itemName}`);
+                            });
+                        }
+                        previousGridLength = grid.length;
+
                         lastGridSnapshot = snapshot;
                         window.postMessage({
                             type: 'SFL_GRID_AUTO_UPDATE',
@@ -255,6 +274,45 @@
         if (e.data.type === 'SFL_GRID_STOP_TRACKING') {
             stopAll();
             console.log('[SFL Bridge] Stopped.');
+        }
+
+        // Click forwarding: simulate a click on the game canvas at the specified grid tile
+        if (e.data.type === 'SFL_GRID_CLICK_TILE') {
+            const { row, col } = e.data;
+            if (!game) return;
+            try {
+                const canvas = game.canvas;
+                if (!canvas) return;
+                const scenes = game.scene.getScenes(true);
+                const scene = scenes?.find(s => s.cameras && s.cameras.main);
+                if (!scene) return;
+                const cam = scene.cameras.main;
+
+                // World position of the tile center
+                const worldX = GRID_WORLD_X + col * GRID_CELL_SIZE + GRID_CELL_SIZE / 2;
+                const worldY = GRID_WORLD_Y + row * GRID_CELL_SIZE + GRID_CELL_SIZE / 2;
+
+                // Convert world → canvas pixel coords
+                const canvasX = (worldX - cam.worldView.x) * cam.zoom + cam.x;
+                const canvasY = (worldY - cam.worldView.y) * cam.zoom + cam.y;
+
+                // Convert canvas → screen coords
+                const rect = canvas.getBoundingClientRect();
+                const sx = rect.width / canvas.width;
+                const sy = rect.height / canvas.height;
+                const screenX = canvasX * sx + rect.left;
+                const screenY = canvasY * sy + rect.top;
+
+                // Simulate click
+                const opts = { bubbles: true, clientX: screenX, clientY: screenY, pointerId: 1, pointerType: 'mouse' };
+                canvas.dispatchEvent(new PointerEvent('pointerdown', opts));
+                setTimeout(() => {
+                    canvas.dispatchEvent(new PointerEvent('pointerup', opts));
+                }, 50);
+                console.log(`[SFL Bridge] Clicked tile (${col},${row}) → canvas(${canvasX.toFixed(0)},${canvasY.toFixed(0)})`);
+            } catch(err) {
+                console.warn('[SFL Bridge] Click forwarding error:', err.message);
+            }
         }
     });
 

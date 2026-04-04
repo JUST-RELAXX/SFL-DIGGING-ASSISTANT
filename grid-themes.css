@@ -22,14 +22,16 @@
            3. BASE GRID ARCHITECTURE (only when a theme is active)
            ========================================================================== */
         #sfl-grid-wrapper[data-theme] {
-            transform-style: preserve-3d;
-            opacity: 0.65;
-            mix-blend-mode: screen;
+            /* No 3D transforms — they cause clipping of ::before/::after edge effects */
+            transform-style: flat;
+            perspective: none;
+            opacity: 1;
             transition: opacity 0.3s ease;
+            overflow: visible;
         }
 
         #sfl-grid-wrapper[data-theme]:hover {
-            opacity: 0.9;
+            opacity: 1;
         }
 
         #sfl-grid-wrapper[data-theme]::before,
@@ -39,13 +41,17 @@
 
         #sfl-grid-wrapper[data-theme] #sfl-master-grid {
             gap: 4px;
-            background-color: rgba(5, 5, 8, 0.6);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            /* TRANSPARENT: so revealed tiles show the game, not the theme bg */
+            background-color: transparent !important;
+            background: transparent !important;
+            /* No backdrop-filter: it blurs game behind ALL tiles including revealed */
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            /* No inset shadows: they darken the transparent grid, blocking game visibility */
+            box-shadow: none !important;
             border-radius: 12px;
             padding: 6px;
             transition: all var(--transition-speed-medium) ease;
-            transform-style: preserve-3d;
 
             /* Mouse tracking variables updated by JS */
             --mouse-x: 50%;
@@ -75,7 +81,8 @@
         #sfl-grid-wrapper[data-theme] .sfl-grid-cell {
             position: relative;
             border-radius: 6px;
-            background-color: rgba(255, 255, 255, 0.05);
+            /* Tile bg more opaque to compensate for transparent grid */
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.35);
             border: 1px solid rgba(255, 255, 255, 0.1);
             cursor: crosshair;
             transition: all var(--transition-speed-fast) var(--ease-smooth);
@@ -83,6 +90,7 @@
             transform-style: preserve-3d;
             will-change: transform, filter, box-shadow, background-color, opacity;
             contain: layout style;
+            pointer-events: all;
 
             /* Entry Animation Initial State */
             opacity: 0;
@@ -105,6 +113,83 @@
                 opacity: 1;
                 transform: scale(1) translateY(0) translateZ(0);
             }
+        }
+
+        /* ==========================================================================
+           TILE STATE CLASSES
+           ========================================================================== */
+
+        /* PENDING: waiting for game to respond after click */
+        #sfl-grid-wrapper[data-theme] .tile-pending {
+            animation: tilePulse 0.6s ease-in-out infinite alternate !important;
+            opacity: 1 !important;
+            cursor: wait !important;
+        }
+        @keyframes tilePulse {
+            0% { transform: scale(1); filter: brightness(1.2); }
+            100% { transform: scale(0.95); filter: brightness(0.8); }
+        }
+
+        /* REVEALING: item found — play reveal animation */
+        #sfl-grid-wrapper[data-theme] .tile-revealing {
+            animation: tileReveal 0.8s var(--ease-bounce) forwards !important;
+            z-index: 20;
+        }
+        @keyframes tileReveal {
+            0% { transform: scale(1) rotateY(0); opacity: 1; }
+            40% { transform: scale(1.3) rotateY(90deg); opacity: 1; filter: brightness(3); }
+            70% { transform: scale(1.1) rotateY(180deg); opacity: 0.6; }
+            100% { transform: scale(1) rotateY(360deg); opacity: 0; }
+        }
+
+        /* Item-specific reveal colors */
+        #sfl-grid-wrapper[data-theme] .tile-revealing.item-sand {
+            box-shadow: 0 0 20px rgba(255, 200, 50, 0.8) !important;
+        }
+        #sfl-grid-wrapper[data-theme] .tile-revealing.item-crab {
+            box-shadow: 0 0 30px rgba(255, 50, 50, 1) !important;
+            filter: hue-rotate(-20deg) brightness(2);
+        }
+        #sfl-grid-wrapper[data-theme] .tile-revealing.item-treasure {
+            box-shadow: 0 0 40px rgba(255, 215, 0, 1), 0 0 80px rgba(255, 165, 0, 0.5) !important;
+            filter: brightness(3) saturate(2);
+        }
+        #sfl-grid-wrapper[data-theme] .tile-revealing.item-rare {
+            box-shadow: 0 0 40px rgba(180, 0, 255, 1), 0 0 80px rgba(100, 0, 255, 0.5) !important;
+            filter: brightness(2.5) hue-rotate(30deg);
+        }
+        #sfl-grid-wrapper[data-theme] .tile-revealing.item-misc {
+            box-shadow: 0 0 15px rgba(100, 180, 255, 0.6) !important;
+        }
+
+        /* REVEALED: tile is transparent — shows real game underneath */
+        #sfl-grid-wrapper[data-theme] .tile-revealed,
+        #sfl-grid-wrapper[data-theme] .sfl-grid-cell.tile-revealed.dug {
+            opacity: 0 !important;
+            pointer-events: none !important;
+            transform: scale(1) !important;
+            animation: none !important;
+            background: transparent !important;
+            border-color: transparent !important;
+            box-shadow: none !important;
+            filter: none !important;
+        }
+        #sfl-grid-wrapper[data-theme] .sfl-grid-cell.tile-revealed.dug::after {
+            display: none !important;
+        }
+
+        /* ==========================================================================
+           PERFORMANCE TIERS (only reduce heavy FX — hover/glow always on)
+           ========================================================================== */
+        #sfl-grid-wrapper[data-perf="potato"] .sfl-grid-cell.digging {
+            animation-duration: 1.5s !important;
+        }
+        #sfl-grid-wrapper[data-perf="potato"] #sfl-master-grid {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+        #sfl-grid-wrapper[data-perf="potato"] #sfl-master-grid::after {
+            display: none !important;
         }
 
         /* Base Tile Types — RGB vars for thematic hooking (only when themed) */
@@ -132,15 +217,15 @@
             --base-b: 150;
         }
 
-        /* Default fallback coloring for themed tiles */
+        /* Default fallback coloring for themed tiles — higher opacity since grid bg is transparent */
         #sfl-grid-wrapper[data-theme] .sfl-grid-cell {
-            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.15);
-            border-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.3);
-            box-shadow: inset 0 0 15px rgba(var(--base-r), var(--base-g), var(--base-b), 0.2);
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.45);
+            border-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.5);
+            box-shadow: inset 0 0 15px rgba(var(--base-r), var(--base-g), var(--base-b), 0.3);
         }
 
         /* Base Hover State (only themed, overridden per-theme) */
-        #sfl-grid-wrapper[data-theme] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: scale(1.15) translateZ(20px);
             z-index: 20;
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.4);
@@ -220,7 +305,179 @@
 
 
         /* ==========================================================================
-           6. THEMES BATCH 1: CORE EFFECTS (Unrestricted & Heavy)
+           6. THEME-SPECIFIC HOVER & DIGGING ANIMATIONS (ported from presets)
+           ========================================================================== */
+
+        /* --- HELLFIRE --- */
+        #sfl-grid-wrapper[data-theme="hellfire"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.7);
+            border-color: #ffffff;
+            box-shadow: 0 0 30px rgba(var(--base-r), var(--base-g), var(--base-b), 1), 0 0 60px rgba(255, 0, 0, 0.8), inset 0 0 40px rgba(255, 100, 0, 0.9);
+            transform: scale(1.15) translateZ(30px);
+            animation: hellfireHoverShake 0.1s infinite alternate linear;
+        }
+        @keyframes hellfireHoverShake { 0% { transform: scale(1.15) translateZ(30px) translateX(-1px) rotate(-0.5deg); } 100% { transform: scale(1.15) translateZ(30px) translateX(1px) rotate(0.5deg); } }
+        #sfl-grid-wrapper[data-theme="hellfire"] .sfl-grid-cell.digging { animation: hellfireDigSequence 2.5s forwards; z-index: 50; }
+        #sfl-grid-wrapper[data-theme="hellfire"] .sfl-grid-cell.digging .dig-fx-container { opacity: 1; background: radial-gradient(circle, #ffffff, #ff4500, #8b0000); box-shadow: 0 0 80px #ff0000, 0 0 120px #ff5e00; animation: hellfireDigFx 2.5s forwards; }
+        @keyframes hellfireDigSequence { 0% { transform: scale(1); border-color: #ff0000; } 10% { transform: scale(0.9) translateY(5px); background-color: #5a0000; } 30% { transform: scale(1.2) translateY(-10px); background-color: #ff0000; } 50% { transform: scale(1.4) translateY(-20px); border-radius: 50%; } 80% { transform: scale(1.8) translateY(-30px); opacity: 1; filter: brightness(2); } 100% { transform: scale(0); opacity: 0; } }
+        @keyframes hellfireDigFx { 0% { opacity: 0; transform: scale(0); } 50% { opacity: 1; transform: scale(1.5); } 100% { opacity: 0; transform: scale(2); filter: blur(20px); } }
+
+        /* --- ELECTRIC --- */
+        #sfl-grid-wrapper[data-theme="electric"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
+            transform: scale(1.15) translateZ(15px);
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.5);
+            border-color: #ffffff;
+            box-shadow: 0 0 25px rgba(var(--base-r), var(--base-g), var(--base-b), 1), 0 0 50px rgba(255, 255, 255, 0.8), inset 0 0 30px #ffffff;
+            animation: electricHoverPulse 0.08s infinite alternate;
+        }
+        @keyframes electricHoverPulse { 0% { filter: brightness(1) drop-shadow(0 0 5px rgba(255,255,255,0.5)); } 100% { filter: brightness(1.5) drop-shadow(0 0 15px rgba(255,255,255,1)); } }
+        #sfl-grid-wrapper[data-theme="electric"] .sfl-grid-cell.digging { animation: electricDigSequence 2.5s forwards steps(10); }
+        #sfl-grid-wrapper[data-theme="electric"] .sfl-grid-cell.digging .dig-fx-container { opacity: 1; background-color: #ffffff; box-shadow: 0 0 100px #00ffff, 0 0 200px #ffffff; animation: electricDigFx 2.5s forwards; }
+        @keyframes electricDigSequence { 0% { transform: scale(1) skewX(0); } 20% { transform: scale(1.1) skewX(20deg) translateX(15px); border-color: #00ffff; } 40% { transform: scale(0.9) skewX(-20deg) translateX(-15px); border-color: #ff00ff; } 60% { transform: scale(1.3) skewY(15deg); border-color: #ffff00; } 80% { transform: scale(1.5) skewY(-15deg); border-color: #ffffff; } 100% { transform: scale(0); opacity: 0; } }
+        @keyframes electricDigFx { 0% { opacity: 0.5; filter: hue-rotate(0deg); } 50% { opacity: 1; filter: hue-rotate(180deg); transform: scale(1.2); } 100% { opacity: 0; filter: hue-rotate(360deg); transform: scale(0.5); } }
+
+        /* --- SPINNING --- */
+        #sfl-grid-wrapper[data-theme="spinning"] .sfl-grid-cell.digging { animation: spinDigSequence 2.5s ease-in forwards; }
+        #sfl-grid-wrapper[data-theme="spinning"] .sfl-grid-cell.digging .dig-fx-container { opacity: 1; background: radial-gradient(circle, #ffaa00, #ff0000, transparent); box-shadow: 0 0 50px #ff4500; animation: spinDigFx 2.5s linear forwards; }
+        @keyframes spinDigSequence { 0% { transform: scale(1) rotate(0deg); border-radius: 6px; } 30% { transform: scale(0.8) rotate(180deg); border-radius: 50%; } 70% { transform: scale(1.5) rotate(720deg); border-radius: 50%; } 100% { transform: scale(0) rotate(1080deg); opacity: 0; } }
+        @keyframes spinDigFx { 0% { opacity: 0; transform: scale(0); } 70% { opacity: 1; transform: scale(1.5); } 100% { opacity: 0; transform: scale(3); filter: blur(15px); } }
+
+        /* --- CYBERPUNK --- */
+        #sfl-grid-wrapper[data-theme="cyberpunk"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
+            border-radius: 0; transform: scale(1.1) skewX(-10deg) translateZ(10px);
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.6);
+            box-shadow: 8px 8px 0px rgba(255, 0, 255, 0.6), -8px -8px 0px rgba(0, 255, 255, 0.6); border-color: #ffffff;
+        }
+        #sfl-grid-wrapper[data-theme="cyberpunk"] .sfl-grid-cell.digging { animation: cyberDigSequence 2.5s linear forwards; background-color: #ffffff; }
+        #sfl-grid-wrapper[data-theme="cyberpunk"] .sfl-grid-cell.digging .dig-fx-container { opacity: 1; background: linear-gradient(90deg, #00ffff, #ff00ff, #00ffff); background-size: 200% 100%; animation: cyberDigFx 2.5s linear forwards; }
+        @keyframes cyberDigSequence { 0% { transform: scale(1) skew(0); opacity: 1; } 10% { transform: scale(1.1) skew(30deg) translateX(20px); } 20% { transform: scale(0.9) skew(-30deg) translateX(-20px); } 50% { transform: scale(1.5); filter: invert(1); } 60% { transform: scale(1.5); filter: invert(0); } 80% { transform: scale(2) scaleY(0.1); opacity: 1; } 100% { transform: scale(0); opacity: 0; } }
+        @keyframes cyberDigFx { 0% { background-position: 0% 0; } 100% { background-position: 200% 0; } }
+
+        /* --- TOXIC --- */
+        #sfl-grid-wrapper[data-theme="toxic"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
+            transform: scale(1.2) translateY(-8px) translateZ(10px);
+            border-radius: 50%;
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.7);
+            box-shadow: 0 -15px 30px rgba(var(--base-r), var(--base-g), var(--base-b), 1), inset 0 0 40px rgba(var(--base-r), var(--base-g), var(--base-b), 0.9); border: 2px solid #ffffff;
+        }
+        #sfl-grid-wrapper[data-theme="toxic"] .sfl-grid-cell.digging { animation: toxicDigSequence 2.5s ease-in forwards; }
+        #sfl-grid-wrapper[data-theme="toxic"] .sfl-grid-cell.digging .dig-fx-container { opacity: 1; background-color: #39ff14; border-radius: 50%; box-shadow: 0 0 50px #39ff14, 0 0 100px #228b22; animation: toxicDigFx 2.5s ease-in forwards; }
+        @keyframes toxicDigSequence { 0% { transform: scale(1) translateY(0); } 20% { transform: scale(1.3) translateY(-15px); border-radius: 50%; } 60% { transform: scale(1.8) translateY(10px); border-radius: 40% 60% 70% 30%; } 80% { transform: scale(2) translateY(30px) scaleY(0.3); opacity: 1; } 100% { transform: scale(0) translateY(50px); opacity: 0; } }
+        @keyframes toxicDigFx { 0% { opacity: 0; filter: hue-rotate(0deg); } 50% { opacity: 1; filter: hue-rotate(90deg); } 100% { opacity: 0; filter: hue-rotate(180deg); } }
+
+        /* --- VOID --- */
+        #sfl-grid-wrapper[data-theme="void"] .sfl-grid-cell.digging { animation: voidDigSequence 2.5s ease-in forwards; }
+        #sfl-grid-wrapper[data-theme="void"] .sfl-grid-cell.digging .dig-fx-container { opacity: 1; background: radial-gradient(circle, #4b0082, #000); box-shadow: 0 0 100px #8a2be2; animation: voidDigFx 2.5s forwards; }
+        @keyframes voidDigSequence { 0% { transform: scale(1); } 30% { transform: scale(0.3); border-radius: 50%; filter: blur(2px); } 60% { transform: scale(0.1); } 100% { transform: scale(0); opacity: 0; } }
+        @keyframes voidDigFx { 0% { opacity: 0; transform: scale(0); } 50% { opacity: 1; transform: scale(2); } 100% { opacity: 0; transform: scale(0); filter: blur(30px); } }
+
+        /* --- AURORA --- */
+        #sfl-grid-wrapper[data-theme="aurora"] .sfl-grid-cell.digging { animation: auroraDigSequence 2.5s ease-out forwards; }
+        #sfl-grid-wrapper[data-theme="aurora"] .sfl-grid-cell.digging .dig-fx-container { opacity: 1; background: linear-gradient(45deg, #00ffcc, #ff69b4, #00ffcc); animation: auroraDigFx 2.5s linear forwards; }
+        @keyframes auroraDigSequence { 0% { transform: scale(1); filter: hue-rotate(0); } 25% { transform: scale(1.2) translateY(-10px); filter: hue-rotate(90deg); } 50% { transform: scale(1.4) translateY(-20px); filter: hue-rotate(180deg); } 75% { transform: scale(1.6); filter: hue-rotate(270deg); opacity: 0.6; } 100% { transform: scale(0); opacity: 0; filter: hue-rotate(360deg); } }
+        @keyframes auroraDigFx { 0% { opacity: 0; } 50% { opacity: 1; transform: scale(1.5); } 100% { opacity: 0; transform: scale(2); filter: blur(20px); } }
+
+        /* --- MATRIX --- */
+        #sfl-grid-wrapper[data-theme="matrix"] .sfl-grid-cell.digging { animation: matrixDigSequence 2.5s steps(15) forwards; }
+        @keyframes matrixDigSequence { 0% { transform: scale(1); opacity: 1; } 20% { transform: scale(1.05) translateY(-5px); opacity: 0.8; } 40% { transform: scale(1.1) translateY(-3px); opacity: 0.6; } 60% { transform: scale(1) translateY(0); opacity: 0.4; } 80% { transform: scale(0.95); opacity: 0.2; } 100% { transform: scale(0.9); opacity: 0; } }
+
+        /* --- HOLY --- */
+        #sfl-grid-wrapper[data-theme="holy"] .sfl-grid-cell.digging { animation: holyDigSequence 2.5s ease-out forwards; }
+        #sfl-grid-wrapper[data-theme="holy"] .sfl-grid-cell.digging .dig-fx-container { opacity: 1; background: radial-gradient(circle, #ffffff, #ffd700); box-shadow: 0 0 80px #ffd700; animation: holyDigFx 2.5s forwards; }
+        @keyframes holyDigSequence { 0% { transform: scale(1); filter: brightness(1); } 30% { transform: scale(1.3) translateY(-20px); filter: brightness(3); } 60% { transform: scale(1.5) translateY(-30px); filter: brightness(5); opacity: 0.8; } 100% { transform: scale(0) translateY(-50px); opacity: 0; } }
+        @keyframes holyDigFx { 0% { opacity: 0; transform: scale(0); } 40% { opacity: 1; transform: scale(2); filter: brightness(3); } 100% { opacity: 0; transform: scale(3); filter: blur(20px) brightness(5); } }
+
+        /* --- BLOOD --- */
+        #sfl-grid-wrapper[data-theme="blood"] .sfl-grid-cell.digging { animation: bloodDigSequence 2.5s ease-in forwards; }
+        @keyframes bloodDigSequence { 0% { transform: scale(1); } 20% { transform: scale(1.2); background-color: #8b0000; } 50% { transform: scale(1.5) translateY(10px) scaleY(0.5); } 80% { transform: scale(2) translateY(30px) scaleY(0.2); opacity: 0.8; } 100% { transform: scale(0) translateY(50px); opacity: 0; } }
+
+        /* --- ABYSS --- */
+        #sfl-grid-wrapper[data-theme="abyss"] .sfl-grid-cell.digging { animation: abyssDigSequence 2.5s ease-in forwards; }
+        @keyframes abyssDigSequence { 0% { transform: scale(1); } 30% { transform: scale(0.8) translateY(10px); filter: brightness(0.5); } 60% { transform: scale(0.4) translateY(30px); filter: brightness(0.2); } 100% { transform: scale(0); opacity: 0; } }
+
+        /* --- ARCANE --- */
+        #sfl-grid-wrapper[data-theme="arcane"] .sfl-grid-cell.digging { animation: arcaneDigSequence 2.5s ease-out forwards; }
+        #sfl-grid-wrapper[data-theme="arcane"] .sfl-grid-cell.digging .dig-fx-container { opacity: 1; background: radial-gradient(circle, #ff00ff, #b100ff, transparent); box-shadow: 0 0 60px #b100ff; animation: arcaneDigFx 2.5s forwards; }
+        @keyframes arcaneDigSequence { 0% { transform: scale(1) rotate(0); } 25% { transform: scale(1.3) rotate(90deg); } 50% { transform: scale(1.5) rotate(180deg); filter: hue-rotate(180deg); } 100% { transform: scale(0) rotate(360deg); opacity: 0; } }
+        @keyframes arcaneDigFx { 0% { opacity: 0; transform: scale(0) rotate(0); } 50% { opacity: 1; transform: scale(1.5) rotate(180deg); } 100% { opacity: 0; transform: scale(2) rotate(360deg); filter: blur(15px); } }
+
+        /* --- SYNTHWAVE --- */
+        #sfl-grid-wrapper[data-theme="synthwave"] .sfl-grid-cell.digging { animation: synthwaveDigSequence 2.5s ease-in-out forwards; }
+        @keyframes synthwaveDigSequence { 0% { transform: scale(1) perspective(800px) rotateX(0); } 30% { transform: scale(1.2) perspective(800px) rotateX(45deg); } 60% { transform: scale(1.4) perspective(800px) rotateX(90deg); opacity: 0.8; } 100% { transform: scale(0) perspective(800px) rotateX(180deg); opacity: 0; } }
+
+        /* --- MECHA --- */
+        #sfl-grid-wrapper[data-theme="mecha"] .sfl-grid-cell.digging { animation: mechaDigSequence 2.5s steps(8) forwards; }
+        @keyframes mechaDigSequence { 0% { transform: scale(1); border-color: #ff6a00; } 25% { transform: scale(1.1) translateX(5px); } 50% { transform: scale(1.2) translateX(-5px); filter: brightness(2); } 75% { transform: scale(1.3); opacity: 0.5; } 100% { transform: scale(0); opacity: 0; } }
+
+        /* --- OBSIDIAN --- */
+        #sfl-grid-wrapper[data-theme="obsidian"] .sfl-grid-cell.digging { animation: obsidianDigSequence 2.5s ease-in forwards; }
+        @keyframes obsidianDigSequence { 0% { transform: scale(1); } 30% { transform: scale(1.1); filter: brightness(0.3); } 60% { transform: scale(0.8); filter: brightness(0.1); } 100% { transform: scale(0); opacity: 0; filter: brightness(0); } }
+
+        /* --- PRISMATIC --- */
+        #sfl-grid-wrapper[data-theme="prismatic"] .sfl-grid-cell.digging { animation: prismaticDigSequence 2.5s linear forwards; }
+        @keyframes prismaticDigSequence { 0% { transform: scale(1); filter: hue-rotate(0); } 25% { transform: scale(1.3); filter: hue-rotate(90deg) brightness(1.5); } 50% { transform: scale(1.5); filter: hue-rotate(180deg) brightness(2); } 75% { transform: scale(1.3); filter: hue-rotate(270deg) brightness(1.5); } 100% { transform: scale(0); opacity: 0; filter: hue-rotate(360deg); } }
+
+        /* --- FROST --- */
+        #sfl-grid-wrapper[data-theme="frost"] .sfl-grid-cell.digging { animation: frostDigSequence 2.5s ease-out forwards; }
+        @keyframes frostDigSequence { 0% { transform: scale(1); filter: brightness(1); } 30% { transform: scale(1.2); filter: brightness(2) contrast(2); background-color: #00ffff; } 60% { transform: scale(1.4); filter: brightness(3); } 100% { transform: scale(0); opacity: 0; filter: blur(10px); } }
+
+        /* --- MOLTEN --- */
+        #sfl-grid-wrapper[data-theme="molten"] .sfl-grid-cell.digging { animation: moltenDigSequence 2.5s ease-in forwards; }
+        @keyframes moltenDigSequence { 0% { transform: scale(1); } 25% { transform: scale(1.2) translateY(5px); background-color: #ff4500; } 50% { transform: scale(1.4) translateY(15px) scaleY(0.6); background-color: #ff6a00; } 100% { transform: scale(0) translateY(40px); opacity: 0; } }
+
+        /* --- DISCO --- */
+        #sfl-grid-wrapper[data-theme="disco"] .sfl-grid-cell.digging { animation: discoDigSequence 2.5s linear forwards; }
+        @keyframes discoDigSequence { 0% { transform: scale(1); filter: hue-rotate(0); } 20% { transform: scale(1.2) rotate(30deg); filter: hue-rotate(72deg); } 40% { transform: scale(1.3) rotate(-30deg); filter: hue-rotate(144deg); } 60% { transform: scale(1.4) rotate(20deg); filter: hue-rotate(216deg); } 80% { transform: scale(1.2); filter: hue-rotate(288deg); opacity: 0.5; } 100% { transform: scale(0); opacity: 0; filter: hue-rotate(360deg); } }
+
+        /* --- ALIEN --- */
+        #sfl-grid-wrapper[data-theme="alien"] .sfl-grid-cell.digging { animation: alienDigSequence 2.5s ease-in-out forwards; }
+        @keyframes alienDigSequence { 0% { transform: scale(1); } 30% { transform: scale(1.3) translateY(-15px); border-radius: 50%; background-color: #39ff14; } 60% { transform: scale(0.5) translateY(20px); border-radius: 30%; } 100% { transform: scale(0); opacity: 0; } }
+
+        /* --- HEXTECH --- */
+        #sfl-grid-wrapper[data-theme="hextech"] .sfl-grid-cell.digging { animation: hextechDigSequence 2.5s ease-out forwards; }
+        @keyframes hextechDigSequence { 0% { transform: scale(1) rotate(0); } 25% { transform: scale(1.2) rotate(60deg); border-color: #00ffff; } 50% { transform: scale(1.4) rotate(120deg); border-color: #ffd700; } 75% { transform: scale(1.2) rotate(180deg); opacity: 0.5; } 100% { transform: scale(0) rotate(240deg); opacity: 0; } }
+
+        /* --- GOLD --- */
+        #sfl-grid-wrapper[data-theme="gold"] .sfl-grid-cell.digging { animation: goldDigSequence 2.5s ease-out forwards; }
+        #sfl-grid-wrapper[data-theme="gold"] .sfl-grid-cell.digging .dig-fx-container { opacity: 1; background: radial-gradient(circle, #ffffff, #ffd700); box-shadow: 0 0 60px #ffd700, 0 0 120px rgba(255, 215, 0, 0.5); animation: goldDigFx 2.5s forwards; }
+        @keyframes goldDigSequence { 0% { transform: scale(1); } 30% { transform: scale(1.3); filter: brightness(2); } 60% { transform: scale(1.5); filter: brightness(4); } 100% { transform: scale(0); opacity: 0; } }
+        @keyframes goldDigFx { 0% { opacity: 0; transform: scale(0); } 50% { opacity: 1; transform: scale(2); } 100% { opacity: 0; transform: scale(3); filter: blur(20px); } }
+
+        /* --- NEBULA --- */
+        #sfl-grid-wrapper[data-theme="nebula"] .sfl-grid-cell.digging { animation: nebulaDigSequence 2.5s ease-in-out forwards; }
+        @keyframes nebulaDigSequence { 0% { transform: scale(1); } 30% { transform: scale(1.3) translateY(-10px); filter: hue-rotate(60deg); } 60% { transform: scale(1.5) translateY(-20px); filter: hue-rotate(180deg) brightness(2); } 100% { transform: scale(0); opacity: 0; filter: hue-rotate(360deg); } }
+
+        /* --- ARCADE --- */
+        #sfl-grid-wrapper[data-theme="arcade"] .sfl-grid-cell.digging { animation: arcadeDigSequence 2.5s steps(12) forwards; }
+        @keyframes arcadeDigSequence { 0% { transform: scale(1); } 25% { transform: scale(1.1) translateY(-5px); filter: brightness(1.5); } 50% { transform: scale(1.2) translateY(-10px); filter: brightness(2); } 75% { transform: scale(1.1); opacity: 0.5; } 100% { transform: scale(0); opacity: 0; } }
+
+        /* --- MIRAGE --- */
+        #sfl-grid-wrapper[data-theme="mirage"] .sfl-grid-cell.digging { animation: mirageDigSequence 2.5s ease-in-out forwards; }
+        @keyframes mirageDigSequence { 0% { transform: scale(1) translateY(0); } 30% { transform: scale(1.2) translateY(-10px); opacity: 0.7; } 60% { transform: scale(1.1) translateY(5px); opacity: 0.4; } 100% { transform: scale(0); opacity: 0; } }
+
+        /* --- CRYSTAL --- */
+        #sfl-grid-wrapper[data-theme="crystal"] .sfl-grid-cell.digging { animation: crystalDigSequence 2.5s ease-out forwards; }
+        @keyframes crystalDigSequence { 0% { transform: scale(1); } 20% { transform: scale(1.2); filter: brightness(2); } 40% { transform: scale(1.1) rotate(10deg); } 60% { transform: scale(1.3) rotate(-5deg); filter: brightness(3); } 80% { transform: scale(1.1); opacity: 0.5; } 100% { transform: scale(0); opacity: 0; filter: blur(5px); } }
+
+        /* --- STEAMPUNK --- */
+        #sfl-grid-wrapper[data-theme="steampunk"] .sfl-grid-cell.digging { animation: steampunkDigSequence 2.5s ease-in forwards; }
+        @keyframes steampunkDigSequence { 0% { transform: scale(1) rotate(0); } 20% { transform: scale(1.1) rotate(30deg); } 40% { transform: scale(1.2) rotate(90deg); } 60% { transform: scale(1.1) rotate(180deg); opacity: 0.7; } 100% { transform: scale(0) rotate(360deg); opacity: 0; } }
+
+        /* --- NECRO --- */
+        #sfl-grid-wrapper[data-theme="necro"] .sfl-grid-cell.digging { animation: necroDigSequence 2.5s ease-in forwards; }
+        @keyframes necroDigSequence { 0% { transform: scale(1); filter: brightness(1); } 30% { transform: scale(1.1); filter: brightness(0.5) saturate(2); } 60% { transform: scale(0.8); filter: brightness(0.2) hue-rotate(120deg); } 100% { transform: scale(0); opacity: 0; filter: brightness(0); } }
+
+        /* --- QUANTUM --- */
+        #sfl-grid-wrapper[data-theme="quantum"] .sfl-grid-cell.digging { animation: quantumDigSequence 2.5s ease-in-out forwards; }
+        @keyframes quantumDigSequence { 0% { transform: scale(1); } 15% { transform: scale(1.2) translateX(10px); opacity: 0.8; } 30% { transform: scale(0.8) translateX(-10px); opacity: 1; } 45% { transform: scale(1.3) translateX(5px); opacity: 0.6; } 60% { transform: scale(0.7); opacity: 0.8; } 100% { transform: scale(0); opacity: 0; } }
+
+        /* --- VAPORWAVE --- */
+        #sfl-grid-wrapper[data-theme="vaporwave"] .sfl-grid-cell.digging { animation: vaporwaveDigSequence 2.5s ease-out forwards; }
+        @keyframes vaporwaveDigSequence { 0% { transform: scale(1) perspective(500px) rotateY(0); } 25% { transform: scale(1.2) perspective(500px) rotateY(45deg); filter: hue-rotate(90deg); } 50% { transform: scale(1.3) perspective(500px) rotateY(90deg); filter: hue-rotate(180deg); } 100% { transform: scale(0) perspective(500px) rotateY(180deg); opacity: 0; } }
+
+
+        /* ==========================================================================
+           7. THEMES BATCH 1: CORE EFFECTS (Unrestricted & Heavy)
            ========================================================================== */
 
         /* ------------------------------------------------------------------
@@ -332,7 +589,7 @@
             --base-b: 20;
         }
 
-        #sfl-grid-wrapper[data-theme="hellfire"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="hellfire"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.7);
             border-color: #ffffff;
             box-shadow:
@@ -492,7 +749,7 @@
         }
 
         /* Electric Tiles */
-        #sfl-grid-wrapper[data-theme="electric"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="electric"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: scale(1.15) translateZ(15px);
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.5);
             border-color: #ffffff;
@@ -731,7 +988,7 @@
             border-width: 2px;
         }
 
-        #sfl-grid-wrapper[data-theme="cyberpunk"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="cyberpunk"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             border-radius: 0;
             transform: scale(1.1) skewX(-10deg) translateZ(10px);
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.6);
@@ -887,7 +1144,7 @@
             border-bottom-width: 3px;
         }
 
-        #sfl-grid-wrapper[data-theme="toxic"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="toxic"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: scale(1.2) translateY(-8px) translateZ(10px);
             border-radius: 50%;
             /* Bubbles up */
@@ -1051,7 +1308,7 @@
         }
 
         /* INWARD pull on hover */
-        #sfl-grid-wrapper[data-theme="void"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="void"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: scale(0.6) translateZ(-20px);
             border-radius: 50%;
             background-color: #ffffff;
@@ -1205,7 +1462,7 @@
             --base-b: 90;
         }
 
-        #sfl-grid-wrapper[data-theme="aurora"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="aurora"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: scale(1.15) translateZ(10px);
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.6);
             box-shadow:
@@ -1367,7 +1624,7 @@
         }
 
         /* Glitchy RGB Split on Hover */
-        #sfl-grid-wrapper[data-theme="matrix"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="matrix"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: scale(1.25) translateZ(10px);
             border-radius: 0;
             background-color: #00ff00;
@@ -1577,7 +1834,7 @@
             transform: scale(0.85);
         }
 
-        #sfl-grid-wrapper[data-theme="holy"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="holy"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: scale(1.4) translateY(-15px) translateZ(20px);
             background-color: #ffffff;
             border-color: #ffd700;
@@ -1731,7 +1988,7 @@
             border: 1px solid rgba(255, 0, 0, 0.15);
         }
 
-        #sfl-grid-wrapper[data-theme="blood"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="blood"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             background-color: #ff0000;
             border-color: #ffaaaa;
             box-shadow:
@@ -1879,7 +2136,7 @@
             --base-b: 60;
         }
 
-        #sfl-grid-wrapper[data-theme="abyss"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="abyss"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             opacity: 1;
             transform: scale(1.6) translateZ(10px);
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.95);
@@ -2067,7 +2324,7 @@
             box-shadow: inset 0 0 15px rgba(var(--base-r), var(--base-g), var(--base-b), 0.6);
         }
 
-        #sfl-grid-wrapper[data-theme="arcane"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="arcane"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: scale(1.35) rotate(90deg) translateZ(15px);
             /* Runes spin as you touch them */
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.3);
@@ -2231,7 +2488,7 @@
             border: 2px solid rgba(var(--base-r), var(--base-g), var(--base-b), 0.5);
         }
 
-        #sfl-grid-wrapper[data-theme="synthwave"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="synthwave"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: scale(1.15) translateZ(10px);
             border-radius: 0;
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.9);
@@ -2388,7 +2645,7 @@
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.3);
         }
 
-        #sfl-grid-wrapper[data-theme="mecha"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="mecha"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: translateY(-6px) scale(1.08) translateZ(10px);
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.9);
             border-color: rgba(var(--base-r), var(--base-g), var(--base-b), 1);
@@ -2552,7 +2809,7 @@
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.2);
         }
 
-        #sfl-grid-wrapper[data-theme="obsidian"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="obsidian"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: rotate(0deg) scale(1.25) translateZ(15px);
             /* Snaps to square on hover */
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 1);
@@ -2714,7 +2971,7 @@
             -webkit-backdrop-filter: brightness(1.3) contrast(1.2);
         }
 
-        #sfl-grid-wrapper[data-theme="prismatic"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="prismatic"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: scale(1.25) rotate(4deg) translateZ(15px);
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.95);
             border: 2px solid #ffffff;
@@ -2872,7 +3129,7 @@
             -webkit-backdrop-filter: blur(6px);
         }
 
-        #sfl-grid-wrapper[data-theme="frost"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="frost"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: scale(1.1) translateZ(10px);
             background-color: rgba(255, 255, 255, 0.9);
             box-shadow:
@@ -3009,7 +3266,7 @@
             box-shadow: inset 0 0 5px #000000;
         }
 
-        #sfl-grid-wrapper[data-theme="molten"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="molten"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: scale(1.15) translateZ(15px);
             background-color: #ffaa00;
             border-color: #ffff00;
@@ -3167,7 +3424,7 @@
             border: 1px solid rgba(255, 255, 255, 0.15);
         }
 
-        #sfl-grid-wrapper[data-theme="disco"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="disco"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: scale(1) translateZ(0);
             /* Floor doesn't pop up, it flashes aggressively */
             background-color: #ffffff;
@@ -3350,7 +3607,7 @@
             border: 1px solid rgba(0, 255, 100, 0.25);
         }
 
-        #sfl-grid-wrapper[data-theme="alien"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="alien"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: scale(1.15) rotate(5deg) translateZ(10px);
             background-color: rgba(0, 255, 100, 0.85);
             border-radius: 50%;
@@ -3522,7 +3779,7 @@
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.2);
         }
 
-        #sfl-grid-wrapper[data-theme="hextech"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="hextech"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             background-color: #0ac8b9;
             border-color: #ffffff;
             transform: scale(1.15) translateZ(10px);
@@ -3669,7 +3926,7 @@
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.25);
         }
 
-        #sfl-grid-wrapper[data-theme="gold"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="gold"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: scale(1.15) translateY(-6px) translateZ(10px);
             background-color: #ffd700;
             box-shadow:
@@ -3825,7 +4082,7 @@
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.8);
         }
 
-        #sfl-grid-wrapper[data-theme="nebula"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="nebula"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: scale(1.6) translateZ(15px);
             opacity: 1;
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 1);
@@ -4004,7 +4261,7 @@
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.2);
         }
 
-        #sfl-grid-wrapper[data-theme="arcade"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="arcade"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: scale(1) translateZ(0);
             /* No 3D scaling for 2D arcade */
             border-radius: 0;
@@ -4128,7 +4385,7 @@
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.3);
         }
 
-        #sfl-grid-wrapper[data-theme="mirage"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="mirage"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: scale(1.15) rotate(3deg) translateZ(10px);
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.95);
             box-shadow:
@@ -4288,13 +4545,13 @@
             /* Clip path breaks box-shadow */
         }
 
-        #sfl-grid-wrapper[data-theme="crystal"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="crystal"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: scale(1.4) translateZ(20px);
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 1);
             /* Pseudo element for hover shadow on clip-path */
         }
 
-        #sfl-grid-wrapper[data-theme="crystal"] .sfl-grid-cell:hover:not(.digging):not(.dug)::after {
+        #sfl-grid-wrapper[data-theme="crystal"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed)::after {
             content: '';
             position: absolute;
             inset: 0;
@@ -4449,7 +4706,7 @@
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.2);
         }
 
-        #sfl-grid-wrapper[data-theme="steampunk"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="steampunk"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: rotate(180deg) scale(1.15) translateZ(10px);
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.9);
             border: 3px solid #ffffff;
@@ -4576,7 +4833,7 @@
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.25);
         }
 
-        #sfl-grid-wrapper[data-theme="necro"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="necro"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: translateY(-8px) scale(1.1) translateZ(10px);
             background-color: #e0e0d1;
             box-shadow:
@@ -4720,7 +4977,7 @@
             }
         }
 
-        #sfl-grid-wrapper[data-theme="quantum"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="quantum"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             animation: none;
             /* Collapses the waveform */
             transform: scale(1.15) translateZ(10px);
@@ -4872,7 +5129,7 @@
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.3);
         }
 
-        #sfl-grid-wrapper[data-theme="vaporwave"] .sfl-grid-cell:hover:not(.digging):not(.dug) {
+        #sfl-grid-wrapper[data-theme="vaporwave"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
             transform: scale(1.15) translateZ(10px);
             background-color: #ff007f;
             box-shadow:

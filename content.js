@@ -3,6 +3,15 @@ console.log("SFL Grid Script Loaded (v11.3 — Auto-Align + Live Dig + Themes)."
 let currentTheme = 'none'; // 'none' = default basic grid, or a theme key
 let auraEnabled = false;     // manual toggle from sidepanel
 let auraAutoActive = false;  // auto-enabled when grid is active + character is in grid area
+let perfTier = 'high';       // ultra | high | medium | potato
+
+// Performance tier config — hover/glow ALWAYS enabled, only particle count scales
+const PERF_CONFIG = {
+    ultra:  { particles: 30, animDuration: 2500 },
+    high:   { particles: 20, animDuration: 2500 },
+    medium: { particles: 10, animDuration: 2500 },
+    potato: { particles: 3,  animDuration: 1500 }
+};
 
 // =============================================================================
 // INJECT BRIDGE
@@ -38,12 +47,13 @@ let domIntervalMs = 0;
 let lastSeenTS = '0';
 
 // Load saved state
-chrome.storage.local.get(['walkSpeed', 'deviceMode', 'domIntervalMs', 'auraEnabled'], (r) => {
+chrome.storage.local.get(['walkSpeed', 'deviceMode', 'domIntervalMs', 'auraEnabled', 'perfTier'], (r) => {
     if (r.walkSpeed !== undefined) walkSpeed = r.walkSpeed;
     if (r.deviceMode) deviceMode = r.deviceMode;
     if (r.domIntervalMs !== undefined) domIntervalMs = r.domIntervalMs;
     if (r.auraEnabled !== undefined) auraEnabled = r.auraEnabled;
-    console.log(`[Grid] Mode=${deviceMode} Speed=${walkSpeed} Aura=${auraEnabled}`);
+    if (r.perfTier) perfTier = r.perfTier;
+    console.log(`[Grid] Mode=${deviceMode} Speed=${walkSpeed} Aura=${auraEnabled} Perf=${perfTier}`);
 });
 
 // =============================================================================
@@ -79,6 +89,12 @@ window.addEventListener('message', (e) => {
         currentGridData = e.data.grid;
         currentPatterns = e.data.patterns || [];
         if (masterGrid) applyLiveGridState(currentGridData, currentPatterns);
+    }
+
+    // Dig result: a specific tile was just dug, with item info
+    if (e.data.type === 'SFL_DIG_RESULT') {
+        const { row, col, item } = e.data;
+        handleDigResult(row, col, item);
     }
 });
 
@@ -420,6 +436,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         chrome.storage.local.set({ auraEnabled });
         if (!auraEnabled && appState !== 'TRACKING') hideAuraSvg();
     }
+    else if (request.action === 'setPerformance') {
+        perfTier = request.tier;
+        chrome.storage.local.set({ perfTier });
+        // Apply perf class to wrapper for CSS to read
+        const w = document.getElementById('sfl-grid-wrapper');
+        if (w) w.dataset.perf = perfTier;
+        console.log(`[Grid] Performance tier: ${perfTier}`);
+    }
     sendResponse({status:"ok"}); return true;
 });
 
@@ -431,7 +455,7 @@ window.addEventListener('keydown', (e) => {
     if (e.altKey && e.key === '1') {
         e.preventDefault(); e.stopPropagation();
         if (masterGrid && appState === 'TRACKING') {
-            masterGrid.remove(); masterGrid = null;
+            removeGrid();
             stopTracking();
             console.log("[Grid] Alt+1: Grid hidden.");
         } else {
@@ -470,18 +494,26 @@ function createGrid() {
     masterGrid = document.createElement('div');
     masterGrid.id = 'sfl-master-grid';
 
-    // Random tile types for visual theming
-    const types = [
-        { name: 'empty', chance: 0.50 },
-        { name: 'blue',  chance: 0.25 },
+    // Tile type distribution for visual theming
+    // In themed mode: ALL tiles get colored types (no 'empty')
+    // In default mode: keep original distribution
+    const themedTypes = [
+        { name: 'blue',   chance: 0.35 },
+        { name: 'yellow', chance: 0.35 },
+        { name: 'red',    chance: 0.30 }
+    ];
+    const defaultTypes = [
+        { name: 'empty',  chance: 0.50 },
+        { name: 'blue',   chance: 0.25 },
         { name: 'yellow', chance: 0.15 },
-        { name: 'red',   chance: 0.10 }
+        { name: 'red',    chance: 0.10 }
     ];
     function getRandomType() {
+        const types = currentTheme !== 'none' ? themedTypes : defaultTypes;
         const rand = Math.random();
         let cum = 0;
         for (let t of types) { cum += t.chance; if (rand <= cum) return t.name; }
-        return 'empty';
+        return 'blue';
     }
 
     for (let i = 0; i < 100; i++) {
@@ -490,6 +522,7 @@ function createGrid() {
         c.dataset.x = i % 10;
         c.dataset.y = Math.floor(i / 10);
         c.dataset.type = getRandomType();
+        c.dataset.tileState = '';
 
         // Staggered pop-in animation
         const row = Math.floor(i / 10), col = i % 10;
@@ -508,26 +541,33 @@ function createGrid() {
         masterGrid.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
     });
 
-    // Click-to-dig interaction (theme animations)
+    // Click-to-dig interaction (themed tiles only — forwards to real game)
     masterGrid.addEventListener('click', (e) => {
-        if (currentTheme === 'none') return; // No dig animation in default mode
+        if (currentTheme === 'none') return; // Default grid: no interactive tiles
         const cell = e.target.closest('.sfl-grid-cell');
-        if (!cell || cell.classList.contains('digging') || cell.classList.contains('dug')) return;
+        if (!cell) return;
+        // Skip already-revealed, pending, or digging tiles
+        if (cell.dataset.tileState === 'revealed' || cell.dataset.tileState === 'pending' || cell.dataset.tileState === 'digging') return;
 
-        cell.classList.add('digging');
-        const fx = document.createElement('div');
-        fx.className = 'dig-fx-container';
-        cell.appendChild(fx);
+        const col = parseInt(cell.dataset.x);
+        const row = parseInt(cell.dataset.y);
 
-        // Spawn particles
-        spawnThemeParticles(cell, currentTheme);
+        // Mark as pending
+        cell.dataset.tileState = 'pending';
+        cell.classList.add('tile-pending');
 
-        // After 2.5s animation, mark as dug
+        // Forward click to the real game canvas via bridge
+        window.postMessage({ type: 'SFL_GRID_CLICK_TILE', row, col }, '*');
+        console.log(`[Grid] Tile clicked: (${col},${row}) — forwarding to game...`);
+
+        // Safety timeout: if no result after 5s, revert to clickable
         setTimeout(() => {
-            cell.classList.remove('digging');
-            cell.classList.add('dug');
-            cell.innerHTML = '';
-        }, 2500);
+            if (cell.dataset.tileState === 'pending') {
+                cell.dataset.tileState = 'hidden';
+                cell.classList.remove('tile-pending');
+                console.warn(`[Grid] Tile (${col},${row}) — no response, reverting.`);
+            }
+        }, 5000);
     });
 
     // Apply cached theme
@@ -549,8 +589,51 @@ function updateGridMode() {
 
 function removeGrid() {
     const w = document.getElementById('sfl-grid-wrapper');
-    if (w) w.remove();
+    if (w) {
+        // Remove data-theme to kill ::before/::after backgrounds
+        w.removeAttribute('data-theme');
+        w.removeAttribute('data-perf');
+        w.remove();
+    }
     masterGrid = null;
+}
+
+// =============================================================================
+// DIG RESULT HANDLER — plays reveal animation when game confirms a dig
+// =============================================================================
+function handleDigResult(row, col, item) {
+    if (!masterGrid || currentTheme === 'none') return;
+    const cell = masterGrid.querySelector(`.sfl-grid-cell[data-x="${col}"][data-y="${row}"]`);
+    if (!cell) return;
+    // Skip if already revealed
+    if (cell.dataset.tileState === 'revealed') return;
+
+    const perf = PERF_CONFIG[perfTier] || PERF_CONFIG.high;
+
+    // Transition: PENDING → DIGGING (uses theme's native dig animation)
+    cell.dataset.tileState = 'digging';
+    cell.classList.remove('tile-pending');
+    cell.classList.add('digging');
+
+    // Add dig-fx-container for themes that use it
+    const fx = document.createElement('div');
+    fx.className = 'dig-fx-container';
+    cell.appendChild(fx);
+
+    // Spawn reveal particles (scaled by perf tier)
+    if (perf.particles > 0) spawnThemeParticles(cell, currentTheme, perf.particles);
+
+    // After animation, mark as REVEALED (transparent — shows real game tile)
+    setTimeout(() => {
+        cell.classList.remove('digging');
+        cell.classList.add('dug', 'tile-revealed');
+        cell.dataset.tileState = 'revealed';
+        // Clean up fx container
+        const fxEl = cell.querySelector('.dig-fx-container');
+        if (fxEl) fxEl.remove();
+    }, perf.animDuration);
+
+    console.log(`[Grid] Tile (${col},${row}) digging → revealed: ${item}`);
 }
 
 function applyGridColors(data) {
@@ -580,46 +663,56 @@ function applyLiveGridState(gridData, patterns) {
     if (!masterGrid) return;
     const cells = masterGrid.querySelectorAll('.sfl-grid-cell');
 
-    // Reset all cells first
-    cells.forEach(c => {
-        c.className = 'sfl-grid-cell';
-        c.style.opacity = '';
-    });
-
     if (!gridData || gridData.length === 0) return;
 
     const flat = Array.isArray(gridData[0]) ? gridData.flat() : gridData;
 
-    flat.forEach(h => {
-        const x = h.x, y = h.y;
-        const dugCell = cells[y * 10 + x];
-        if (!dugCell) return;
+    // Build a set of dug tile positions for quick lookup
+    const dugSet = new Set(flat.map(h => `${h.x},${h.y}`));
 
-        // Get the item name from the dug cell
-        const n = (h.name || (h.items ? Object.keys(h.items)[0] : '')).toLowerCase();
-
-        // Determine the color class for this item type
-        let cls = 'sfl-cell-misc';
-        if (n.includes('sand')) cls = 'sfl-cell-sand';
-        else if (n.includes('crab')) cls = 'sfl-cell-crab';
-        else if (n.includes('bone') || n.includes('artefact') || n.includes('hieroglyph') || n.includes('map')) cls = 'sfl-cell-bone';
-
-        // Mark the dug cell itself
-        dugCell.classList.add('sfl-cell-dug');
-        dugCell.classList.add(cls);
-
-        // Color adjacent cells (hints about nearby items)
-        [{nx:x,ny:y-1},{nx:x,ny:y+1},{nx:x-1,ny:y},{nx:x+1,ny:y}].forEach(c => {
-            if (c.nx >= 0 && c.nx < 10 && c.ny >= 0 && c.ny < 10) {
-                const adj = cells[c.ny * 10 + c.nx];
-                if (adj && !adj.classList.contains('sfl-cell-dug')) {
-                    adj.classList.add(cls);
-                }
+    if (currentTheme !== 'none') {
+        // THEMED MODE: mark dug tiles as revealed (transparent)
+        cells.forEach(c => {
+            const key = `${c.dataset.x},${c.dataset.y}`;
+            if (dugSet.has(key) && c.dataset.tileState !== 'revealed' && c.dataset.tileState !== 'digging') {
+                c.classList.add('tile-revealed', 'dug');
+                c.classList.remove('tile-pending');
+                c.dataset.tileState = 'revealed';
             }
         });
-    });
+    } else {
+        // DEFAULT MODE: color-coding (unchanged)
+        cells.forEach(c => {
+            c.className = 'sfl-grid-cell';
+            c.style.opacity = '';
+        });
 
-    console.log(`[Grid] Live state applied: ${flat.length} dug cells, ${patterns.length} patterns remaining`);
+        flat.forEach(h => {
+            const x = h.x, y = h.y;
+            const dugCell = cells[y * 10 + x];
+            if (!dugCell) return;
+
+            const n = (h.name || (h.items ? Object.keys(h.items)[0] : '')).toLowerCase();
+            let cls = 'sfl-cell-misc';
+            if (n.includes('sand')) cls = 'sfl-cell-sand';
+            else if (n.includes('crab')) cls = 'sfl-cell-crab';
+            else if (n.includes('bone') || n.includes('artefact') || n.includes('hieroglyph') || n.includes('map')) cls = 'sfl-cell-bone';
+
+            dugCell.classList.add('sfl-cell-dug');
+            dugCell.classList.add(cls);
+
+            [{nx:x,ny:y-1},{nx:x,ny:y+1},{nx:x-1,ny:y},{nx:x+1,ny:y}].forEach(c => {
+                if (c.nx >= 0 && c.nx < 10 && c.ny >= 0 && c.ny < 10) {
+                    const adj = cells[c.ny * 10 + c.nx];
+                    if (adj && !adj.classList.contains('sfl-cell-dug')) {
+                        adj.classList.add(cls);
+                    }
+                }
+            });
+        });
+    }
+
+    console.log(`[Grid] Live state applied: ${flat.length} dug cells (theme: ${currentTheme})`);
 }
 
 function makeDraggable(el) {
@@ -648,12 +741,27 @@ function applyTheme(theme) {
         wrapper.setAttribute('data-theme', theme);
     }
 
+    // Set perf tier on wrapper
+    wrapper.dataset.perf = perfTier;
+
+    // Themed tile type distribution (all colored, no 'empty')
+    const themedTypes = ['blue', 'yellow', 'red'];
+
     // Re-trigger pop-in animation on all cells for a morph effect
     const cells = wrapper.querySelectorAll('.sfl-grid-cell');
     cells.forEach((cell, i) => {
-        // Remove digging/dug states on theme switch
-        cell.classList.remove('digging', 'dug');
-        cell.innerHTML = '';
+        // Reset tile states on theme switch
+        cell.classList.remove('digging', 'dug', 'tile-pending', 'tile-revealing', 'tile-revealed');
+        cell.dataset.tileState = '';
+        // Clean up any FX container children
+        const fx = cell.querySelector('.dig-fx-container');
+        if (fx) fx.remove();
+
+        // Reassign tile types for themed mode (no 'empty' tiles)
+        if (theme !== 'none') {
+            cell.dataset.type = themedTypes[Math.floor(Math.random() * themedTypes.length)];
+        }
+
         cell.style.animation = 'none';
         cell.offsetHeight; // force reflow
         const row = Math.floor(i / 10), col = i % 10;
@@ -661,15 +769,21 @@ function applyTheme(theme) {
         cell.style.animation = 'popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards';
     });
 
+    // Re-apply live grid state after pop-in animation completes
+    if (currentGridData) {
+        setTimeout(() => applyLiveGridState(currentGridData, currentPatterns), 800);
+    }
+
     console.log(`[Grid] Theme applied: ${theme}`);
 }
 
 // =============================================================================
-// PARTICLE PHYSICS ENGINE (From user presets)
+// PARTICLE PHYSICS ENGINE (performance-scaled)
 // =============================================================================
-function spawnThemeParticles(tileElement, theme) {
+function spawnThemeParticles(tileElement, theme, numOverride) {
     if (!masterGrid) return;
-    const numParticles = 20;
+    const perf = PERF_CONFIG[perfTier] || PERF_CONFIG.high;
+    const numParticles = numOverride || perf.particles;
     const tileRect = tileElement.getBoundingClientRect();
     const gridRect = masterGrid.getBoundingClientRect();
     const centerX = (tileRect.left - gridRect.left) + (tileRect.width / 2);
