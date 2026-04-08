@@ -63,7 +63,10 @@
             /* No inset shadows: they darken the transparent grid, blocking game visibility */
             box-shadow: none !important;
             border-radius: 0;
-            transition: all var(--transition-speed-medium) ease;
+            /* IMPORTANT: Do NOT use 'transition: all' — it causes clip-path (character cutout)
+               to animate smoothly instead of snapping instantly, creating a visible lag trail.
+               Only transition properties that actually need smooth animation. */
+            transition: opacity var(--transition-speed-medium) ease, background-color var(--transition-speed-medium) ease;
 
             /* Mouse tracking variables updated by JS */
             --mouse-x: 50%;
