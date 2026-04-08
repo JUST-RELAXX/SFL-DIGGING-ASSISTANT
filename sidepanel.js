@@ -186,6 +186,38 @@ document.addEventListener('DOMContentLoaded', () => {
         logStatus(`FX: ${label}`, '#a5b4fc');
     });
 
+    // --- Grid Calibration ---
+    const calibXInput = document.getElementById('calibX');
+    const calibYInput = document.getElementById('calibY');
+
+    // Load saved calibration
+    chrome.storage.local.get(['gridCalibX', 'gridCalibY'], (r) => {
+        if (r.gridCalibX !== undefined) calibXInput.value = r.gridCalibX;
+        if (r.gridCalibY !== undefined) calibYInput.value = r.gridCalibY;
+    });
+
+    function sendCalibration() {
+        const x = parseInt(calibXInput.value) || 0;
+        const y = parseInt(calibYInput.value) || 0;
+        sendCommand('setCalibration', { x, y });
+        logStatus(`Calib: (${x}, ${y})px`, '#a5b4fc');
+    }
+
+    // Arrow buttons
+    document.querySelectorAll('.calib-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const axis = btn.dataset.axis;
+            const dir = parseInt(btn.dataset.dir);
+            const input = axis === 'x' ? calibXInput : calibYInput;
+            input.value = (parseInt(input.value) || 0) + dir;
+            sendCalibration();
+        });
+    });
+
+    // Direct input
+    calibXInput.addEventListener('change', sendCalibration);
+    calibYInput.addEventListener('change', sendCalibration);
+
     // --- API Sync ---
     document.getElementById('btnSync').addEventListener('click', () => {
         const farmId = farmInput.value.trim();

@@ -47,13 +47,15 @@ let domIntervalMs = 0;
 let lastSeenTS = '0';
 
 // Load saved state
-chrome.storage.local.get(['walkSpeed', 'deviceMode', 'domIntervalMs', 'auraEnabled', 'perfTier'], (r) => {
+chrome.storage.local.get(['walkSpeed', 'deviceMode', 'domIntervalMs', 'auraEnabled', 'perfTier', 'gridCalibX', 'gridCalibY'], (r) => {
     if (r.walkSpeed !== undefined) walkSpeed = r.walkSpeed;
     if (r.deviceMode) deviceMode = r.deviceMode;
     if (r.domIntervalMs !== undefined) domIntervalMs = r.domIntervalMs;
     if (r.auraEnabled !== undefined) auraEnabled = r.auraEnabled;
     if (r.perfTier) perfTier = r.perfTier;
-    console.log(`[Grid] Mode=${deviceMode} Speed=${walkSpeed} Aura=${auraEnabled} Perf=${perfTier}`);
+    if (r.gridCalibX !== undefined) gridCalibX = r.gridCalibX;
+    if (r.gridCalibY !== undefined) gridCalibY = r.gridCalibY;
+    console.log(`[Grid] Mode=${deviceMode} Speed=${walkSpeed} Aura=${auraEnabled} Perf=${perfTier} Calib=(${gridCalibX},${gridCalibY})`);
 });
 
 // =============================================================================
@@ -121,6 +123,10 @@ function handleAutoAlign(cam) {
     if (appState !== 'TRACKING') startTracking();
 }
 
+// Calibration offsets (pixels) — adjusted from sidepanel
+let gridCalibX = 0;
+let gridCalibY = 0;
+
 function snapToScreen(cam) {
     if (!masterGrid || gridWorldX === null) return;
     const w = document.getElementById('sfl-grid-wrapper');
@@ -129,10 +135,21 @@ function snapToScreen(cam) {
     const sy = cam.canvasDisplayH / cam.canvasInternalH;
     gridX = (gridWorldX - cam.scrollX) * cam.zoom * sx + cam.cameraX * sx + cam.canvasLeft;
     gridY = (gridWorldY - cam.scrollY) * cam.zoom * sy + cam.cameraY * sy + cam.canvasTop;
-    w.style.left = gridX + 'px';
-    w.style.top = gridY + 'px';
+
+    // DYNAMIC SIZE: match the game's actual grid size at current zoom
+    const screenCellW = gridCellSize * cam.zoom * sx;
+    const screenCellH = gridCellSize * cam.zoom * sy;
+    const gridPixelW = screenCellW * 10;
+    const gridPixelH = screenCellH * 10;
+
+    // Apply user calibration offset
+    w.style.left = (gridX + gridCalibX) + 'px';
+    w.style.top = (gridY + gridCalibY) + 'px';
+    w.style.width = gridPixelW + 'px';
+    w.style.height = gridPixelH + 'px';
     w.style.transform = 'none';
-    console.log(`[Grid] Snapped to screen(${gridX.toFixed(1)}, ${gridY.toFixed(1)})`);
+
+    console.log(`[Grid] Snapped: pos(${(gridX + gridCalibX).toFixed(1)}, ${(gridY + gridCalibY).toFixed(1)}), size(${gridPixelW.toFixed(1)}x${gridPixelH.toFixed(1)}), calib(${gridCalibX}, ${gridCalibY})`);
 }
 
 // =============================================================================
@@ -169,8 +186,8 @@ function correctDriftIfFresh() {
     if (Math.abs(errX) > 1 || Math.abs(errY) > 1) {
         gridX = correctX;
         gridY = correctY;
-        w.style.left = gridX + 'px';
-        w.style.top = gridY + 'px';
+        w.style.left = (gridX + gridCalibX) + 'px';
+        w.style.top = (gridY + gridCalibY) + 'px';
         w.style.transform = 'none';
     }
 }
@@ -184,8 +201,8 @@ function fullDOMSnap() {
     const sy = cam.canvasDisplayH / cam.canvasInternalH;
     gridX = (gridWorldX - cam.scrollX) * cam.zoom * sx + cam.cameraX * sx + cam.canvasLeft;
     gridY = (gridWorldY - cam.scrollY) * cam.zoom * sy + cam.cameraY * sy + cam.canvasTop;
-    w.style.left = gridX + 'px';
-    w.style.top = gridY + 'px';
+    w.style.left = (gridX + gridCalibX) + 'px';
+    w.style.top = (gridY + gridCalibY) + 'px';
     w.style.transform = 'none';
 }
 
@@ -269,7 +286,8 @@ function updateCharacterCutout() {
     const shouldShowAura = auraEnabled || gridActive;
 
     if (!hasPlayer || !shouldShowAura) {
-        if (w) w.style.clipPath = 'none';
+        // CLIP ON MASTER-GRID (not wrapper) so edge effects (::before/::after) aren't clipped
+        if (masterGrid) masterGrid.style.clipPath = 'none';
         hideAuraSvg();
         return;
     }
@@ -277,21 +295,21 @@ function updateCharacterCutout() {
     const px = parseFloat(camEl.dataset.px);
     const py = parseFloat(camEl.dataset.py);
 
-    // Check if character is near the grid
+    // Check if character is near the grid — use masterGrid bounds for accuracy
     let isOnGrid = false;
-    if (w) {
-        const wr = w.getBoundingClientRect();
-        const relX = px - wr.left;
-        const relY = py - wr.top;
-        isOnGrid = relX > -60 && relX < wr.width + 60 && relY > -60 && relY < wr.height + 60;
+    if (masterGrid) {
+        const gr = masterGrid.getBoundingClientRect();
+        const relX = px - gr.left;
+        const relY = py - gr.top;
+        isOnGrid = relX > -60 && relX < gr.width + 60 && relY > -60 && relY < gr.height + 60;
     }
 
-    // Clip-path cutout (only when character is on the grid area)
-    if (w && isOnGrid) {
-        const wr = w.getBoundingClientRect();
-        const relX = px - wr.left;
-        const relY = py - wr.top;
-        const outerPath = `M 0 0 L ${wr.width} 0 L ${wr.width} ${wr.height} L 0 ${wr.height} Z`;
+    // Clip-path cutout on MASTER-GRID (not wrapper — wrapper's ::before/::after must stay unclipped)
+    if (masterGrid && isOnGrid) {
+        const gr = masterGrid.getBoundingClientRect();
+        const relX = px - gr.left;
+        const relY = py - gr.top;
+        const outerPath = `M 0 0 L ${gr.width} 0 L ${gr.width} ${gr.height} L 0 ${gr.height} Z`;
 
         if (camEl.dataset.pSil === '1') {
             try {
@@ -317,18 +335,18 @@ function updateCharacterCutout() {
                         polyPath += (i === 0 ? 'M ' : 'L ') + sx.toFixed(1) + ' ' + sy.toFixed(1) + ' ';
                     }
                     polyPath += 'Z';
-                    w.style.clipPath = `path(evenodd, "${outerPath} ${polyPath}")`;
+                    masterGrid.style.clipPath = `path(evenodd, "${outerPath} ${polyPath}")`;
                 }
             } catch(e) {
                 const r = 45;
-                w.style.clipPath = `path(evenodd, "${outerPath} M ${relX} ${relY - r} A ${r} ${r} 0 1 0 ${relX} ${relY + r} A ${r} ${r} 0 1 0 ${relX} ${relY - r} Z")`;
+                masterGrid.style.clipPath = `path(evenodd, "${outerPath} M ${relX} ${relY - r} A ${r} ${r} 0 1 0 ${relX} ${relY + r} A ${r} ${r} 0 1 0 ${relX} ${relY - r} Z")`;
             }
         } else {
             const r = 45;
-            w.style.clipPath = `path(evenodd, "${outerPath} M ${relX} ${relY - r} A ${r} ${r} 0 1 0 ${relX} ${relY + r} A ${r} ${r} 0 1 0 ${relX} ${relY - r} Z")`;
+            masterGrid.style.clipPath = `path(evenodd, "${outerPath} M ${relX} ${relY - r} A ${r} ${r} 0 1 0 ${relX} ${relY + r} A ${r} ${r} 0 1 0 ${relX} ${relY - r} Z")`;
         }
-    } else if (w) {
-        w.style.clipPath = 'none';
+    } else if (masterGrid) {
+        masterGrid.style.clipPath = 'none';
     }
 
     // Visible silhouette aura (SVG polygon around character)
@@ -381,8 +399,8 @@ function applyWASD() {
         const len = Math.sqrt(mx * mx + my * my);
         gridX += (mx / len) * walkSpeed;
         gridY += (my / len) * walkSpeed;
-        w.style.left = gridX + 'px';
-        w.style.top = gridY + 'px';
+        w.style.left = (gridX + gridCalibX) + 'px';
+        w.style.top = (gridY + gridCalibY) + 'px';
         w.style.transform = 'none';
     }
 }
@@ -443,6 +461,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const w = document.getElementById('sfl-grid-wrapper');
         if (w) w.dataset.perf = perfTier;
         console.log(`[Grid] Performance tier: ${perfTier}`);
+    }
+    else if (request.action === 'setCalibration') {
+        gridCalibX = request.x || 0;
+        gridCalibY = request.y || 0;
+        chrome.storage.local.set({ gridCalibX, gridCalibY });
+        // Immediately reposition the wrapper
+        const w = document.getElementById('sfl-grid-wrapper');
+        if (w && gridX !== null) {
+            w.style.left = (gridX + gridCalibX) + 'px';
+            w.style.top = (gridY + gridCalibY) + 'px';
+        }
+        console.log(`[Grid] Calibration: (${gridCalibX}, ${gridCalibY})`);
     }
     sendResponse({status:"ok"}); return true;
 });
@@ -532,6 +562,22 @@ function createGrid() {
     }
 
     gridWrapper.appendChild(masterGrid);
+
+    // If a theme is active, apply absolute positioning for pixel-perfect alignment
+    if (currentTheme !== 'none') {
+        const tileW = masterGrid.offsetWidth / 10;
+        const tileH = masterGrid.offsetHeight / 10;
+        const cells = masterGrid.querySelectorAll('.sfl-grid-cell');
+        cells.forEach((cell, i) => {
+            const col = i % 10, row = Math.floor(i / 10);
+            cell.style.position = 'absolute';
+            cell.style.left = `${col * tileW}px`;
+            cell.style.top = `${row * tileH}px`;
+            cell.style.width = `${tileW}px`;
+            cell.style.height = `${tileH}px`;
+        });
+    }
+
     updateGridMode(); makeDraggable(gridWrapper);
 
     // Mouse spotlight tracking
@@ -761,29 +807,73 @@ function makeDraggable(el) {
 // =============================================================================
 function applyTheme(theme) {
     const wrapper = document.getElementById('sfl-grid-wrapper');
-    if (!wrapper) return;
+    if (!wrapper || !masterGrid) return;
 
+    const cells = masterGrid.querySelectorAll('.sfl-grid-cell');
+
+    // -------------------------------------------------------------------------
+    // STEP 1: Capture pixel-perfect positions from DEFAULT CSS grid layout
+    // The default grid aligns perfectly with the game. We capture those exact
+    // positions and re-use them in themed mode as absolute coordinates.
+    // This makes alignment IMMUNE to any CSS theme interference.
+    // -------------------------------------------------------------------------
+    let cellPositions = null;
+    if (theme !== 'none') {
+        // Temporarily strip ALL theme styling to get clean default layout
+        wrapper.style.opacity = '0'; // prevent visual flicker
+        wrapper.removeAttribute('data-theme');
+        wrapper.removeAttribute('data-perf');
+
+        // Reset cells to default grid flow
+        cells.forEach(cell => {
+            cell.style.position = '';
+            cell.style.left = '';
+            cell.style.top = '';
+            cell.style.width = '';
+            cell.style.height = '';
+        });
+
+        // Force synchronous layout calculation in default mode
+        void masterGrid.offsetHeight;
+
+        // Capture every cell's exact position relative to the grid
+        const gridRect = masterGrid.getBoundingClientRect();
+        cellPositions = [];
+        cells.forEach(cell => {
+            const r = cell.getBoundingClientRect();
+            cellPositions.push({
+                left: r.left - gridRect.left,
+                top: r.top - gridRect.top,
+                width: r.width,
+                height: r.height
+            });
+        });
+        console.log(`[Grid] Position capture: grid=${gridRect.width}x${gridRect.height}, tile[0]=${JSON.stringify(cellPositions[0])}, tile[99]=${JSON.stringify(cellPositions[99])}`);
+    }
+
+    // -------------------------------------------------------------------------
+    // STEP 2: Apply theme
+    // -------------------------------------------------------------------------
     if (theme === 'none') {
         wrapper.removeAttribute('data-theme');
     } else {
         wrapper.setAttribute('data-theme', theme);
     }
-
-    // Set perf tier on wrapper
     wrapper.dataset.perf = perfTier;
+    wrapper.style.opacity = ''; // restore visibility
 
     // Themed tile type distribution (all colored, no 'empty')
     const themedTypes = ['blue', 'yellow', 'red'];
 
-    // Re-trigger pop-in animation on all cells for a morph effect
-    const cells = wrapper.querySelectorAll('.sfl-grid-cell');
+    // -------------------------------------------------------------------------
+    // STEP 3: Apply captured positions + animations
+    // -------------------------------------------------------------------------
     cells.forEach((cell, i) => {
         // Reset tile states on theme switch
         cell.classList.remove('digging', 'dug', 'tile-pending', 'tile-revealing', 'tile-revealed',
             'item-sand', 'item-crab', 'item-bone', 'item-rare', 'item-misc');
         cell.dataset.tileState = '';
         delete cell.dataset.itemTier;
-        // Clean up any FX container children
         const fx = cell.querySelector('.dig-fx-container');
         if (fx) fx.remove();
 
@@ -792,9 +882,19 @@ function applyTheme(theme) {
             cell.dataset.type = themedTypes[Math.floor(Math.random() * themedTypes.length)];
         }
 
-        cell.style.animation = 'none';
-        cell.offsetHeight; // force reflow
         const row = Math.floor(i / 10), col = i % 10;
+
+        if (theme !== 'none' && cellPositions) {
+            // PIXEL-PERFECT: use cssText with !important to guarantee override
+            const p = cellPositions[i];
+            cell.style.cssText = `position: absolute !important; left: ${p.left}px !important; top: ${p.top}px !important; width: ${p.width}px !important; height: ${p.height}px !important; box-sizing: border-box !important; margin: 0 !important;`;
+        } else {
+            // DEFAULT: use CSS grid flow (already perfect)
+            cell.style.cssText = '';
+        }
+
+        // Re-apply animation after cssText (which clears all inline styles)
+        cell.offsetHeight; // force reflow
         cell.style.animationDelay = `${(row + col) * 0.02}s`;
         cell.style.animation = 'popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards';
     });

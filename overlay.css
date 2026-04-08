@@ -10,8 +10,8 @@
     z-index: 99999;
     border-radius: 4px;
     transition: box-shadow 0.3s ease, border 0.3s ease;
-    transform-style: preserve-3d;
-    perspective: 1000px;
+    transform-style: flat;
+    perspective: none;
     overflow: visible;
 }
 
@@ -38,7 +38,9 @@
 #sfl-grid-wrapper[data-theme].sfl-mode-locked {
     pointer-events: auto;
     background: transparent;
-    border: none;
+    /* Keep SAME border width as default (2px) so grid position stays identical.
+       'none' shifts grid 2px up-left = misalignment. */
+    border: 2px solid transparent;
 }
 
 .sfl-mode-unlocked {
@@ -52,7 +54,7 @@
 
 #sfl-grid-wrapper[data-theme].sfl-mode-unlocked {
     background: transparent;
-    border: none;
+    border: 2px solid transparent;
     box-shadow: none;
     backdrop-filter: none;
 }
