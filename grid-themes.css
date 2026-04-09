@@ -12,11 +12,12 @@
     --ease-smooth: cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-/* Quality Scalers */
+/* Quality Scalers — controls jackpot animation intensity per perf tier */
 #sfl-grid-wrapper[data-quality="ultra"] { --jp-scale: 1; --jp-shadow: 1; --jp-blur: 1; --jp-text: 1; }
 #sfl-grid-wrapper[data-quality="high"] { --jp-scale: 0.8; --jp-shadow: 0.6; --jp-blur: 0.7; --jp-text: 0.8; }
 #sfl-grid-wrapper[data-quality="medium"] { --jp-scale: 0.4; --jp-shadow: 0.3; --jp-blur: 0.3; --jp-text: 0.6; }
-#sfl-grid-wrapper[data-quality="low"] { --jp-scale: 0.15; --jp-shadow: 0.05; --jp-blur: 0; --jp-text: 0.35; }
+#sfl-grid-wrapper[data-quality="low"],
+#sfl-grid-wrapper[data-quality="potato"] { --jp-scale: 0.15; --jp-shadow: 0.05; --jp-blur: 0; --jp-text: 0.35; }
 
         /* ==========================================================================
            3. BASE GRID ARCHITECTURE (only when a theme is active)
@@ -5574,7 +5575,7 @@
         }
 
         /* Jackpot Global Grid Overload (Shaking removed for overlay alignment) */
-        .grid.jackpot-active {
+        #sfl-master-grid.jackpot-active {
             animation: gridJackpotOverload 3s cubic-bezier(.36, .07, .19, .97) both !important;
         }
 
@@ -5968,7 +5969,8 @@
         }
 
         /* Quality Scaler Override: Kill particle shadows on Potato */
-        #sfl-grid-wrapper[data-quality="low"] .dig-particle {
+        #sfl-grid-wrapper[data-quality="low"] .dig-particle,
+        #sfl-grid-wrapper[data-quality="potato"] .dig-particle {
             box-shadow: none !important;
             filter: none !important;
         }

@@ -646,23 +646,40 @@ function removeGrid() {
 
 // =============================================================================
 // ITEM TIER CLASSIFICATION — determines animation intensity
+// Maps actual SFL API item names → tier categories
 // =============================================================================
 function getItemTier(itemName) {
     const name = (itemName || '').toLowerCase();
-    if (name.includes('sand') || name.includes('seaweed')) return 'sand';
-    if (name.includes('crab')) return 'crab';
-    if (name.includes('bone')) return 'bone';
-    if (name.includes('ammonite') || name.includes('shell') || name.includes('artefact') ||
-        name.includes('hieroglyph') || name.includes('map') || name.includes('puzzle')) return 'rare';
-    return 'misc'; // Coins, wooden compass, old bottle, etc.
+    // Tier 5 (Sand) — empty dig, base animation
+    if (name === 'sand' || name.includes('seaweed')) return 'sand';
+    // Tier 4 (Crab) — minor hint pulse
+    if (name === 'crab' || name.includes('crab')) return 'crab';
+    // Tier 2 (Bone) — spectral resonance
+    if (name.includes('camel bone') || name.includes('bone')) return 'bone';
+    // Tier 1 (Rare/Jackpot) — EXTREME animations
+    // Seasonal artefacts, puzzle pieces, hieroglyphs, pearls, bounty
+    if (name.includes('artefact') || name.includes('seasonal artefact') ||
+        name.includes('hieroglyph') || name.includes('puzzle') ||
+        name.includes('scarab') || name.includes('cow skull') ||
+        name.includes('ancient clock') || name.includes('broken pillar') ||
+        name.includes('coprolite') || name.includes('moon crystal') ||
+        name.includes('ammonite shell') || name.includes('pearl') ||
+        name.includes('pirate bounty')) return 'rare';
+    // Tier 3 (Misc) — treasure glow
+    // Coins, compass, bottles, vases, shells, coral, sea cucumber, starfish, etc.
+    return 'misc';
 }
 
+// Maps named tiers → CSS tier numbers (tier-1 through tier-5)
+// CSS animations use .tier-1, .tier-2 etc. class names
+const TIER_TO_NUMBER = { sand: '5', misc: '3', crab: '4', bone: '2', rare: '1' };
+
 const TIER_CONFIG = {
-    sand:  { durationMult: 0.4, particleMult: 0.3 },   // Quick, minimal
-    misc:  { durationMult: 0.7, particleMult: 0.6 },   // Standard
-    crab:  { durationMult: 0.85, particleMult: 1.0 },   // Enhanced
-    bone:  { durationMult: 1.0, particleMult: 1.5 },    // Strong
-    rare:  { durationMult: 1.5, particleMult: 2.5 },    // EPIC
+    sand:  { durationMult: 0.4, particleMult: 0.3, velocityMult: 0.5, sizeMult: 0.8 },   // Quick, minimal, melancholic
+    misc:  { durationMult: 0.7, particleMult: 0.6, velocityMult: 1.5, sizeMult: 1.2 },   // Treasure glow
+    crab:  { durationMult: 0.85, particleMult: 1.0, velocityMult: 1.2, sizeMult: 1.0 },  // Minor hint pulse
+    bone:  { durationMult: 1.0, particleMult: 1.5, velocityMult: 2.0, sizeMult: 1.5 },   // Spectral resonance
+    rare:  { durationMult: 1.5, particleMult: 2.5, velocityMult: 5.0, sizeMult: 2.5 },   // JACKPOT — EPIC
 };
 
 // =============================================================================
@@ -679,27 +696,52 @@ function handleDigResult(row, col, item) {
     const tier = getItemTier(item);
     const tierConf = TIER_CONFIG[tier];
 
-    // Transition: PENDING → DIGGING (uses theme's native dig animation + tier class)
+    // Transition: PENDING → DIGGING
+    // Add BOTH named tier class (item-sand etc.) AND numeric tier class (tier-5 etc.)
+    // CSS tier animations (.tier-1 through .tier-5) won't work without the numeric class!
+    const tierNum = TIER_TO_NUMBER[tier] || '3';
     cell.dataset.tileState = 'digging';
     cell.dataset.itemTier = tier;
     cell.classList.remove('tile-pending');
-    cell.classList.add('digging', `item-${tier}`);
+    cell.classList.add('digging', `item-${tier}`, `tier-${tierNum}`);
 
     // Add dig-fx-container for themes that use it
     const fx = document.createElement('div');
     fx.className = 'dig-fx-container';
     cell.appendChild(fx);
 
+    // --- JACKPOT GLOBAL EFFECTS (Tier 1 / Rare only) ---
+    if (tier === 'rare' && masterGrid) {
+        // Trigger grid overload glow (CSS: gridJackpotOverload animation)
+        masterGrid.classList.add('jackpot-active');
+
+        // Spawn massive "PUZZLE FOUND!" text across screen
+        const text = document.createElement('div');
+        text.className = 'jackpot-text';
+        text.innerText = 'PUZZLE FOUND!';
+        document.body.appendChild(text);
+
+        // Clean up global effects after animation
+        setTimeout(() => {
+            masterGrid.classList.remove('jackpot-active');
+            if (text.parentNode) text.remove();
+        }, 3500);
+    }
+
     // Spawn reveal particles (scaled by perf tier × item tier)
+    // Jackpot (tier 1) spawns instantly for maximum impact; others delayed
+    const particleDelay = tier === 'rare' ? 100 : 1000;
     const particleCount = Math.round(perf.particles * tierConf.particleMult);
-    if (particleCount > 0) spawnThemeParticles(cell, currentTheme, particleCount);
+    setTimeout(() => {
+        if (particleCount > 0) spawnThemeParticles(cell, currentTheme, particleCount, tier);
+    }, particleDelay);
 
     // Animation duration scaled by item tier
     const animDuration = Math.round(perf.animDuration * tierConf.durationMult);
 
     // After animation, mark as REVEALED (transparent — shows real game tile)
     setTimeout(() => {
-        cell.classList.remove('digging', `item-${tier}`);
+        cell.classList.remove('digging', `item-${tier}`, `tier-${tierNum}`);
         cell.classList.add('dug', 'tile-revealed');
         cell.dataset.tileState = 'revealed';
         // Clean up fx container
@@ -707,7 +749,7 @@ function handleDigResult(row, col, item) {
         if (fxEl) fxEl.remove();
     }, animDuration);
 
-    console.log(`[Grid] Tile (${col},${row}) digging [${tier}] → revealed: ${item}`);
+    console.log(`[Grid] Tile (${col},${row}) digging [${tier}/tier-${tierNum}] → revealed: ${item}`);
 }
 
 function applyGridColors(data) {
@@ -860,7 +902,12 @@ function applyTheme(theme) {
         wrapper.setAttribute('data-theme', theme);
     }
     wrapper.dataset.perf = perfTier;
+    wrapper.dataset.quality = perfTier; // CSS uses data-quality for --jp-* vars (jackpot scale/shadow/blur)
     wrapper.style.opacity = ''; // restore visibility
+
+    // Clean up any lingering jackpot effects from a previous theme
+    masterGrid.classList.remove('jackpot-active');
+    document.querySelectorAll('.jackpot-text').forEach(el => el.remove());
 
     // Themed tile type distribution (all colored, no 'empty')
     const themedTypes = ['blue', 'yellow', 'red'];
@@ -869,9 +916,10 @@ function applyTheme(theme) {
     // STEP 3: Apply captured positions + animations
     // -------------------------------------------------------------------------
     cells.forEach((cell, i) => {
-        // Reset tile states on theme switch
+        // Reset tile states on theme switch (includes numeric tier classes for CSS animations)
         cell.classList.remove('digging', 'dug', 'tile-pending', 'tile-revealing', 'tile-revealed',
-            'item-sand', 'item-crab', 'item-bone', 'item-rare', 'item-misc');
+            'item-sand', 'item-crab', 'item-bone', 'item-rare', 'item-misc',
+            'tier-1', 'tier-2', 'tier-3', 'tier-4', 'tier-5', 'jackpot-active');
         cell.dataset.tileState = '';
         delete cell.dataset.itemTier;
         const fx = cell.querySelector('.dig-fx-container');
@@ -908,12 +956,28 @@ function applyTheme(theme) {
 }
 
 // =============================================================================
-// PARTICLE PHYSICS ENGINE (performance-scaled)
+// PARTICLE PHYSICS ENGINE (performance-scaled + tier-aware)
+// Matches reference Maingridesignpresets.html particle system exactly.
 // =============================================================================
-function spawnThemeParticles(tileElement, theme, numOverride) {
+function spawnThemeParticles(tileElement, theme, numOverride, tier) {
     if (!masterGrid) return;
     const perf = PERF_CONFIG[perfTier] || PERF_CONFIG.high;
-    const numParticles = numOverride || perf.particles;
+    const tierConf = TIER_CONFIG[tier] || TIER_CONFIG.misc;
+    let numParticles = numOverride || perf.particles;
+
+    // Quality scaling for non-jackpot tiers (matches reference exactly)
+    if (tier !== 'rare') {
+        if (perfTier === 'high') numParticles = Math.floor(numParticles * 0.7);
+        else if (perfTier === 'medium') numParticles = Math.floor(numParticles * 0.4);
+        else if (perfTier === 'potato') numParticles = Math.floor(numParticles * 0.15);
+    } else {
+        // Jackpot quality scaling (from reference)
+        if (perfTier === 'ultra') numParticles = Math.max(numParticles, 200);
+        else if (perfTier === 'high') numParticles = Math.max(numParticles, 100);
+        else if (perfTier === 'medium') numParticles = Math.max(numParticles, 50);
+        else if (perfTier === 'potato') numParticles = Math.max(numParticles, 15);
+    }
+
     const tileRect = tileElement.getBoundingClientRect();
     const gridRect = masterGrid.getBoundingClientRect();
     const centerX = (tileRect.left - gridRect.left) + (tileRect.width / 2);
@@ -937,30 +1001,49 @@ function spawnThemeParticles(tileElement, theme, numOverride) {
         necro: ['#8a2be2', '#39ff14'], quantum: ['#00ffff', '#b100ff'],
         vaporwave: ['#ff71ce', '#01cdfe'], spinning: ['#ff4500', '#ffd700'],
     };
-    const colors = themeColors[theme] || ['#ffffff', '#cccccc'];
+    let colors = themeColors[theme] || ['#ffffff', '#cccccc'];
+
+    // Sand tier (tier 5): melancholic dark crimson override (from reference)
+    if (tier === 'sand') {
+        colors = ['#660000', '#220000'];
+    }
+
+    // Tier-specific velocity and size multipliers
+    const velocityMult = tierConf.velocityMult || 1;
+    const sizeMult = tierConf.sizeMult || 1;
 
     for (let i = 0; i < numParticles; i++) {
         const p = document.createElement('div');
         p.className = 'dig-particle';
-        const size = Math.random() * 8 + 3;
+        const size = (Math.random() * 8 + 4) * sizeMult;
         p.style.width = p.style.height = `${size}px`;
         p.style.backgroundColor = colors[i % 2];
-        p.style.boxShadow = `0 0 8px ${colors[i % 2]}`;
+        // Kill shadows on potato (except jackpot) for performance
+        if (perfTier !== 'potato' || tier === 'rare') {
+            p.style.boxShadow = `0 0 10px ${colors[i % 2]}`;
+        }
         p.style.left = `${centerX - size/2}px`;
         p.style.top = `${centerY - size/2}px`;
         masterGrid.appendChild(p);
 
+        // Physics math — velocity scaled by tier (from reference)
         const angle = Math.random() * Math.PI * 2;
-        const vel = Math.random() * 80 + 40;
-        const dx = Math.cos(angle) * vel, dy = Math.sin(angle) * vel;
+        const velocity = (Math.random() * 100 + 50) * velocityMult;
+        const dx = Math.cos(angle) * velocity;
+        const dy = Math.sin(angle) * velocity;
         const rot = Math.random() * 720 - 360;
+
+        // Jackpot particles hang 1.5x longer (from reference)
+        const baseDuration = 1000 + Math.random() * 1000;
+        const duration = baseDuration * (tier === 'rare' ? 1.5 : 1);
 
         p.animate([
             { transform: 'translate(0,0) rotate(0deg) scale(1)', opacity: 1 },
             { transform: `translate(${dx}px,${dy}px) rotate(${rot}deg) scale(0)`, opacity: 0 }
-        ], { duration: 1000 + Math.random() * 800, easing: 'cubic-bezier(0.25,0.8,0.25,1)', fill: 'forwards' });
+        ], { duration, easing: 'cubic-bezier(0.25,0.8,0.25,1)', fill: 'forwards' });
 
-        setTimeout(() => { if(p.parentNode) p.remove(); }, 2500);
+        // Extended cleanup time (4s like reference, up from 2.5s)
+        setTimeout(() => { if(p.parentNode) p.remove(); }, 4000);
     }
 }
 
