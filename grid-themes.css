@@ -612,14 +612,7 @@
         }
 
         #sfl-grid-wrapper[data-theme="hellfire"] #sfl-master-grid {
-            border-top: 2px solid #5a0000;
-            border-right: 2px solid #5a0000;
-            border-bottom: 2px solid #5a0000;
-            border-left: 2px solid #5a0000;
-            background-color: rgba(20, 0, 0, 0.8);
-            box-shadow:
-                inset 0 0 60px rgba(255, 0, 0, 0.4),
-                inset 0 0 120px rgba(100, 0, 0, 0.5);
+            /* Overridden by base !important rules — left for reference */
         }
 
         /* Layered Chaotic Burning Edges */
@@ -635,6 +628,7 @@
             background-size: 400% 400%;
             z-index: -1;
             filter: blur(20px);
+            opacity: 0.6; /* Toned down for overlay visibility */
             animation:
                 hellfireBurnPrimary 3s infinite alternate ease-in-out,
                 hellfireMove 5s linear infinite;
@@ -655,7 +649,7 @@
             animation:
                 hellfireBurnSecondary 2.5s infinite alternate-reverse ease-in-out,
                 hellfireMove 7s linear infinite reverse;
-            opacity: 0.8;
+            opacity: 0.45; /* Reduced for overlay — game must show through */
         }
 
         @keyframes hellfireBurnPrimary {
@@ -2692,20 +2686,21 @@
         #sfl-grid-wrapper[data-theme="mecha"]::before {
             content: '';
             position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
+            /* Caution tape only on outer edge, not covering the grid */
+            top: -8px;
+            right: -8px;
+            bottom: -8px;
+            left: -8px;
             border-radius: 6px;
             background: repeating-linear-gradient(45deg,
-                    #ffcc00,
-                    #ffcc00 25px,
-                    #111111 25px,
-                    #111111 50px);
+                    rgba(255, 204, 0, 0.7),
+                    rgba(255, 204, 0, 0.7) 25px,
+                    rgba(17, 17, 17, 0.7) 25px,
+                    rgba(17, 17, 17, 0.7) 50px);
             background-size: 70px 70px;
             animation: mechaCautionTape 2s linear infinite;
             z-index: -1;
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9);
+            opacity: 0.6; /* Toned down for overlay visibility */
         }
 
         @keyframes mechaCautionTape {
@@ -2719,17 +2714,9 @@
         }
 
         #sfl-grid-wrapper[data-theme="mecha"] #sfl-master-grid {
-            border-top: 10px solid #555555;
-            border-right: 10px solid #555555;
-            border-bottom: 10px solid #555555;
-            border-left: 10px solid #555555;
-            border-radius: 0;
-            background-color: #222222;
-            /* Manipulating the edges: Chamfered (cut) corners while remaining a square box */
-            clip-path: polygon(5% 0, 95% 0, 100% 5%, 100% 95%, 95% 100%, 5% 100%, 0 95%, 0 5%);
-            -webkit-clip-path: polygon(5% 0, 95% 0, 100% 5%, 100% 95%, 95% 100%, 5% 100%, 0 95%, 0 5%);
-            box-shadow: inset 0 0 30px #000000;
-            padding: 12px;
+            /* clip-path REMOVED: incompatible with overlay absolute positioning,
+               and would clip revealed tiles near corners. */
+            /* Overridden by base !important rules — left for reference */
         }
 
         #sfl-grid-wrapper[data-theme="mecha"] .sfl-grid-cell[data-type="blue"] {
@@ -2758,11 +2745,12 @@
 
         #sfl-grid-wrapper[data-theme="mecha"] .sfl-grid-cell {
             border-radius: 3px;
-            border: 2px solid #444444;
+            border: 2px solid rgba(100, 100, 100, 0.5);
             box-shadow:
-                inset 2px 2px 6px rgba(255, 255, 255, 0.15),
-                inset -2px -2px 6px rgba(0, 0, 0, 0.6);
-            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.3);
+                inset 2px 2px 6px rgba(255, 255, 255, 0.08),
+                inset -2px -2px 6px rgba(0, 0, 0, 0.3);
+            /* Reduced opacity for overlay — game must show through tiles */
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.2);
         }
 
         #sfl-grid-wrapper[data-theme="mecha"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
@@ -2851,14 +2839,13 @@
         #sfl-grid-wrapper[data-theme="obsidian"]::after {
             content: '';
             position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            background-color: #1a0033;
+            top: -10px;
+            right: -10px;
+            bottom: -10px;
+            left: -10px;
+            background-color: rgba(26, 0, 51, 0.5); /* Reduced opacity for overlay */
             box-shadow: 0 0 50px #8a2be2;
             z-index: -1;
-            transition: all var(--transition-speed-medium);
             animation: obsidianSpikePulse 5s infinite alternate ease-in-out;
         }
 
@@ -2868,7 +2855,7 @@
 
         #sfl-grid-wrapper[data-theme="obsidian"]::after {
             transform: rotate(-15deg) scale(1.08);
-            background-color: #330066;
+            background-color: rgba(51, 0, 102, 0.35);
         }
 
         @keyframes obsidianSpikePulse {
@@ -2885,16 +2872,7 @@
         }
 
         #sfl-grid-wrapper[data-theme="obsidian"] #sfl-master-grid {
-            border-top: 5px solid #8a2be2;
-            border-right: 5px solid #8a2be2;
-            border-bottom: 5px solid #8a2be2;
-            border-left: 5px solid #8a2be2;
-            border-radius: 0;
-            /* Strictly square core */
-            background-color: #0d001a;
-            box-shadow:
-                inset 0 0 80px #4b0082,
-                0 0 40px #000000;
+            /* Overridden by base !important rules — left for reference */
         }
 
         #sfl-grid-wrapper[data-theme="obsidian"] .sfl-grid-cell[data-type="blue"] {
@@ -2922,17 +2900,16 @@
         }
 
         #sfl-grid-wrapper[data-theme="obsidian"] .sfl-grid-cell {
-            border-radius: 0;
-            /* Diamond tiles inside the square */
-            transform: rotate(45deg) scale(0.65);
-            border: 2px solid rgba(var(--base-r), var(--base-g), var(--base-b), 0.6);
+            border-radius: 2px;
+            /* Diamond rotation REMOVED: breaks overlay grid alignment.
+               Tiles must stay axis-aligned to match game grid. */
+            border: 1px solid rgba(var(--base-r), var(--base-g), var(--base-b), 0.5);
             background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.2);
         }
 
         #sfl-grid-wrapper[data-theme="obsidian"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
-            transform: rotate(0deg) scale(1.25) translateZ(15px);
-            /* Snaps to square on hover */
-            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 1);
+            transform: scale(1.15) translateZ(15px);
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.8);
             border-color: #ffffff;
             box-shadow:
                 0 0 50px rgba(var(--base-r), var(--base-g), var(--base-b), 1),
@@ -2952,7 +2929,7 @@
 
         @keyframes obsidianDigSequence {
             0% {
-                transform: rotate(45deg) scale(0.65);
+                transform: scale(1);
                 opacity: 1;
             }
 
@@ -3976,15 +3953,7 @@
         }
 
         #sfl-grid-wrapper[data-theme="gold"] #sfl-master-grid {
-            border-top: 5px solid #ffd700;
-            border-right: 5px solid #ffd700;
-            border-bottom: 5px solid #ffd700;
-            border-left: 5px solid #ffd700;
-            border-radius: 0;
-            background-color: #1f1900;
-            box-shadow:
-                0 0 80px rgba(255, 215, 0, 0.5),
-                inset 0 0 60px rgba(255, 215, 0, 0.4);
+            /* Overridden by base !important rules — left for reference */
         }
 
         #sfl-grid-wrapper[data-theme="gold"]::before {
@@ -3997,6 +3966,7 @@
             background: linear-gradient(45deg, #ffdf00, #d4af37, #996515, #ffdf00);
             filter: blur(15px);
             z-index: -1;
+            opacity: 0.5; /* Toned down for overlay — game must show through */
             animation: goldAuroraFlow 5s linear infinite;
             background-size: 200% 200%;
         }
@@ -4041,9 +4011,10 @@
 
         #sfl-grid-wrapper[data-theme="gold"] .sfl-grid-cell {
             border-radius: 2px;
-            border: 1px solid rgba(255, 215, 0, 0.6);
-            box-shadow: inset 0 0 15px rgba(255, 215, 0, 0.3);
-            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.25);
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.15);
+            /* Reduced opacity for overlay — game must show through tiles */
+            background-color: rgba(var(--base-r), var(--base-g), var(--base-b), 0.18);
         }
 
         #sfl-grid-wrapper[data-theme="gold"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) {
