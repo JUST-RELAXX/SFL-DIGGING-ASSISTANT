@@ -628,10 +628,12 @@
             background-size: 400% 400%;
             z-index: -1;
             filter: blur(20px);
-            opacity: 0.6; /* Toned down for overlay visibility */
             animation:
                 hellfireBurnPrimary 3s infinite alternate ease-in-out,
                 hellfireMove 5s linear infinite;
+            /* Edge-fade: keep fire at edges, fade in center so dug items show */
+            -webkit-mask-image: radial-gradient(ellipse 70% 70% at center, transparent 40%, black 75%);
+            mask-image: radial-gradient(ellipse 70% 70% at center, transparent 40%, black 75%);
         }
 
         #sfl-grid-wrapper[data-theme="hellfire"]::after {
@@ -649,7 +651,10 @@
             animation:
                 hellfireBurnSecondary 2.5s infinite alternate-reverse ease-in-out,
                 hellfireMove 7s linear infinite reverse;
-            opacity: 0.45; /* Reduced for overlay — game must show through */
+            opacity: 0.8;
+            /* Edge-fade: secondary glow stays at edges */
+            -webkit-mask-image: radial-gradient(ellipse 75% 75% at center, transparent 35%, black 70%);
+            mask-image: radial-gradient(ellipse 75% 75% at center, transparent 35%, black 70%);
         }
 
         @keyframes hellfireBurnPrimary {
@@ -2693,14 +2698,16 @@
             left: -8px;
             border-radius: 6px;
             background: repeating-linear-gradient(45deg,
-                    rgba(255, 204, 0, 0.7),
-                    rgba(255, 204, 0, 0.7) 25px,
-                    rgba(17, 17, 17, 0.7) 25px,
-                    rgba(17, 17, 17, 0.7) 50px);
+                    rgba(255, 204, 0, 0.9),
+                    rgba(255, 204, 0, 0.9) 25px,
+                    rgba(17, 17, 17, 0.9) 25px,
+                    rgba(17, 17, 17, 0.9) 50px);
             background-size: 70px 70px;
             animation: mechaCautionTape 2s linear infinite;
             z-index: -1;
-            opacity: 0.6; /* Toned down for overlay visibility */
+            /* Edge-fade: tape at edges, clear center for dug items */
+            -webkit-mask-image: radial-gradient(ellipse 65% 65% at center, transparent 45%, black 75%);
+            mask-image: radial-gradient(ellipse 65% 65% at center, transparent 45%, black 75%);
         }
 
         @keyframes mechaCautionTape {
@@ -2843,10 +2850,13 @@
             right: -10px;
             bottom: -10px;
             left: -10px;
-            background-color: rgba(26, 0, 51, 0.5); /* Reduced opacity for overlay */
+            background-color: rgba(26, 0, 51, 0.7); /* Rich purple for obsidian aesthetic */
             box-shadow: 0 0 50px #8a2be2;
             z-index: -1;
             animation: obsidianSpikePulse 5s infinite alternate ease-in-out;
+            /* Edge-fade: spikes at edges, clear center for dug items */
+            -webkit-mask-image: radial-gradient(ellipse 70% 70% at center, transparent 35%, black 70%);
+            mask-image: radial-gradient(ellipse 70% 70% at center, transparent 35%, black 70%);
         }
 
         #sfl-grid-wrapper[data-theme="obsidian"]::before {
@@ -2855,7 +2865,7 @@
 
         #sfl-grid-wrapper[data-theme="obsidian"]::after {
             transform: rotate(-15deg) scale(1.08);
-            background-color: rgba(51, 0, 102, 0.35);
+            background-color: rgba(51, 0, 102, 0.55);
         }
 
         @keyframes obsidianSpikePulse {
@@ -3966,9 +3976,12 @@
             background: linear-gradient(45deg, #ffdf00, #d4af37, #996515, #ffdf00);
             filter: blur(15px);
             z-index: -1;
-            opacity: 0.5; /* Toned down for overlay — game must show through */
+            opacity: 0.7;
             animation: goldAuroraFlow 5s linear infinite;
             background-size: 200% 200%;
+            /* Edge-fade: aurora at edges, transparent center for dug items */
+            -webkit-mask-image: radial-gradient(ellipse 70% 70% at center, transparent 40%, black 75%);
+            mask-image: radial-gradient(ellipse 70% 70% at center, transparent 40%, black 75%);
         }
 
         @keyframes goldAuroraFlow {

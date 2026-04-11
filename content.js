@@ -286,8 +286,9 @@ function updateCharacterCutout() {
     const shouldShowAura = auraEnabled || gridActive;
 
     if (!hasPlayer || !shouldShowAura) {
-        // CLIP ON MASTER-GRID (not wrapper) so edge effects (::before/::after) aren't clipped
-        if (masterGrid) masterGrid.style.clipPath = 'none';
+        // CLIP ON WRAPPER: cuts through ALL layers (tiles + edge effects like fire/glow)
+        // This ensures character is 100% visible while themes stay at full vibrancy.
+        if (w) w.style.clipPath = 'none';
         hideAuraSvg();
         return;
     }
@@ -304,49 +305,67 @@ function updateCharacterCutout() {
         isOnGrid = relX > -60 && relX < gr.width + 60 && relY > -60 && relY < gr.height + 60;
     }
 
-    // Clip-path cutout on MASTER-GRID (not wrapper — wrapper's ::before/::after must stay unclipped)
-    if (masterGrid && isOnGrid) {
-        const gr = masterGrid.getBoundingClientRect();
-        const relX = px - gr.left;
-        const relY = py - gr.top;
-        const outerPath = `M 0 0 L ${gr.width} 0 L ${gr.width} ${gr.height} L 0 ${gr.height} Z`;
+    // =========================================================================
+    // BUILD UNIFIED CLIP-PATH on WRAPPER
+    // Punches holes for: (1) character silhouette, (2) every dug/revealed tile.
+    // Uses SVG path with evenodd: outer rect shows everything, inner sub-paths cut holes.
+    // Outer rect extends 300px beyond wrapper to preserve edge effect overflow.
+    // =========================================================================
+    if (w) {
+        const wr = w.getBoundingClientRect();
+        const EXT = 300;
+        const outerPath = `M ${-EXT} ${-EXT} L ${wr.width + EXT} ${-EXT} L ${wr.width + EXT} ${wr.height + EXT} L ${-EXT} ${wr.height + EXT} Z`;
 
-        if (camEl.dataset.pSil === '1') {
-            try {
-                const rawPoly = camEl.dataset.pPoly;
-                if (rawPoly !== cachedPolyStr) {
-                    cachedPolyStr = rawPoly;
-                    cachedPolyParsed = JSON.parse(rawPoly);
-                }
-                const poly = cachedPolyParsed;
-                if (poly && poly.length > 2) {
-                    const fw = parseFloat(camEl.dataset.pFw);
-                    const fh = parseFloat(camEl.dataset.pFh);
-                    const flip = camEl.dataset.pFlip === '1';
-                    const scale = parseFloat(camEl.dataset.pScale) || 1;
-                    const yOffset = 3;
+        // --- Character silhouette hole (pixel-perfect) ---
+        let charPath = '';
+        if (isOnGrid) {
+            const relX = px - wr.left;
+            const relY = py - wr.top;
 
-                    let polyPath = '';
-                    for (let i = 0; i < poly.length; i++) {
-                        const p = poly[i];
-                        const localX = flip ? (fw - p.x) : p.x;
-                        const sx = relX + (localX - fw / 2) * scale;
-                        const sy = relY + (p.y - fh / 2) * scale + yOffset * scale;
-                        polyPath += (i === 0 ? 'M ' : 'L ') + sx.toFixed(1) + ' ' + sy.toFixed(1) + ' ';
+            if (camEl.dataset.pSil === '1') {
+                try {
+                    const rawPoly = camEl.dataset.pPoly;
+                    if (rawPoly !== cachedPolyStr) {
+                        cachedPolyStr = rawPoly;
+                        cachedPolyParsed = JSON.parse(rawPoly);
                     }
-                    polyPath += 'Z';
-                    masterGrid.style.clipPath = `path(evenodd, "${outerPath} ${polyPath}")`;
+                    const poly = cachedPolyParsed;
+                    if (poly && poly.length > 2) {
+                        const fw = parseFloat(camEl.dataset.pFw);
+                        const fh = parseFloat(camEl.dataset.pFh);
+                        const flip = camEl.dataset.pFlip === '1';
+                        const scale = parseFloat(camEl.dataset.pScale) || 1;
+                        const yOffset = 3;
+
+                        for (let i = 0; i < poly.length; i++) {
+                            const p = poly[i];
+                            const localX = flip ? (fw - p.x) : p.x;
+                            const sx = relX + (localX - fw / 2) * scale;
+                            const sy = relY + (p.y - fh / 2) * scale + yOffset * scale;
+                            charPath += (i === 0 ? ' M ' : ' L ') + sx.toFixed(1) + ' ' + sy.toFixed(1);
+                        }
+                        charPath += ' Z';
+                    }
+                } catch(e) {
+                    const r = 45;
+                    charPath = ` M ${relX} ${relY - r} A ${r} ${r} 0 1 0 ${relX} ${relY + r} A ${r} ${r} 0 1 0 ${relX} ${relY - r} Z`;
                 }
-            } catch(e) {
+                if (!charPath) {
+                    const r = 45;
+                    charPath = ` M ${relX} ${relY - r} A ${r} ${r} 0 1 0 ${relX} ${relY + r} A ${r} ${r} 0 1 0 ${relX} ${relY - r} Z`;
+                }
+            } else {
                 const r = 45;
-                masterGrid.style.clipPath = `path(evenodd, "${outerPath} M ${relX} ${relY - r} A ${r} ${r} 0 1 0 ${relX} ${relY + r} A ${r} ${r} 0 1 0 ${relX} ${relY - r} Z")`;
+                charPath = ` M ${relX} ${relY - r} A ${r} ${r} 0 1 0 ${relX} ${relY + r} A ${r} ${r} 0 1 0 ${relX} ${relY - r} Z`;
             }
-        } else {
-            const r = 45;
-            masterGrid.style.clipPath = `path(evenodd, "${outerPath} M ${relX} ${relY - r} A ${r} ${r} 0 1 0 ${relX} ${relY + r} A ${r} ${r} 0 1 0 ${relX} ${relY - r} Z")`;
         }
-    } else if (masterGrid) {
-        masterGrid.style.clipPath = 'none';
+
+        // Apply clip-path
+        if (charPath) {
+            w.style.clipPath = `path(evenodd, "${outerPath}${charPath}")`;
+        } else {
+            w.style.clipPath = 'none';
+        }
     }
 
     // Visible silhouette aura (SVG polygon around character)
