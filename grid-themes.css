@@ -632,8 +632,8 @@
                 hellfireBurnPrimary 3s infinite alternate ease-in-out,
                 hellfireMove 5s linear infinite;
             /* Edge-fade: keep fire at edges, fade in center so dug items show */
-            -webkit-mask-image: radial-gradient(ellipse 70% 70% at center, transparent 40%, black 75%);
-            mask-image: radial-gradient(ellipse 70% 70% at center, transparent 40%, black 75%);
+            -webkit-mask-image: radial-gradient(ellipse 80% 80% at center, transparent 55%, black 90%);
+            mask-image: radial-gradient(ellipse 80% 80% at center, transparent 55%, black 90%);
         }
 
         #sfl-grid-wrapper[data-theme="hellfire"]::after {
@@ -653,8 +653,8 @@
                 hellfireMove 7s linear infinite reverse;
             opacity: 0.8;
             /* Edge-fade: secondary glow stays at edges */
-            -webkit-mask-image: radial-gradient(ellipse 75% 75% at center, transparent 35%, black 70%);
-            mask-image: radial-gradient(ellipse 75% 75% at center, transparent 35%, black 70%);
+            -webkit-mask-image: radial-gradient(ellipse 85% 85% at center, transparent 50%, black 85%);
+            mask-image: radial-gradient(ellipse 85% 85% at center, transparent 50%, black 85%);
         }
 
         @keyframes hellfireBurnPrimary {
@@ -2706,8 +2706,8 @@
             animation: mechaCautionTape 2s linear infinite;
             z-index: -1;
             /* Edge-fade: tape at edges, clear center for dug items */
-            -webkit-mask-image: radial-gradient(ellipse 65% 65% at center, transparent 45%, black 75%);
-            mask-image: radial-gradient(ellipse 65% 65% at center, transparent 45%, black 75%);
+            -webkit-mask-image: radial-gradient(ellipse 75% 75% at center, transparent 55%, black 85%);
+            mask-image: radial-gradient(ellipse 75% 75% at center, transparent 55%, black 85%);
         }
 
         @keyframes mechaCautionTape {
@@ -2855,8 +2855,8 @@
             z-index: -1;
             animation: obsidianSpikePulse 5s infinite alternate ease-in-out;
             /* Edge-fade: spikes at edges, clear center for dug items */
-            -webkit-mask-image: radial-gradient(ellipse 70% 70% at center, transparent 35%, black 70%);
-            mask-image: radial-gradient(ellipse 70% 70% at center, transparent 35%, black 70%);
+            -webkit-mask-image: radial-gradient(ellipse 80% 80% at center, transparent 50%, black 85%);
+            mask-image: radial-gradient(ellipse 80% 80% at center, transparent 50%, black 85%);
         }
 
         #sfl-grid-wrapper[data-theme="obsidian"]::before {
@@ -3980,8 +3980,8 @@
             animation: goldAuroraFlow 5s linear infinite;
             background-size: 200% 200%;
             /* Edge-fade: aurora at edges, transparent center for dug items */
-            -webkit-mask-image: radial-gradient(ellipse 70% 70% at center, transparent 40%, black 75%);
-            mask-image: radial-gradient(ellipse 70% 70% at center, transparent 40%, black 75%);
+            -webkit-mask-image: radial-gradient(ellipse 80% 80% at center, transparent 55%, black 90%);
+            mask-image: radial-gradient(ellipse 80% 80% at center, transparent 55%, black 90%);
         }
 
         @keyframes goldAuroraFlow {
