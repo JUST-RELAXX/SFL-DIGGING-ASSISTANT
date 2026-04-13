@@ -605,14 +605,11 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="hellfire"] {
             background-color: #070000;
-        }
-
-        #sfl-grid-wrapper[data-theme="hellfire"] {
             padding: 16px;
-        }
-
-        #sfl-grid-wrapper[data-theme="hellfire"] #sfl-master-grid {
-            /* Overridden by base !important rules — left for reference */
+            border: 2px solid #5a0000;
+            box-shadow:
+                inset 0 0 60px rgba(255, 0, 0, 0.4),
+                inset 0 0 120px rgba(100, 0, 0, 0.5);
         }
 
         /* Layered Chaotic Burning Edges */
@@ -799,18 +796,8 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="electric"] {
             background-color: #020205;
-        }
-
-        #sfl-grid-wrapper[data-theme="electric"] {
             padding: 12px;
-        }
-
-        #sfl-grid-wrapper[data-theme="electric"] #sfl-master-grid {
-            border-top: 4px solid #ff6a00;
-            border-right: 4px solid #ff6a00;
-            border-bottom: 4px solid #ff6a00;
-            border-left: 4px solid #ff6a00;
-            background-color: rgba(10, 10, 20, 0.8);
+            border: 4px solid #ff6a00;
             box-shadow:
                 0 0 20px 5px rgba(255, 106, 0, 0.9),
                 0 0 50px 15px rgba(255, 0, 0, 0.7),
@@ -958,6 +945,7 @@
         #sfl-grid-wrapper[data-theme="spinning"] {
             padding: 10px;
             border-radius: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.15);
             box-shadow:
                 0 0 80px rgba(255, 69, 0, 0.4),
                 0 0 200px rgba(255, 215, 0, 0.2);
@@ -992,13 +980,7 @@
             }
         }
 
-        #sfl-grid-wrapper[data-theme="spinning"] #sfl-master-grid {
-            border-top: 2px solid rgba(255, 255, 255, 0.15);
-            border-right: 2px solid rgba(255, 255, 255, 0.15);
-            border-bottom: 2px solid rgba(255, 255, 255, 0.15);
-            border-left: 2px solid rgba(255, 255, 255, 0.15);
-            background-color: rgba(20, 10, 5, 0.7);
-        }
+        
 
         /* Spinning Fire Digging Animation (2.5s) */
         #sfl-grid-wrapper[data-theme="spinning"] .sfl-grid-cell.digging {
@@ -1058,18 +1040,8 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="cyberpunk"] {
             background-color: #000510;
-        }
-
-        #sfl-grid-wrapper[data-theme="cyberpunk"] {
             padding: 8px;
-        }
-
-        #sfl-grid-wrapper[data-theme="cyberpunk"] #sfl-master-grid {
-            border-top: 3px solid #00ffff;
-            border-right: 3px solid #00ffff;
-            border-bottom: 3px solid #00ffff;
-            border-left: 3px solid #00ffff;
-            background-color: rgba(0, 15, 30, 0.85);
+            border: 3px solid #00ffff;
             box-shadow:
                 0 0 15px #00ffff,
                 0 0 30px #00ffff,
@@ -1203,24 +1175,16 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="toxic"] {
             background-color: #030a03;
-        }
-
-        #sfl-grid-wrapper[data-theme="toxic"] {
             padding: 15px;
-        }
-
-        #sfl-grid-wrapper[data-theme="toxic"] #sfl-master-grid {
-            border-top: 5px solid #39ff14;
-            border-right: 5px solid #39ff14;
-            border-bottom: 5px solid #39ff14;
-            border-left: 5px solid #39ff14;
-            background-color: rgba(5, 25, 5, 0.75);
+            border: 5px solid #39ff14;
             border-radius: 25px;
             box-shadow:
                 0 0 30px #39ff14,
                 inset 0 0 60px #228b22;
             animation: toxicSlimePulse 4s infinite alternate ease-in-out;
         }
+
+        
 
         @keyframes toxicSlimePulse {
             0% {
@@ -1345,24 +1309,16 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="void"] {
             background-color: #000000;
-        }
-
-        #sfl-grid-wrapper[data-theme="void"] {
             padding: 10px;
-        }
-
-        #sfl-grid-wrapper[data-theme="void"] #sfl-master-grid {
-            border-top: 2px solid #2a004d;
-            border-right: 2px solid #2a004d;
-            border-bottom: 2px solid #2a004d;
-            border-left: 2px solid #2a004d;
-            background: radial-gradient(circle at center, #000000 20%, #1a0033 100%);
+            border: 2px solid #2a004d;
             border-radius: 35px;
             box-shadow:
                 0 0 100px 40px #000000,
                 inset 0 0 120px 20px #4b0082,
                 inset 0 0 180px 40px #000000;
         }
+
+        
 
         #sfl-grid-wrapper[data-theme="void"]::before {
             content: '';
@@ -1505,24 +1461,14 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="aurora"] {
             background-color: #000a14;
-        }
-
-        #sfl-grid-wrapper[data-theme="aurora"] {
             padding: 12px;
+            border: 3px solid rgba(0, 255, 128, 0.6);
+            box-shadow:
+                0 0 40px rgba(0, 255, 128, 0.4),
+                inset 0 0 60px rgba(0, 200, 100, 0.3);
         }
 
-        #sfl-grid-wrapper[data-theme="aurora"] #sfl-master-grid {
-            border-top: 1px solid rgba(255, 255, 255, 0.25);
-            border-right: 1px solid rgba(255, 255, 255, 0.25);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.25);
-            border-left: 1px solid rgba(255, 255, 255, 0.25);
-            background-color: rgba(10, 20, 35, 0.4);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            box-shadow:
-                inset 0 0 40px rgba(255, 255, 255, 0.15),
-                0 20px 50px rgba(0, 0, 0, 0.5);
-        }
+        
 
         #sfl-grid-wrapper[data-theme="aurora"]::before {
             content: '';
@@ -1656,26 +1602,15 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="matrix"] {
             background-color: #000000;
-        }
-
-        #sfl-grid-wrapper[data-theme="matrix"] {
             padding: 6px;
-        }
-
-        #sfl-grid-wrapper[data-theme="matrix"] #sfl-master-grid {
-            border-top: 4px solid #00ff00;
-            border-right: 4px solid #00ff00;
-            border-bottom: 4px solid #00ff00;
-            border-left: 4px solid #00ff00;
-            border-radius: 0;
-            background-color: #000500;
+            border: 3px solid #00ff00;
             box-shadow:
-                0 0 25px #00ff00,
-                inset 0 0 30px #003300;
-            backdrop-filter: none;
-            -webkit-backdrop-filter: none;
+                0 0 20px #00ff00,
+                inset 0 0 40px rgba(0, 255, 0, 0.3);
             animation: matrixGridFlicker 5s infinite;
         }
+
+        
 
         @keyframes matrixGridFlicker {
 
@@ -1867,23 +1802,15 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="holy"] {
             background-color: #1a1a14;
-        }
-
-        #sfl-grid-wrapper[data-theme="holy"] {
             padding: 20px;
-        }
-
-        #sfl-grid-wrapper[data-theme="holy"] #sfl-master-grid {
-            border-top: 3px solid #ffffff;
-            border-right: 3px solid #ffffff;
-            border-bottom: 3px solid #ffffff;
-            border-left: 3px solid #ffffff;
-            background-color: rgba(255, 255, 230, 0.15);
+            border: 4px solid #ffd700;
             box-shadow:
-                0 0 50px rgba(255, 255, 255, 0.9),
-                inset 0 0 80px rgba(255, 215, 0, 0.6);
+                0 0 60px rgba(255, 215, 0, 0.6),
+                inset 0 0 80px rgba(255, 255, 200, 0.4);
             animation: holyGridBreathe 6s infinite alternate ease-in-out;
         }
+
+        
 
         @keyframes holyGridBreathe {
             0% {
@@ -2032,24 +1959,15 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="blood"] {
             background-color: #050000;
-        }
-
-        #sfl-grid-wrapper[data-theme="blood"] {
             padding: 10px;
-        }
-
-        #sfl-grid-wrapper[data-theme="blood"] #sfl-master-grid {
-            border-top: 4px solid #8a0303;
-            border-right: 4px solid #8a0303;
-            border-bottom: 4px solid #8a0303;
-            border-left: 4px solid #8a0303;
-            background-color: rgba(25, 0, 0, 0.95);
+            border: 3px solid #8b0000;
             box-shadow:
-                0 0 70px #660000,
-                inset 0 0 100px #330000;
-            /* Accurate human heartbeat timing */
+                0 0 40px rgba(139, 0, 0, 0.6),
+                inset 0 0 60px rgba(200, 0, 0, 0.4);
             animation: heartbeatPulse 1.2s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
         }
+
+        
 
         @keyframes heartbeatPulse {
             0% {
@@ -2191,25 +2109,15 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="abyss"] {
             background-color: #000408;
-        }
-
-        #sfl-grid-wrapper[data-theme="abyss"] {
             padding: 15px;
+            border: 3px solid #00ffff;
+            box-shadow:
+                0 0 30px #001a33,
+                inset 0 0 50px rgba(0, 100, 150, 0.4);
+            animation: abyssLiquidWobble 10s ease-in-out infinite alternate;
         }
 
-        #sfl-grid-wrapper[data-theme="abyss"] #sfl-master-grid {
-            border-top: 2px solid #001a33;
-            border-right: 2px solid #001a33;
-            border-bottom: 2px solid #001a33;
-            border-left: 2px solid #001a33;
-            background-color: rgba(0, 10, 20, 0.85);
-            /* Extreme organic liquid blob shape */
-            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
-            animation: abyssLiquidWobble 10s ease-in-out infinite alternate;
-            box-shadow:
-                inset 0 0 80px #000000,
-                0 0 40px rgba(0, 100, 255, 0.2);
-        }
+        
 
         @keyframes abyssLiquidWobble {
             0% {
@@ -2340,10 +2248,11 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="arcane"] {
             background-color: #0c0014;
-        }
-
-        #sfl-grid-wrapper[data-theme="arcane"] {
             padding: 35px;
+            border: 4px solid #ff4500;
+            box-shadow:
+                0 0 40px #ff4500,
+                inset 0 0 60px rgba(255, 69, 0, 0.4);
         }
 
         /* Massive rotating magic circles */
@@ -2398,19 +2307,7 @@
             }
         }
 
-        #sfl-grid-wrapper[data-theme="arcane"] #sfl-master-grid {
-            border-top: 3px solid #b100ff;
-            border-right: 3px solid #b100ff;
-            border-bottom: 3px solid #b100ff;
-            border-left: 3px solid #b100ff;
-            background-color: rgba(20, 0, 35, 0.85);
-            border-radius: 50%;
-            /* Perfect circle grid container */
-            box-shadow:
-                inset 0 0 100px #b100ff,
-                0 0 60px #ff00ff;
-            padding: 25px;
-        }
+        
 
         #sfl-grid-wrapper[data-theme="arcane"] .sfl-grid-cell[data-type="blue"] {
             --base-r: 0;
@@ -2527,26 +2424,14 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="synthwave"] {
             background-color: #050011;
-        }
-
-        #sfl-grid-wrapper[data-theme="synthwave"] {
             padding: 6px;
-        }
-
-        #sfl-grid-wrapper[data-theme="synthwave"] #sfl-master-grid {
-            border-top: 5px solid #ff007f;
-            border-right: 5px solid #ff007f;
-            border-bottom: 5px solid #ff007f;
-            border-left: 5px solid #ff007f;
-            border-radius: 0;
-            /* Strictly square */
-            background-color: rgba(15, 0, 30, 0.95);
+            border: 5px solid #ff007f;
             box-shadow:
                 0 0 30px #ff007f,
                 inset 0 0 60px #ff007f;
-            overflow: hidden;
-            /* Contains the scanline */
         }
+
+        
 
         /* Holographic Scanline crossing the strict square */
         #sfl-grid-wrapper[data-theme="synthwave"] #sfl-master-grid::before {
@@ -2681,10 +2566,9 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="mecha"] {
             background-color: #0a0a0a;
-        }
-
-        #sfl-grid-wrapper[data-theme="mecha"] {
             padding: 16px;
+            border: 10px solid #555555;
+            box-shadow: inset 0 0 30px #000000;
         }
 
         /* Animated Caution Tape border rotating strictly around the square */
@@ -2835,10 +2719,11 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="obsidian"] {
             background-color: #06000d;
-        }
-
-        #sfl-grid-wrapper[data-theme="obsidian"] {
             padding: 0;
+            border: 5px solid #8a2be2;
+            box-shadow:
+                inset 0 0 80px #4b0082,
+                0 0 40px #000000;
         }
 
         /* Layered Geometric Spikes bursting out of the perfect square */
@@ -2881,9 +2766,7 @@
             }
         }
 
-        #sfl-grid-wrapper[data-theme="obsidian"] #sfl-master-grid {
-            /* Overridden by base !important rules — left for reference */
-        }
+        
 
         #sfl-grid-wrapper[data-theme="obsidian"] .sfl-grid-cell[data-type="blue"] {
             --base-r: 138;
@@ -2995,30 +2878,12 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="prismatic"] {
             background-color: #05101a;
-        }
-
-        #sfl-grid-wrapper[data-theme="prismatic"] {
             padding: 12px;
-        }
-
-        #sfl-grid-wrapper[data-theme="prismatic"] #sfl-master-grid {
-            border-top: 4px solid #ffffff;
-            border-right: 4px solid #ffffff;
-            border-bottom: 4px solid #ffffff;
-            border-left: 4px solid #ffffff;
-            border-radius: 0;
-            background-color: rgba(200, 230, 255, 0.15);
-            /* Jagged clipped square edges */
-            clip-path: polygon(0% 0%, 15% 5%, 30% 0%, 50% 8%, 70% 0%, 85% 5%, 100% 0%,
-                    95% 15%, 100% 30%, 92% 50%, 100% 70%, 95% 85%, 100% 100%,
-                    85% 95%, 70% 100%, 50% 92%, 30% 100%, 15% 95%, 0% 100%,
-                    5% 85%, 0% 70%, 8% 50%, 0% 30%, 5% 15%);
-            -webkit-clip-path: polygon(0% 0%, 15% 5%, 30% 0%, 50% 8%, 70% 0%, 85% 5%, 100% 0%,
-                    95% 15%, 100% 30%, 92% 50%, 100% 70%, 95% 85%, 100% 100%,
-                    85% 95%, 70% 100%, 50% 92%, 30% 100%, 15% 95%, 0% 100%,
-                    5% 85%, 0% 70%, 8% 50%, 0% 30%, 5% 15%);
+            border: 4px solid #ffffff;
             box-shadow: inset 0 0 70px rgba(255, 255, 255, 0.6);
         }
+
+        
 
         #sfl-grid-wrapper[data-theme="prismatic"]::before {
             content: '';
@@ -3165,25 +3030,14 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="frost"] {
             background-color: #050a14;
-        }
-
-        #sfl-grid-wrapper[data-theme="frost"] {
             padding: 12px 12px 40px 12px;
-            /* Extra padding for hanging icicles */
-        }
-
-        #sfl-grid-wrapper[data-theme="frost"] #sfl-master-grid {
-            border-top: 5px solid rgba(255, 255, 255, 0.8);
-            border-right: 5px solid rgba(255, 255, 255, 0.8);
-            border-bottom: 5px solid rgba(255, 255, 255, 0.8);
-            border-left: 5px solid rgba(255, 255, 255, 0.8);
-            border-radius: 0;
-            /* Strict square block */
-            background-color: rgba(150, 200, 255, 0.2);
+            border: 5px solid rgba(255, 255, 255, 0.8);
             box-shadow:
                 0 0 40px rgba(100, 200, 255, 0.5),
                 inset 0 0 60px rgba(255, 255, 255, 0.6);
         }
+
+        
 
         /* Heavy jagged icicles hanging directly off the bottom of the square */
         #sfl-grid-wrapper[data-theme="frost"]::after {
@@ -3310,26 +3164,16 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="molten"] {
             background-color: #0a0300;
-        }
-
-        #sfl-grid-wrapper[data-theme="molten"] {
             padding: 12px;
-        }
-
-        #sfl-grid-wrapper[data-theme="molten"] #sfl-master-grid {
-            border-top: 10px solid #1a0a00;
-            border-right: 10px solid #1a0a00;
-            border-bottom: 10px solid #1a0a00;
-            border-left: 10px solid #1a0a00;
-            border-radius: 0;
-            background-color: #2a1000;
-            /* Strict dark iron square */
+            border: 10px solid #1a0a00;
             box-shadow:
                 0 0 70px #ff3300,
                 inset 0 0 60px #cc2200,
                 0 0 150px #ff0000;
             animation: moltenMagmaBreathe 3.5s infinite alternate ease-in-out;
         }
+
+        
 
         @keyframes moltenMagmaBreathe {
             0% {
@@ -3463,22 +3307,12 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="disco"] {
             background-color: #050505;
-        }
-
-        #sfl-grid-wrapper[data-theme="disco"] {
             padding: 8px;
+            border: 6px solid #ffffff;
+            animation: discoRainbowBorder 1.5s linear infinite;
         }
 
-        #sfl-grid-wrapper[data-theme="disco"] #sfl-master-grid {
-            border-top: 6px solid #ffffff;
-            border-right: 6px solid #ffffff;
-            border-bottom: 6px solid #ffffff;
-            border-left: 6px solid #ffffff;
-            border-radius: 0;
-            background-color: #000000;
-            animation: discoRainbowBorder 1.5s linear infinite;
-            /* Strict square border flashing RGB */
-        }
+        
 
         @keyframes discoRainbowBorder {
             0% {
@@ -3623,25 +3457,15 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="alien"] {
             background-color: #020a05;
-        }
-
-        #sfl-grid-wrapper[data-theme="alien"] {
             padding: 18px;
-        }
-
-        #sfl-grid-wrapper[data-theme="alien"] #sfl-master-grid {
-            border-top: 5px solid #00ff66;
-            border-right: 5px solid #00ff66;
-            border-bottom: 5px solid #00ff66;
-            border-left: 5px solid #00ff66;
-            border-radius: 0;
-            background-color: #051a05;
-            /* Strict square core */
+            border: 5px solid #00ff66;
             box-shadow:
                 inset 0 0 70px #003311,
                 0 0 40px #00ff66;
             animation: alienShipBreathe 4s infinite alternate ease-in-out;
         }
+
+        
 
         @keyframes alienShipBreathe {
             0% {
@@ -3797,23 +3621,14 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="hextech"] {
             background-color: #01050a;
-        }
-
-        #sfl-grid-wrapper[data-theme="hextech"] {
             padding: 24px;
-        }
-
-        #sfl-grid-wrapper[data-theme="hextech"] #sfl-master-grid {
-            border-top: 4px solid #c89b3c;
-            border-right: 4px solid #c89b3c;
-            border-bottom: 4px solid #c89b3c;
-            border-left: 4px solid #c89b3c;
-            border-radius: 0;
-            background-color: #010a13;
+            border: 4px solid #c89b3c;
             box-shadow:
                 inset 0 0 50px #0ac8b9,
                 0 0 30px #0ac8b9;
         }
+
+        
 
         #sfl-grid-wrapper[data-theme="hextech"]::before {
             content: '';
@@ -3956,15 +3771,14 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="gold"] {
             background-color: #1a1500;
-        }
-
-        #sfl-grid-wrapper[data-theme="gold"] {
             padding: 12px;
+            border: 5px solid #ffd700;
+            box-shadow:
+                0 0 80px rgba(255, 215, 0, 0.5),
+                inset 0 0 60px rgba(255, 215, 0, 0.4);
         }
 
-        #sfl-grid-wrapper[data-theme="gold"] #sfl-master-grid {
-            /* Overridden by base !important rules — left for reference */
-        }
+        
 
         #sfl-grid-wrapper[data-theme="gold"]::before {
             content: '';
@@ -4109,21 +3923,12 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="nebula"] {
             background-color: #030008;
-        }
-
-        #sfl-grid-wrapper[data-theme="nebula"] {
             padding: 8px;
-        }
-
-        #sfl-grid-wrapper[data-theme="nebula"] #sfl-master-grid {
-            border-top: 3px solid #b100ff;
-            border-right: 3px solid #b100ff;
-            border-bottom: 3px solid #b100ff;
-            border-left: 3px solid #b100ff;
-            border-radius: 0;
-            background-color: rgba(5, 0, 20, 0.85);
+            border: 3px solid #b100ff;
             box-shadow: inset 0 0 100px #330066;
         }
+
+        
 
         #sfl-grid-wrapper[data-theme="nebula"]::before {
             content: '';
@@ -4277,30 +4082,16 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="arcade"] {
             background-color: #0a0a0a;
-        }
-
-        #sfl-grid-wrapper[data-theme="arcade"] {
             padding: 20px;
-            background-color: #222222;
-            border-radius: 25px;
-            box-shadow:
-                0 25px 60px rgba(0, 0, 0, 0.9),
-                inset 0 5px 15px rgba(255, 255, 255, 0.1);
-            /* Thick arcade cabinet frame */
-        }
-
-        #sfl-grid-wrapper[data-theme="arcade"] #sfl-master-grid {
-            border-top: 6px solid #33ff00;
-            border-right: 6px solid #33ff00;
-            border-bottom: 6px solid #33ff00;
-            border-left: 6px solid #33ff00;
+            border: 6px solid #33ff00;
             border-radius: 12px;
-            background-color: #001500;
             box-shadow:
                 0 0 30px #33ff00,
                 inset 0 0 50px #004400;
             animation: arcadeCrtFlicker 0.12s infinite;
         }
+
+        
 
         @keyframes arcadeCrtFlicker {
 
@@ -4429,22 +4220,13 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="mirage"] {
             background-color: #2b1d11;
-        }
-
-        #sfl-grid-wrapper[data-theme="mirage"] {
             padding: 8px;
-        }
-
-        #sfl-grid-wrapper[data-theme="mirage"] #sfl-master-grid {
-            border-top: 3px solid #d4a373;
-            border-right: 3px solid #d4a373;
-            border-bottom: 3px solid #d4a373;
-            border-left: 3px solid #d4a373;
-            border-radius: 0;
-            background-color: rgba(139, 69, 19, 0.5);
+            border: 3px solid #d4a373;
             box-shadow: 0 0 50px rgba(212, 163, 115, 0.4);
             animation: mirageWaveBg 4s infinite alternate ease-in-out;
         }
+
+        
 
         @keyframes mirageWaveBg {
             0% {
@@ -4571,23 +4353,14 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="crystal"] {
             background-color: #000c14;
-        }
-
-        #sfl-grid-wrapper[data-theme="crystal"] {
             padding: 12px;
-        }
-
-        #sfl-grid-wrapper[data-theme="crystal"] #sfl-master-grid {
-            border-top: 3px solid #00ffff;
-            border-right: 3px solid #00ffff;
-            border-bottom: 3px solid #00ffff;
-            border-left: 3px solid #00ffff;
-            border-radius: 0;
-            background-color: rgba(0, 60, 60, 0.85);
+            border: 3px solid #00ffff;
             box-shadow:
                 inset 0 0 70px #00ffff,
                 0 0 40px #ff00ff;
         }
+
+        
 
         #sfl-grid-wrapper[data-theme="crystal"]::before {
             content: '';
@@ -4735,23 +4508,14 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="steampunk"] {
             background-color: #1a1008;
-        }
-
-        #sfl-grid-wrapper[data-theme="steampunk"] {
             padding: 18px;
-        }
-
-        #sfl-grid-wrapper[data-theme="steampunk"] #sfl-master-grid {
-            border-top: 10px solid #b87333;
-            border-right: 10px solid #b87333;
-            border-bottom: 10px solid #b87333;
-            border-left: 10px solid #b87333;
-            border-radius: 0;
-            background-color: #2b1d11;
+            border: 10px solid #b87333;
             box-shadow:
                 inset 0 0 50px #000000,
                 0 0 30px #000000;
         }
+
+        
 
         #sfl-grid-wrapper[data-theme="steampunk"]::before {
             content: '';
@@ -4887,23 +4651,14 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="necro"] {
             background-color: #050a05;
-        }
-
-        #sfl-grid-wrapper[data-theme="necro"] {
             padding: 8px;
-        }
-
-        #sfl-grid-wrapper[data-theme="necro"] #sfl-master-grid {
-            border-top: 4px solid #e0e0d1;
-            border-right: 4px solid #e0e0d1;
-            border-bottom: 4px solid #e0e0d1;
-            border-left: 4px solid #e0e0d1;
-            border-radius: 0;
-            background-color: #0a110a;
+            border: 4px solid #e0e0d1;
             box-shadow:
                 inset 0 0 60px #33ff33,
                 0 0 40px #003300;
         }
+
+        
 
         #sfl-grid-wrapper[data-theme="necro"] .sfl-grid-cell[data-type="blue"] {
             --base-r: 51;
@@ -5018,23 +4773,14 @@
            ------------------------------------------------------------------ */
         #sfl-grid-wrapper[data-theme="quantum"] {
             background-color: #020202;
-        }
-
-        #sfl-grid-wrapper[data-theme="quantum"] {
             padding: 10px;
-        }
-
-        #sfl-grid-wrapper[data-theme="quantum"] #sfl-master-grid {
-            border-top: 3px solid #ffffff;
-            border-right: 3px solid #ffffff;
-            border-bottom: 3px solid #ffffff;
-            border-left: 3px solid #ffffff;
-            border-radius: 0;
-            background-color: #000000;
+            border: 3px solid #ffffff;
             box-shadow:
                 -15px 0 30px #ff0000,
                 15px 0 30px #0000ff;
         }
+
+        
 
         #sfl-grid-wrapper[data-theme="quantum"] .sfl-grid-cell[data-type="blue"] {
             --base-r: 0;
@@ -5167,23 +4913,13 @@
         #sfl-grid-wrapper[data-theme="vaporwave"] {
             background: linear-gradient(to bottom, #000033, #ff007f);
             background-attachment: fixed;
-        }
-
-        #sfl-grid-wrapper[data-theme="vaporwave"] {
             padding: 0;
-        }
-
-        #sfl-grid-wrapper[data-theme="vaporwave"] #sfl-master-grid {
-            border-top: 5px solid #00ffff;
-            border-right: 5px solid #00ffff;
-            border-bottom: 5px solid #00ffff;
-            border-left: 5px solid #00ffff;
-            border-radius: 0;
-            background-color: rgba(0, 0, 20, 0.85);
+            border: 5px solid #00ffff;
             box-shadow:
                 0 0 60px #ff007f,
                 inset 0 0 40px #00ffff;
         }
+
 
         #sfl-grid-wrapper[data-theme="vaporwave"]::after {
             content: '';
