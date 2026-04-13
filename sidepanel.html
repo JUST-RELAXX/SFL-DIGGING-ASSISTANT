@@ -157,14 +157,6 @@
             border-radius: 4px; letter-spacing: 0.5px; vertical-align: middle;
             background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;
         }
-        .calib-btn {
-            width: 24px; height: 24px; border: 1px solid #374151; border-radius: 4px;
-            background: #1f2937; color: #9ca3af; cursor: pointer; font-size: 10px;
-            display: flex; align-items: center; justify-content: center; padding: 0;
-            transition: all 0.15s ease;
-        }
-        .calib-btn:hover { background: #374151; color: #f3f4f6; border-color: #6366f1; }
-        .calib-btn:active { background: #6366f1; color: white; }
     </style>
 </head>
 <body>
@@ -241,25 +233,6 @@
                 <option value="medium">Medium (Small FX)</option>
                 <option value="potato">Potato PC (Zero Lag)</option>
             </select>
-        </div>
-        <div style="margin-top:12px;">
-            <label style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;">Grid Calibration (px)</label>
-            <div style="display:flex;gap:10px;margin-top:6px;">
-                <div style="flex:1;display:flex;align-items:center;gap:4px;">
-                    <span style="font-size:11px;color:#6b7280;min-width:14px;">X:</span>
-                    <button class="calib-btn" data-axis="x" data-dir="-1">◀</button>
-                    <input type="number" id="calibX" value="0" style="width:48px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#f3f4f6;text-align:center;font-size:12px;padding:3px 2px;">
-                    <button class="calib-btn" data-axis="x" data-dir="1">▶</button>
-                </div>
-                <div style="flex:1;display:flex;align-items:center;gap:4px;">
-                    <span style="font-size:11px;color:#6b7280;min-width:14px;">Y:</span>
-                    <button class="calib-btn" data-axis="y" data-dir="-1">▲</button>
-                    <input type="number" id="calibY" value="0" style="width:48px;background:#1f2937;border:1px solid #374151;border-radius:4px;color:#f3f4f6;text-align:center;font-size:12px;padding:3px 2px;">
-                    <button class="calib-btn" data-axis="y" data-dir="1">▼</button>
-                </div>
-            </div>
-            <div style="font-size:10px;color:#4b5563;margin-top:4px;">Nudge grid position to align with game tiles</div>
-        </div>
     </div>
 
     <!-- CHARACTER AURA -->
@@ -272,14 +245,6 @@
             </label>
             <div class="card-hint">Displays a glowing outline around your character. Auto-enables in the digging area.</div>
         </div>
-    </div>
-
-    <div class="card">
-        <label class="card-label">
-            <input type="checkbox" id="lockToggle" checked>
-            Lock Grid (Dig Mode)
-        </label>
-        <div class="card-hint">Uncheck to drag and fine-tune grid position manually.</div>
     </div>
 
     <!-- How To Use ΓÇö Updated for auto-alignment -->

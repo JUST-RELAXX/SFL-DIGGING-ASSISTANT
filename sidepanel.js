@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const farmInput = document.getElementById('farmIdInput');
     const statusDiv = document.getElementById('status');
-    const lockToggle = document.getElementById('lockToggle');
     const speedSlider = document.getElementById('speedSlider');
     const speedDisplay = document.getElementById('speedDisplay');
     const domIntervalSlider = document.getElementById('domIntervalSlider');
@@ -152,12 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
             onCommit(el.textContent);
         });
     }
-
     // --- Core buttons ---
-    lockToggle.addEventListener('change', (e) => {
-        sendCommand('setLockState', { isLocked: e.target.checked });
-    });
-
     document.getElementById('btnHide').addEventListener('click', () => sendCommand('hideAll'));
 
     // --- Aura Toggle ---
@@ -185,40 +179,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const label = perfTuning.options[perfTuning.selectedIndex].text;
         logStatus(`FX: ${label}`, '#a5b4fc');
     });
-
-    // --- Grid Calibration ---
-    const calibXInput = document.getElementById('calibX');
-    const calibYInput = document.getElementById('calibY');
-
-    // Load saved calibration
-    chrome.storage.local.get(['gridCalibX', 'gridCalibY'], (r) => {
-        if (r.gridCalibX !== undefined) calibXInput.value = r.gridCalibX;
-        if (r.gridCalibY !== undefined) calibYInput.value = r.gridCalibY;
-    });
-
-    function sendCalibration() {
-        const x = parseInt(calibXInput.value) || 0;
-        const y = parseInt(calibYInput.value) || 0;
-        sendCommand('setCalibration', { x, y });
-        logStatus(`Calib: (${x}, ${y})px`, '#a5b4fc');
-    }
-
-    // Arrow buttons
-    document.querySelectorAll('.calib-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const axis = btn.dataset.axis;
-            const dir = parseInt(btn.dataset.dir);
-            const input = axis === 'x' ? calibXInput : calibYInput;
-            input.value = (parseInt(input.value) || 0) + dir;
-            sendCalibration();
-        });
-    });
-
-    // Direct input
-    calibXInput.addEventListener('change', sendCalibration);
-    calibYInput.addEventListener('change', sendCalibration);
-
-    // --- API Sync ---
     document.getElementById('btnSync').addEventListener('click', () => {
         const farmId = farmInput.value.trim();
         if (!farmId) return logStatus("Farm ID required.", "#ef4444");

@@ -918,6 +918,10 @@ function applyTheme(theme) {
     if (theme === 'none') {
         wrapper.removeAttribute('data-theme');
     } else {
+        // Force-reset wrapper animations to prevent previous theme bleed
+        wrapper.style.animation = 'none';
+        void wrapper.offsetHeight; // trigger reflow
+        wrapper.style.animation = '';
         wrapper.setAttribute('data-theme', theme);
     }
     wrapper.dataset.perf = perfTier;

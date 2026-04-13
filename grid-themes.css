@@ -198,17 +198,41 @@
         }
 
         /* ==========================================================================
-           PERFORMANCE TIERS (only reduce heavy FX — hover/glow always on)
+           PERFORMANCE TIERS — Very subtle scaling of theme effects
+           Ultra = full peak | High = barely reduced | Medium = slightly dimmed | Potato = dimmed
+           NOTHING gets killed — just reduced in intensity. Theme always stays visible.
            ========================================================================== */
-        #sfl-grid-wrapper[data-perf="potato"] .sfl-grid-cell.digging {
-            animation-duration: 1.5s !important;
+
+        /* --- ULTRA: Everything at max (no overrides) --- */
+
+        /* --- HIGH: Barely noticeable reduction (pseudo-elements 85%) --- */
+        #sfl-grid-wrapper[data-perf="high"]::before,
+        #sfl-grid-wrapper[data-perf="high"]::after {
+            opacity: 0.85;
+        }
+
+        /* --- MEDIUM: Slightly dimmed glows, slower pseudo animations --- */
+        #sfl-grid-wrapper[data-perf="medium"]::before,
+        #sfl-grid-wrapper[data-perf="medium"]::after {
+            opacity: 0.55;
+            animation-duration: 8s !important;
+        }
+        #sfl-grid-wrapper[data-perf="medium"] #sfl-master-grid::after {
+            opacity: 0.5;
+        }
+
+        /* --- POTATO: Dimmed but always present — reduced glow, slower anim --- */
+        #sfl-grid-wrapper[data-perf="potato"]::before,
+        #sfl-grid-wrapper[data-perf="potato"]::after {
+            opacity: 0.3;
+            animation-duration: 15s !important;
         }
         #sfl-grid-wrapper[data-perf="potato"] #sfl-master-grid {
             backdrop-filter: none !important;
             -webkit-backdrop-filter: none !important;
         }
         #sfl-grid-wrapper[data-perf="potato"] #sfl-master-grid::after {
-            display: none !important;
+            opacity: 0.2;
         }
 
         /* Base Tile Types — RGB vars for thematic hooking (only when themed) */
