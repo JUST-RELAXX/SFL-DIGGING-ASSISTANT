@@ -4,6 +4,7 @@ let currentTheme = 'none'; // 'none' = default basic grid, or a theme key
 let auraEnabled = false;     // manual toggle from sidepanel
 let auraAutoActive = false;  // auto-enabled when grid is active + character is in grid area
 let perfTier = 'high';       // ultra | high | medium | potato
+let preserveUnderlying = false; // when true, perf tiers skip underlying theme effects
 
 // Performance tier config — hover/glow ALWAYS enabled, only particle count scales
 const PERF_CONFIG = {
@@ -47,7 +48,7 @@ let domIntervalMs = 0;
 let lastSeenTS = '0';
 
 // Load saved state
-chrome.storage.local.get(['walkSpeed', 'deviceMode', 'domIntervalMs', 'auraEnabled', 'perfTier', 'gridCalibX', 'gridCalibY'], (r) => {
+chrome.storage.local.get(['walkSpeed', 'deviceMode', 'domIntervalMs', 'auraEnabled', 'perfTier', 'gridCalibX', 'gridCalibY', 'preserveUnderlying'], (r) => {
     if (r.walkSpeed !== undefined) walkSpeed = r.walkSpeed;
     if (r.deviceMode) deviceMode = r.deviceMode;
     if (r.domIntervalMs !== undefined) domIntervalMs = r.domIntervalMs;
@@ -55,7 +56,8 @@ chrome.storage.local.get(['walkSpeed', 'deviceMode', 'domIntervalMs', 'auraEnabl
     if (r.perfTier) perfTier = r.perfTier;
     if (r.gridCalibX !== undefined) gridCalibX = r.gridCalibX;
     if (r.gridCalibY !== undefined) gridCalibY = r.gridCalibY;
-    console.log(`[Grid] Mode=${deviceMode} Speed=${walkSpeed} Aura=${auraEnabled} Perf=${perfTier} Calib=(${gridCalibX},${gridCalibY})`);
+    if (r.preserveUnderlying !== undefined) preserveUnderlying = r.preserveUnderlying;
+    console.log(`[Grid] Mode=${deviceMode} Speed=${walkSpeed} Aura=${auraEnabled} Perf=${perfTier} Preserve=${preserveUnderlying} Calib=(${gridCalibX},${gridCalibY})`);
 });
 
 // =============================================================================
@@ -478,8 +480,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         chrome.storage.local.set({ perfTier });
         // Apply perf class to wrapper for CSS to read
         const w = document.getElementById('sfl-grid-wrapper');
-        if (w) w.dataset.perf = perfTier;
+        if (w) {
+            w.dataset.perf = perfTier;
+            w.dataset.quality = perfTier;
+        }
         console.log(`[Grid] Performance tier: ${perfTier}`);
+    }
+    else if (request.action === 'setPreserveEffects') {
+        const preserve = request.preserve;
+        chrome.storage.local.set({ preserveUnderlying: preserve });
+        const w = document.getElementById('sfl-grid-wrapper');
+        if (w) w.dataset.preserve = preserve ? 'true' : 'false';
+        console.log(`[Grid] Preserve underlying effects: ${preserve}`);
     }
     else if (request.action === 'setCalibration') {
         gridCalibX = request.x || 0;
@@ -918,14 +930,24 @@ function applyTheme(theme) {
     if (theme === 'none') {
         wrapper.removeAttribute('data-theme');
     } else {
-        // Force-reset wrapper animations to prevent previous theme bleed
-        wrapper.style.animation = 'none';
-        void wrapper.offsetHeight; // trigger reflow
+        // Clear ALL inline styles that might conflict with CSS theme rules
         wrapper.style.animation = '';
+        wrapper.style.border = '';
+        wrapper.style.boxShadow = '';
+        wrapper.style.backgroundColor = '';
+        wrapper.style.borderRadius = '';
+
+        // Set the new theme attribute
         wrapper.setAttribute('data-theme', theme);
+
+        // Force animation restart: set none, reflow, then clear to let CSS take over
+        wrapper.style.animation = 'none';
+        void wrapper.offsetHeight;
+        wrapper.style.animation = '';
     }
     wrapper.dataset.perf = perfTier;
     wrapper.dataset.quality = perfTier; // CSS uses data-quality for --jp-* vars (jackpot scale/shadow/blur)
+    wrapper.dataset.preserve = preserveUnderlying ? 'true' : 'false';
     wrapper.style.opacity = ''; // restore visibility
 
     // Clean up any lingering jackpot effects from a previous theme

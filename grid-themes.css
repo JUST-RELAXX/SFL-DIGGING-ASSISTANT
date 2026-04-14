@@ -201,37 +201,50 @@
            PERFORMANCE TIERS — Very subtle scaling of theme effects
            Ultra = full peak | High = barely reduced | Medium = slightly dimmed | Potato = dimmed
            NOTHING gets killed — just reduced in intensity. Theme always stays visible.
+           Scales BOTH pseudo-element glows AND wrapper-level animations/borders.
+           When data-preserve="true", ALL these rules are SKIPPED (underlying FX preserved).
            ========================================================================== */
 
         /* --- ULTRA: Everything at max (no overrides) --- */
 
-        /* --- HIGH: Barely noticeable reduction (pseudo-elements 85%) --- */
-        #sfl-grid-wrapper[data-perf="high"]::before,
-        #sfl-grid-wrapper[data-perf="high"]::after {
+        /* --- HIGH: Barely noticeable reduction --- */
+        #sfl-grid-wrapper[data-perf="high"]:not([data-preserve="true"])::before,
+        #sfl-grid-wrapper[data-perf="high"]:not([data-preserve="true"])::after {
             opacity: 0.85;
         }
+        #sfl-grid-wrapper[data-perf="high"]:not([data-preserve="true"]) {
+            animation-duration: 3s !important;
+        }
 
-        /* --- MEDIUM: Slightly dimmed glows, slower pseudo animations --- */
-        #sfl-grid-wrapper[data-perf="medium"]::before,
-        #sfl-grid-wrapper[data-perf="medium"]::after {
+        /* --- MEDIUM: Slightly dimmed glows, slower animations --- */
+        #sfl-grid-wrapper[data-perf="medium"]:not([data-preserve="true"])::before,
+        #sfl-grid-wrapper[data-perf="medium"]:not([data-preserve="true"])::after {
             opacity: 0.55;
             animation-duration: 8s !important;
         }
-        #sfl-grid-wrapper[data-perf="medium"] #sfl-master-grid::after {
+        #sfl-grid-wrapper[data-perf="medium"]:not([data-preserve="true"]) {
+            animation-duration: 6s !important;
+            filter: saturate(0.85) brightness(0.95);
+        }
+        #sfl-grid-wrapper[data-perf="medium"]:not([data-preserve="true"]) #sfl-master-grid::after {
             opacity: 0.5;
         }
 
         /* --- POTATO: Dimmed but always present — reduced glow, slower anim --- */
-        #sfl-grid-wrapper[data-perf="potato"]::before,
-        #sfl-grid-wrapper[data-perf="potato"]::after {
+        #sfl-grid-wrapper[data-perf="potato"]:not([data-preserve="true"])::before,
+        #sfl-grid-wrapper[data-perf="potato"]:not([data-preserve="true"])::after {
             opacity: 0.3;
             animation-duration: 15s !important;
         }
-        #sfl-grid-wrapper[data-perf="potato"] #sfl-master-grid {
+        #sfl-grid-wrapper[data-perf="potato"]:not([data-preserve="true"]) {
+            animation-duration: 12s !important;
+            filter: saturate(0.7) brightness(0.85);
+        }
+        #sfl-grid-wrapper[data-perf="potato"]:not([data-preserve="true"]) #sfl-master-grid {
             backdrop-filter: none !important;
             -webkit-backdrop-filter: none !important;
         }
-        #sfl-grid-wrapper[data-perf="potato"] #sfl-master-grid::after {
+        #sfl-grid-wrapper[data-perf="potato"]:not([data-preserve="true"]) #sfl-master-grid::after {
             opacity: 0.2;
         }
 

@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const themeSelector = document.getElementById('themeSelector');
     const auraToggle = document.getElementById('auraToggle');
     const perfTuning = document.getElementById('perfTuning');
+    const preserveEffects = document.getElementById('preserveEffects');
 
     let currentMode = 'mid';
 
@@ -26,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
         statusDiv.style.color = color;
     }
 
-    chrome.storage.local.get(['sflFarmId', 'walkSpeed', 'deviceMode', 'domIntervalMs', 'gridTheme', 'auraEnabled', 'perfTier'], (r) => {
+    chrome.storage.local.get(['sflFarmId', 'walkSpeed', 'deviceMode', 'domIntervalMs', 'gridTheme', 'auraEnabled', 'perfTier', 'preserveUnderlying'], (r) => {
         if (r.sflFarmId) farmInput.value = r.sflFarmId;
         if (r.walkSpeed !== undefined) {
             speedSlider.value = r.walkSpeed;
@@ -41,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (r.gridTheme) themeSelector.value = r.gridTheme;
         if (r.auraEnabled !== undefined) auraToggle.checked = r.auraEnabled;
         if (r.perfTier) perfTuning.value = r.perfTier;
+        if (r.preserveUnderlying !== undefined) preserveEffects.checked = r.preserveUnderlying;
         updateModeUI(currentMode);
         updateSettingsVisibility();
     });
@@ -179,6 +181,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const label = perfTuning.options[perfTuning.selectedIndex].text;
         logStatus(`FX: ${label}`, '#a5b4fc');
     });
+
+    // --- Preserve Underlying Effects ---
+    preserveEffects.addEventListener('change', (e) => {
+        const preserve = e.target.checked;
+        chrome.storage.local.set({ preserveUnderlying: preserve });
+        sendCommand('setPreserveEffects', { preserve });
+        logStatus(preserve ? 'Underlying FX: Preserved' : 'Underlying FX: Scaled', '#a5b4fc');
+    });
+
     document.getElementById('btnSync').addEventListener('click', () => {
         const farmId = farmInput.value.trim();
         if (!farmId) return logStatus("Farm ID required.", "#ef4444");
