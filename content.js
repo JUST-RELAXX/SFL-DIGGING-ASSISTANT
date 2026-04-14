@@ -789,15 +789,40 @@ function applyGridColors(data) {
     const flat = Array.isArray(data[0]) ? data.flat() : data;
     const cells = masterGrid.querySelectorAll('.sfl-grid-cell');
     cells.forEach(c => c.className = 'sfl-grid-cell');
+
+    // Priority: sand (highest) > crab > bone > misc (lowest)
+    const HINT_PRIORITY = { 'sfl-cell-sand': 4, 'sfl-cell-crab': 3, 'sfl-cell-bone': 2, 'sfl-cell-misc': 1 };
+    const ALL_HINT_CLASSES = Object.keys(HINT_PRIORITY);
+
+    function getHintClass(name) {
+        if (name.includes('sand')) return 'sfl-cell-sand';
+        if (name.includes('crab')) return 'sfl-cell-crab';
+        if (name.includes('bone') || name.includes('artefact') || name.includes('hieroglyph') || name.includes('map')) return 'sfl-cell-bone';
+        return 'sfl-cell-misc';
+    }
+
+    function getCurrentPriority(cell) {
+        for (const cls of ALL_HINT_CLASSES) {
+            if (cell.classList.contains(cls)) return HINT_PRIORITY[cls];
+        }
+        return 0;
+    }
+
+    function setHintIfHigher(cell, cls) {
+        const newPri = HINT_PRIORITY[cls] || 0;
+        const curPri = getCurrentPriority(cell);
+        if (newPri > curPri) {
+            ALL_HINT_CLASSES.forEach(c => cell.classList.remove(c));
+            cell.classList.add(cls);
+        }
+    }
+
     flat.forEach(h => {
         const x=h.x, y=h.y;
         const n = (h.name||(h.items?Object.keys(h.items)[0]:'')).toLowerCase();
-        let cls = 'sfl-cell-misc';
-        if (n.includes('sand')) cls='sfl-cell-sand';
-        else if (n.includes('crab')) cls='sfl-cell-crab';
-        else if (n.includes('bone')||n.includes('artefact')||n.includes('hieroglyph')||n.includes('map')) cls='sfl-cell-bone';
+        const cls = getHintClass(n);
         [{nx:x,ny:y},{nx:x,ny:y-1},{nx:x,ny:y+1},{nx:x-1,ny:y},{nx:x+1,ny:y}].forEach(c => {
-            if (c.nx>=0&&c.nx<10&&c.ny>=0&&c.ny<10) { const cell=cells[c.ny*10+c.nx]; if(cell) cell.classList.add(cls); }
+            if (c.nx>=0&&c.nx<10&&c.ny>=0&&c.ny<10) { const cell=cells[c.ny*10+c.nx]; if(cell) setHintIfHigher(cell, cls); }
         });
     });
 }
@@ -817,6 +842,33 @@ function applyLiveGridState(gridData, patterns) {
     // Build a set of dug tile positions for quick lookup
     const dugSet = new Set(flat.map(h => `${h.x},${h.y}`));
 
+    // Priority: sand (highest) > crab > bone > misc (lowest)
+    const HINT_PRIORITY = { 'sfl-cell-sand': 4, 'sfl-cell-crab': 3, 'sfl-cell-bone': 2, 'sfl-cell-misc': 1 };
+    const ALL_HINT_CLASSES = Object.keys(HINT_PRIORITY);
+
+    function getHintClass(name) {
+        if (name.includes('sand')) return 'sfl-cell-sand';
+        if (name.includes('crab')) return 'sfl-cell-crab';
+        if (name.includes('bone') || name.includes('artefact') || name.includes('hieroglyph') || name.includes('map')) return 'sfl-cell-bone';
+        return 'sfl-cell-misc';
+    }
+
+    function getCurrentPriority(cell) {
+        for (const cls of ALL_HINT_CLASSES) {
+            if (cell.classList.contains(cls)) return HINT_PRIORITY[cls];
+        }
+        return 0;
+    }
+
+    function setHintIfHigher(cell, cls) {
+        const newPri = HINT_PRIORITY[cls] || 0;
+        const curPri = getCurrentPriority(cell);
+        if (newPri > curPri) {
+            ALL_HINT_CLASSES.forEach(c => cell.classList.remove(c));
+            cell.classList.add(cls);
+        }
+    }
+
     if (currentTheme !== 'none') {
         // THEMED MODE: mark dug tiles as revealed (transparent)
         cells.forEach(c => {
@@ -828,7 +880,7 @@ function applyLiveGridState(gridData, patterns) {
             }
         });
     } else {
-        // DEFAULT MODE: color-coding (unchanged)
+        // DEFAULT MODE: color-coding with priority
         cells.forEach(c => {
             c.className = 'sfl-grid-cell';
             c.style.opacity = '';
@@ -840,10 +892,7 @@ function applyLiveGridState(gridData, patterns) {
             if (!dugCell) return;
 
             const n = (h.name || (h.items ? Object.keys(h.items)[0] : '')).toLowerCase();
-            let cls = 'sfl-cell-misc';
-            if (n.includes('sand')) cls = 'sfl-cell-sand';
-            else if (n.includes('crab')) cls = 'sfl-cell-crab';
-            else if (n.includes('bone') || n.includes('artefact') || n.includes('hieroglyph') || n.includes('map')) cls = 'sfl-cell-bone';
+            const cls = getHintClass(n);
 
             dugCell.classList.add('sfl-cell-dug');
             dugCell.classList.add(cls);
@@ -852,7 +901,7 @@ function applyLiveGridState(gridData, patterns) {
                 if (c.nx >= 0 && c.nx < 10 && c.ny >= 0 && c.ny < 10) {
                     const adj = cells[c.ny * 10 + c.nx];
                     if (adj && !adj.classList.contains('sfl-cell-dug')) {
-                        adj.classList.add(cls);
+                        setHintIfHigher(adj, cls);
                     }
                 }
             });
