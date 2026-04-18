@@ -5,6 +5,7 @@ let auraEnabled = false;     // manual toggle from sidepanel
 let auraAutoActive = false;  // auto-enabled when grid is active + character is in grid area
 let perfTier = 'high';       // ultra | high | medium | potato
 let preserveUnderlying = false; // when true, perf tiers skip underlying theme effects
+let customConfig = null; // custom theme config object from builder
 
 // Performance tier config — hover/glow ALWAYS enabled, only particle count scales
 const PERF_CONFIG = {
@@ -493,6 +494,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (w) w.dataset.preserve = preserve ? 'true' : 'false';
         console.log(`[Grid] Preserve underlying effects: ${preserve}`);
     }
+    else if (request.action === 'setCustomTheme') {
+        customConfig = request.config;
+        chrome.storage.local.set({ activeCustomConfig: customConfig });
+        currentTheme = 'custom';
+        chrome.storage.local.set({ gridTheme: currentTheme });
+        applyTheme('custom');
+    }
     else if (request.action === 'setCalibration') {
         gridCalibX = request.x || 0;
         gridCalibY = request.y || 0;
@@ -978,6 +986,8 @@ function applyTheme(theme) {
     // -------------------------------------------------------------------------
     if (theme === 'none') {
         wrapper.removeAttribute('data-theme');
+        // Clean up any custom engine residue
+        cleanupCustomAttributes(wrapper);
     } else {
         // Clear ALL inline styles that might conflict with CSS theme rules
         wrapper.style.animation = '';
@@ -986,13 +996,26 @@ function applyTheme(theme) {
         wrapper.style.backgroundColor = '';
         wrapper.style.borderRadius = '';
 
+        // Clean up custom engine attributes when switching to a built-in theme
+        const isCustom = (theme === 'custom' || theme.startsWith('custom-'));
+        if (!isCustom) {
+            cleanupCustomAttributes(wrapper);
+        }
+
         // Set the new theme attribute
-        wrapper.setAttribute('data-theme', theme);
+        // Custom themes always use data-theme="custom" for CSS matching
+        const cssTheme = isCustom ? 'custom' : theme;
+        wrapper.setAttribute('data-theme', cssTheme);
 
         // Force animation restart: set none, reflow, then clear to let CSS take over
         wrapper.style.animation = 'none';
         void wrapper.offsetHeight;
         wrapper.style.animation = '';
+
+        // Apply custom config data-attributes after theme is set
+        if (isCustom && customConfig) {
+            applyCustomConfig(customConfig);
+        }
     }
     wrapper.dataset.perf = perfTier;
     wrapper.dataset.quality = perfTier; // CSS uses data-quality for --jp-* vars (jackpot scale/shadow/blur)
@@ -1097,6 +1120,11 @@ function spawnThemeParticles(tileElement, theme, numOverride, tier) {
     };
     let colors = themeColors[theme] || ['#ffffff', '#cccccc'];
 
+    // Custom theme: use user-chosen colors
+    if (theme === 'custom' && customConfig) {
+        colors = [customConfig.primaryColor || '#00ffff', customConfig.secondaryColor || '#ff00ff'];
+    }
+
     // Sand tier (tier 5): melancholic dark crimson override (from reference)
     if (tier === 'sand') {
         colors = ['#660000', '#220000'];
@@ -1141,7 +1169,56 @@ function spawnThemeParticles(tileElement, theme, numOverride, tier) {
     }
 }
 
-// Load saved theme on startup
-chrome.storage.local.get(['gridTheme'], (r) => {
+// Load saved theme on startup (including custom themes)
+chrome.storage.local.get(['gridTheme', 'activeCustomConfig', 'customThemes'], (r) => {
     if (r.gridTheme) currentTheme = r.gridTheme;
+    // If it's a custom theme, load the config
+    if (currentTheme === 'custom-live' && r.activeCustomConfig) {
+        customConfig = r.activeCustomConfig;
+    } else if (currentTheme && currentTheme.startsWith('custom-') && r.customThemes) {
+        const found = r.customThemes.find(t => t.id === currentTheme);
+        if (found) customConfig = found.config;
+    }
 });
+
+// Apply custom config data-attributes onto the wrapper
+function applyCustomConfig(config) {
+    if (!config) return;
+    const w = document.getElementById('sfl-grid-wrapper');
+    if (!w) return;
+
+    // Set CSS custom properties
+    w.style.setProperty('--engine-primary', config.primaryColor || '#00ffff');
+    w.style.setProperty('--engine-secondary', config.secondaryColor || '#ff00ff');
+    w.style.setProperty('--engine-glow-intensity', config.glowIntensity || 1);
+
+    // Set composable data attributes for CSS to read
+    w.dataset.shape = config.tileShape || 'square';
+    w.dataset.border = config.borderStyle || 'neon';
+    w.dataset.particles = config.particleType || 'shards';
+    w.dataset.jackpot = config.jackpotEffect || 'orbital';
+    w.dataset.digT2 = config.digT2 || 'bone-shatter';
+    w.dataset.digT3 = config.digT3 || 'gold-pop';
+    w.dataset.digT4 = config.digT4 || 'snap';
+    w.dataset.digT5 = config.digT5 || 'thud';
+
+    console.log(`[Grid] Custom config applied:`, config);
+}
+
+// Remove all custom engine data-attributes and CSS vars from wrapper
+function cleanupCustomAttributes(w) {
+    if (!w) return;
+    // Remove custom CSS variables
+    w.style.removeProperty('--engine-primary');
+    w.style.removeProperty('--engine-secondary');
+    w.style.removeProperty('--engine-glow-intensity');
+    // Remove composable data attributes
+    delete w.dataset.shape;
+    delete w.dataset.border;
+    delete w.dataset.particles;
+    delete w.dataset.jackpot;
+    delete w.dataset.digT2;
+    delete w.dataset.digT3;
+    delete w.dataset.digT4;
+    delete w.dataset.digT5;
+}

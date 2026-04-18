@@ -1,0 +1,1989 @@
+/* ==========================================================================
+   CUSTOM THEME ENGINE — Auto-generated from customengine.html
+   This file provides composable effects for user-created custom themes.
+   All rules are scoped under #sfl-grid-wrapper[data-theme="custom"].
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   CUSTOM ENGINE CSS VARIABLES (set via JS on the wrapper element)
+   -------------------------------------------------------------------------- */
+#sfl-grid-wrapper[data-theme="custom"] {
+    --engine-primary: #00ffff;
+    --engine-secondary: #ff00ff;
+    --engine-glow-intensity: 1;
+    --dig-duration: 2.5s;
+    --jackpot-duration: 3.5s;
+    --ease-bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    --ease-heavy: cubic-bezier(0.8, 0, 0.2, 1);
+    --ease-fluid: cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Quality Scalers */
+#sfl-grid-wrapper[data-theme="custom"][data-quality="ultra"] { --jp-scale: 1; --jp-shadow: 1; --jp-blur: 1; --jp-text: 1; }
+#sfl-grid-wrapper[data-theme="custom"][data-quality="high"]  { --jp-scale: 0.8; --jp-shadow: 0.6; --jp-blur: 0.7; --jp-text: 0.8; }
+#sfl-grid-wrapper[data-theme="custom"][data-quality="medium"]{ --jp-scale: 0.4; --jp-shadow: 0.3; --jp-blur: 0.3; --jp-text: 0.6; }
+#sfl-grid-wrapper[data-theme="custom"][data-quality="potato"]{ --jp-scale: 0.15; --jp-shadow: 0.05; --jp-blur: 0; --jp-text: 0.35; }
+
+/* ==========================================================================
+   TILE GEOMETRIES (10 Shapes)
+   ========================================================================== */
+#sfl-grid-wrapper[data-theme="custom"][data-shape="square"] .sfl-grid-cell { border-radius: 4px; }
+#sfl-grid-wrapper[data-theme="custom"][data-shape="circle"] .sfl-grid-cell { border-radius: 50%; }
+#sfl-grid-wrapper[data-theme="custom"][data-shape="diamond"] .sfl-grid-cell { transform: rotate(45deg) scale(0.7); }
+#sfl-grid-wrapper[data-theme="custom"][data-shape="droplet"] .sfl-grid-cell { border-radius: 50% 50% 10% 10%; border-top-color: transparent; }
+#sfl-grid-wrapper[data-theme="custom"][data-shape="hexagon"] .sfl-grid-cell { clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); border-radius: 0; border: none; }
+#sfl-grid-wrapper[data-theme="custom"][data-shape="octagon"] .sfl-grid-cell { clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%); border-radius: 0; border: none; }
+#sfl-grid-wrapper[data-theme="custom"][data-shape="star"] .sfl-grid-cell { clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); border-radius: 0; border: none; }
+#sfl-grid-wrapper[data-theme="custom"][data-shape="cross"] .sfl-grid-cell { clip-path: polygon(33% 0, 66% 0, 66% 33%, 100% 33%, 100% 66%, 66% 66%, 66% 100%, 33% 100%, 33% 66%, 0 66%, 0 33%, 33% 33%); border-radius: 0; border: none; }
+#sfl-grid-wrapper[data-theme="custom"][data-shape="pill"] .sfl-grid-cell { border-radius: 50px; }
+#sfl-grid-wrapper[data-theme="custom"][data-shape="beveled"] .sfl-grid-cell { clip-path: polygon(15% 0, 85% 0, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0 85%, 0 15%); border: none; }
+#sfl-grid-wrapper[data-theme="custom"][data-shape="diamond"] .sfl-grid-cell:hover:not(.digging):not(.dug):not(.tile-revealed) { transform: rotate(45deg) scale(0.9) translateZ(20px); }
+
+/* ==========================================================================
+   CRITICAL: DUG & REVEALED TILE TRANSPARENCY
+   Must override ALL shape, border, and effect rules.
+   Repeated attribute selectors boost specificity above any shape/border combo.
+   ========================================================================== */
+#sfl-grid-wrapper[data-theme="custom"][data-theme="custom"] .tile-revealed,
+#sfl-grid-wrapper[data-theme="custom"][data-theme="custom"] .sfl-grid-cell.tile-revealed,
+#sfl-grid-wrapper[data-theme="custom"][data-theme="custom"] .sfl-grid-cell.tile-revealed.dug {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: none !important;
+    animation: none !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    filter: none !important;
+    clip-path: none !important;
+    -webkit-clip-path: none !important;
+}
+#sfl-grid-wrapper[data-theme="custom"][data-theme="custom"] .sfl-grid-cell.tile-revealed.dug::before,
+#sfl-grid-wrapper[data-theme="custom"][data-theme="custom"] .sfl-grid-cell.tile-revealed.dug::after {
+    display: none !important;
+}
+
+/* ==========================================================================
+           7. COMPOSABLE ENGINE: BORDER ARCHITECTURES (15 Options)
+           ========================================================================== */
+        #sfl-grid-wrapper[data-theme="custom"][data-border="solid"] {
+            border: 4px solid var(--engine-primary);
+            box-shadow: 0 0 calc(30px * var(--engine-glow-intensity)) var(--engine-primary);
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-border="neon"] {
+            border: 2px solid #fff;
+            box-shadow: 0 0 calc(20px * var(--engine-glow-intensity)) var(--engine-primary), inset 0 0 calc(20px * var(--engine-glow-intensity)) var(--engine-secondary), 0 0 calc(50px * var(--engine-glow-intensity)) var(--engine-secondary);
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-border="spiky"]::before,
+        #sfl-grid-wrapper[data-theme="custom"][data-border="spiky"]::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--engine-secondary);
+            z-index: -1;
+            animation: spikyPulse 4s infinite alternate;
+            box-shadow: 0 0 30px var(--engine-primary);
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-border="spiky"]::before {
+            transform: rotate(10deg) scale(1.05);
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-border="spiky"]::after {
+            transform: rotate(-10deg) scale(1.05);
+            background: var(--engine-primary);
+        }
+
+        @keyframes spikyPulse {
+            0% {
+                filter: brightness(0.8);
+                transform: rotate(8deg) scale(1.02);
+            }
+
+            100% {
+                filter: brightness(1.2);
+                transform: rotate(15deg) scale(1.1);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-border="scifi"] {
+            border: 6px solid var(--engine-secondary);
+            border-radius: 0;
+            clip-path: polygon(5% 0, 95% 0, 100% 5%, 100% 95%, 95% 100%, 5% 100%, 0 95%, 0 5%);
+            background: #111;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-border="scifi"]::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            background: repeating-linear-gradient(45deg, var(--engine-primary), var(--engine-primary) 20px, #000 20px, #000 40px);
+            z-index: -1;
+            animation: scifiScroll 2s linear infinite;
+        }
+
+        @keyframes scifiScroll {
+            100% {
+                background-position: -56px 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-border="crystal"] {
+            border: 3px solid var(--engine-primary);
+            border-radius: 0;
+            clip-path: polygon(0% 0%, 15% 5%, 30% 0%, 50% 8%, 70% 0%, 85% 5%, 100% 0%, 95% 15%, 100% 30%, 92% 50%, 100% 70%, 95% 85%, 100% 100%, 85% 95%, 70% 100%, 50% 92%, 30% 100%, 15% 95%, 0% 100%, 5% 85%, 0% 70%, 8% 50%, 0% 30%, 5% 15%);
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-border="crystal"]::before {
+            content: '';
+            position: absolute;
+            inset: -15px;
+            background: var(--engine-secondary);
+            filter: blur(20px);
+            z-index: -1;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-border="circuit"] {
+            border: 4px dashed var(--engine-primary);
+            box-shadow: inset 0 0 40px var(--engine-primary);
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-border="circuit"]::after {
+            content: '';
+            position: absolute;
+            inset: -10px;
+            border: 2px solid var(--engine-secondary);
+            z-index: -1;
+            animation: circuitPulse 2s steps(2) infinite;
+        }
+
+        @keyframes circuitPulse {
+            0% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.2;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-border="molten"] {
+            border: 10px solid #2a0000;
+            border-radius: 20px;
+            box-shadow: 0 0 50px #ff0000, inset 0 0 50px #ff5e00;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-border="celtic"] {
+            border: 6px double var(--engine-secondary);
+            border-radius: 50%;
+            padding: 30px;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-border="laser"] {
+            border: 1px solid var(--engine-primary);
+            box-shadow: 0 0 40px var(--engine-primary), inset 0 0 40px var(--engine-primary);
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-border="bio"] {
+            border: 8px solid var(--engine-secondary);
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+            animation: bioWobble 6s infinite alternate ease-in-out;
+        }
+
+        @keyframes bioWobble {
+            100% {
+                border-radius: 60% 40% 30% 70% / 60% 50% 40% 50%;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-border="steampunk"] {
+            border: 12px solid #b87333;
+            border-radius: 0;
+            box-shadow: inset 0 0 40px #000;
+            border-image: repeating-linear-gradient(45deg, #b87333, #b87333 10px, #8b4513 10px, #8b4513 20px) 12;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-border="frozen"] {
+            border-top: 10px solid #fff;
+            border-bottom: 10px solid #fff;
+            border-radius: 0;
+            box-shadow: 0 0 30px #00ffff;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-border="shadow"] {
+            border: none;
+            box-shadow: 0 0 100px 30px #000, inset 0 0 100px #b100ff;
+            background: #050010;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-border="holographic"] {
+            border: 4px solid #fff;
+            box-shadow: 6px 0 0 var(--engine-primary), -6px 0 0 var(--engine-secondary);
+            animation: holoGlitch 3s infinite;
+        }
+
+        @keyframes holoGlitch {
+            95% {
+                transform: skewX(0);
+            }
+
+            96% {
+                transform: skewX(5deg);
+            }
+
+            97% {
+                transform: skewX(-5deg);
+            }
+
+            100% {
+                transform: skewX(0);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-border="divine"] {
+            border: 4px solid #fff;
+            border-radius: 50px;
+            box-shadow: 0 0 100px #fff, 0 0 200px gold;
+        }
+
+
+        /* ==========================================================================
+           8. COMPOSABLE ENGINE: TIER 1 JACKPOTS (15 Options)
+           No grid shaking allowed. Scaling controlled by CSS Quality vars.
+           ========================================================================== */
+
+        .jackpot-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 7vw;
+            font-weight: 900;
+            color: #fff;
+            text-transform: uppercase;
+            font-style: italic;
+            z-index: 9999;
+            pointer-events: none;
+            text-align: center;
+            letter-spacing: 12px;
+            animation: jpText var(--jackpot-duration) var(--ease-heavy) forwards;
+            text-shadow: 0 0 30px #fff, 0 0 calc(80px * var(--jp-shadow)) var(--engine-primary), 0 0 calc(150px * var(--jp-shadow)) var(--engine-secondary);
+        }
+
+        @keyframes jpText {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+                filter: blur(calc(20px * var(--jp-blur)));
+            }
+
+            15% {
+                transform: translate(-50%, -50%) scale(calc(1.2 * var(--jp-text)));
+                opacity: 1;
+                filter: blur(0px);
+                text-shadow: 0 0 calc(200px * var(--jp-shadow)) #fff;
+            }
+
+            25% {
+                transform: translate(-50%, -50%) scale(calc(1 * var(--jp-text)));
+                opacity: 1;
+            }
+
+            80% {
+                transform: translate(-50%, -50%) scale(calc(1.1 * var(--jp-text)));
+                opacity: 1;
+                filter: hue-rotate(360deg);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(calc(4 * var(--jp-text)));
+                opacity: 0;
+                filter: blur(calc(40px * var(--jp-blur)));
+            }
+        }
+
+        /* GRID OVERLOAD (NO SHAKING) */
+        #sfl-grid-wrapper[data-theme="custom"].jackpot-active {
+            animation: jpGridOverload var(--jackpot-duration) ease-in-out both !important;
+        }
+
+        @keyframes jpGridOverload {
+
+            0%,
+            100% {
+                filter: brightness(1) contrast(1);
+                box-shadow: none;
+                transform: none !important;
+            }
+
+            10%,
+            30%,
+            50%,
+            70% {
+                filter: brightness(1.5) contrast(1.2);
+                box-shadow: 0 0 calc(150px * var(--jp-shadow)) var(--engine-primary);
+                transform: none !important;
+            }
+
+            20%,
+            40%,
+            60%,
+            80% {
+                filter: brightness(2) contrast(1.5);
+                box-shadow: 0 0 calc(250px * var(--jp-shadow)) var(--engine-secondary), inset 0 0 calc(100px * var(--jp-shadow)) #fff;
+                transform: none !important;
+            }
+        }
+
+        .sfl-grid-cell.tier-1.digging {
+            z-index: 5000 !important;
+            animation: tileJackpotAscend 3.5s forwards !important;
+            border-color: transparent !important;
+        }
+
+        @keyframes tileJackpotAscend {
+            0% {
+                transform: scale(1) translateZ(0);
+            }
+
+            20% {
+                transform: scale(calc(2.5 * var(--jp-scale))) translateZ(200px);
+                background: #fff;
+                box-shadow: 0 0 calc(150px * var(--jp-shadow)) #fff;
+            }
+
+            80% {
+                transform: scale(calc(2.5 * var(--jp-scale))) translateZ(200px);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(0) translateZ(500px);
+                opacity: 0;
+            }
+        }
+
+        /* 1. Gamma */
+        #sfl-grid-wrapper[data-theme="custom"][data-jackpot="gamma"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before {
+            content: '';
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            pointer-events: none;
+            transform-origin: bottom center;
+            z-index: 9999;
+            width: calc(600px * var(--jp-scale));
+            margin-left: calc(-300px * var(--jp-scale));
+            height: calc(3000px * var(--jp-scale));
+            background: linear-gradient(to top, #fff, var(--engine-primary) 20%, var(--engine-secondary) 80%, transparent);
+            border-radius: calc(300px * var(--jp-scale));
+            box-shadow: 0 0 calc(500px * var(--jp-shadow)) var(--engine-primary);
+            animation: jpGamma var(--jackpot-duration) forwards var(--ease-heavy);
+        }
+
+        @keyframes jpGamma {
+            0% {
+                transform: scaleY(0) scaleX(0);
+                opacity: 0;
+                filter: blur(0px);
+            }
+
+            5% {
+                transform: scaleY(1) scaleX(1.5);
+                opacity: 1;
+                filter: brightness(5) blur(calc(5px * var(--jp-blur)));
+                box-shadow: 0 0 calc(1000px * var(--jp-shadow)) #fff;
+            }
+
+            20%,
+            40% {
+                transform: scaleY(1.1) scaleX(1.2);
+                opacity: 1;
+                filter: brightness(2);
+            }
+
+            80% {
+                transform: scaleY(1.5) scaleX(0.5);
+                opacity: 0.8;
+                filter: blur(calc(20px * var(--jp-blur)));
+            }
+
+            100% {
+                transform: scaleY(2) scaleX(0);
+                opacity: 0;
+            }
+        }
+
+        /* 2. Orbital */
+        #sfl-grid-wrapper[data-theme="custom"][data-jackpot="orbital"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before {
+            content: '';
+            position: absolute;
+            top: calc(-3000px * var(--jp-scale));
+            bottom: 50%;
+            left: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            width: calc(800px * var(--jp-scale));
+            margin-left: calc(-400px * var(--jp-scale));
+            background: linear-gradient(90deg, var(--engine-primary), #fff, var(--engine-secondary));
+            box-shadow: 0 0 calc(500px * var(--jp-shadow)) #fff;
+            animation: jpOrbital var(--jackpot-duration) forwards var(--ease-heavy);
+        }
+
+        @keyframes jpOrbital {
+            0% {
+                transform: scaleX(0);
+                opacity: 0;
+            }
+
+            10% {
+                transform: scaleX(2);
+                opacity: 1;
+                filter: brightness(4);
+            }
+
+            30%,
+            50%,
+            70% {
+                transform: scaleX(random(1, 4));
+                opacity: 1;
+                filter: invert(1);
+            }
+
+            40%,
+            60%,
+            80% {
+                transform: scaleX(random(1, 3));
+                opacity: 1;
+                filter: invert(0);
+            }
+
+            100% {
+                transform: scaleX(0);
+                opacity: 0;
+                filter: blur(calc(30px * var(--jp-blur)));
+            }
+        }
+
+        /* 3. Supernova */
+        #sfl-grid-wrapper[data-theme="custom"][data-jackpot="supernova"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            z-index: 9999;
+            mix-blend-mode: screen;
+            pointer-events: none;
+            width: calc(250vw * var(--jp-scale));
+            height: calc(250vh * var(--jp-scale));
+            background: conic-gradient(from 0deg, #fff, var(--engine-primary), var(--engine-secondary), #fff);
+            animation: jpSupernova var(--jackpot-duration) forwards var(--ease-heavy);
+        }
+
+        @keyframes jpSupernova {
+            0% {
+                transform: translate(-50%, -50%) scale(0) rotate(0deg);
+                opacity: 0;
+                filter: blur(0px);
+            }
+
+            20% {
+                transform: translate(-50%, -50%) scale(0.2) rotate(90deg);
+                opacity: 1;
+                filter: brightness(3) blur(calc(10px * var(--jp-blur)));
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(0.5) rotate(180deg);
+                opacity: 1;
+                box-shadow: 0 0 calc(500px * var(--jp-shadow)) #fff;
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(2) rotate(360deg);
+                opacity: 0;
+                filter: blur(calc(80px * var(--jp-blur)));
+            }
+        }
+
+        /* 4. Blackhole */
+        #sfl-grid-wrapper[data-theme="custom"][data-jackpot="blackhole"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            z-index: 9999;
+            mix-blend-mode: difference;
+            pointer-events: none;
+            width: calc(200vw * var(--jp-scale));
+            height: calc(200vh * var(--jp-scale));
+            background: radial-gradient(circle, #000 10%, var(--engine-primary) 20%, transparent 60%);
+            animation: jpBlackHole var(--jackpot-duration) forwards cubic-bezier(0.5, 0, 1, 0.5);
+        }
+
+        @keyframes jpBlackHole {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+
+            40% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 1;
+                box-shadow: inset 0 0 calc(500px * var(--jp-shadow)) #000;
+            }
+
+            80% {
+                transform: translate(-50%, -50%) scale(1) rotate(1080deg);
+                filter: contrast(5);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(0) rotate(2160deg);
+                opacity: 0;
+            }
+        }
+
+        /* 5. Geyser */
+        #sfl-grid-wrapper[data-theme="custom"][data-jackpot="geyser"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before {
+            content: '';
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: bottom center;
+            z-index: 9999;
+            pointer-events: none;
+            width: calc(800px * var(--jp-scale));
+            margin-left: calc(-400px * var(--jp-scale));
+            height: calc(3000px * var(--jp-scale));
+            background: repeating-radial-gradient(circle at bottom center, var(--engine-primary) 0%, #000 10%, var(--engine-secondary) 20%);
+            animation: jpGeyser var(--jackpot-duration) forwards var(--ease-heavy);
+        }
+
+        @keyframes jpGeyser {
+            0% {
+                transform: scale(0) translateY(500px);
+                opacity: 0;
+                border-radius: 50%;
+            }
+
+            50% {
+                transform: scale(1) translateY(0px);
+                opacity: 1;
+                filter: contrast(3);
+                border-radius: 0%;
+            }
+
+            80% {
+                transform: scale(1.5) translateY(-500px);
+                opacity: 0.8;
+                filter: invert(1);
+            }
+
+            100% {
+                transform: scale(3) translateY(-1000px);
+                opacity: 0;
+            }
+        }
+
+        /* 6. Quantum Rift */
+        #sfl-grid-wrapper[data-theme="custom"][data-jackpot="quantum-rift"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            z-index: 9999;
+            pointer-events: none;
+            mix-blend-mode: hard-light;
+            width: calc(300vw * var(--jp-scale));
+            height: calc(300vh * var(--jp-scale));
+            background: linear-gradient(45deg, transparent 48%, #fff 49%, var(--engine-primary) 50%, #fff 51%, transparent 52%), linear-gradient(-45deg, transparent 48%, #fff 49%, var(--engine-secondary) 50%, #fff 51%, transparent 52%);
+            animation: jpQuantumRift var(--jackpot-duration) forwards var(--ease-heavy);
+        }
+
+        @keyframes jpQuantumRift {
+            0% {
+                transform: translate(-50%, -50%) scale(0) rotate(0deg);
+                opacity: 0;
+            }
+
+            10% {
+                transform: translate(-50%, -50%) scale(1) rotate(0deg);
+                opacity: 1;
+                filter: brightness(4);
+            }
+
+            40% {
+                transform: translate(-50%, -50%) scale(1.5) rotate(90deg);
+                opacity: 1;
+                filter: hue-rotate(180deg);
+            }
+
+            80% {
+                transform: translate(-50%, -50%) scale(2) rotate(180deg);
+                opacity: 0.8;
+                filter: blur(calc(10px * var(--jp-blur)));
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(5) rotate(360deg);
+                opacity: 0;
+                filter: blur(calc(40px * var(--jp-blur)));
+            }
+        }
+
+        /* 7. Divine Smite */
+        #sfl-grid-wrapper[data-theme="custom"][data-jackpot="divine-smite"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before {
+            content: '';
+            position: absolute;
+            top: calc(-5000px * var(--jp-scale));
+            bottom: 50%;
+            left: 50%;
+            transform-origin: bottom center;
+            z-index: 9999;
+            pointer-events: none;
+            width: calc(400px * var(--jp-scale));
+            margin-left: calc(-200px * var(--jp-scale));
+            background: #fff;
+            box-shadow: 0 0 calc(200px * var(--jp-shadow)) #fff, 0 0 calc(400px * var(--jp-shadow)) var(--engine-primary);
+            animation: jpDivineSmite var(--jackpot-duration) forwards ease-in-out;
+        }
+
+        @keyframes jpDivineSmite {
+            0% {
+                transform: scaleY(0) scaleX(0);
+                opacity: 0;
+                filter: blur(0px);
+            }
+
+            10% {
+                transform: scaleY(1) scaleX(1);
+                opacity: 1;
+                filter: brightness(5);
+            }
+
+            30% {
+                transform: scaleY(1) scaleX(5);
+                opacity: 1;
+                background: var(--engine-secondary);
+            }
+
+            60% {
+                transform: scaleY(1) scaleX(20);
+                opacity: 0.8;
+                background: var(--engine-primary);
+                filter: blur(calc(20px * var(--jp-blur)));
+            }
+
+            100% {
+                transform: scaleY(0) scaleX(100);
+                opacity: 0;
+                filter: blur(calc(50px * var(--jp-blur)));
+            }
+        }
+
+        /* 8. Plasma Nova */
+        #sfl-grid-wrapper[data-theme="custom"][data-jackpot="plasma-nova"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            border-radius: 50%;
+            z-index: 9999;
+            pointer-events: none;
+            mix-blend-mode: screen;
+            transform: translate(-50%, -50%) scale(0);
+            width: calc(100vw * var(--jp-scale));
+            height: calc(100vw * var(--jp-scale));
+            border: calc(200px * var(--jp-scale)) solid var(--engine-primary);
+            box-shadow: inset 0 0 calc(200px * var(--jp-shadow)) var(--engine-secondary), 0 0 calc(200px * var(--jp-shadow)) var(--engine-secondary);
+            animation: jpPlasmaNova var(--jackpot-duration) forwards ease-out;
+        }
+
+        @keyframes jpPlasmaNova {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 1;
+                border-width: calc(50px * var(--jp-scale));
+            }
+
+            40% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+                border-width: calc(300px * var(--jp-scale));
+                border-color: #fff;
+                filter: brightness(3);
+            }
+
+            80% {
+                transform: translate(-50%, -50%) scale(2);
+                opacity: 0.5;
+                border-width: calc(50px * var(--jp-scale));
+                filter: blur(calc(20px * var(--jp-blur)));
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(3);
+                opacity: 0;
+            }
+        }
+
+        /* 9. Nuke */
+        #sfl-grid-wrapper[data-theme="custom"][data-jackpot="nuke"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before {
+            content: '';
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            width: calc(200vw * var(--jp-scale));
+            height: calc(200vh * var(--jp-scale));
+            margin-left: calc(-100vw * var(--jp-scale));
+            background: radial-gradient(circle at bottom, #fff, #ffff00 30%, #ff0000 70%, transparent 100%);
+            border-radius: 50% 50% 0 0;
+            z-index: 9999;
+            pointer-events: none;
+            transform-origin: bottom center;
+            animation: jpNuke var(--jackpot-duration) forwards var(--ease-heavy);
+        }
+
+        @keyframes jpNuke {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            10% {
+                transform: scale(0.5);
+                opacity: 1;
+                filter: brightness(4);
+            }
+
+            50% {
+                transform: scale(1);
+                opacity: 1;
+                filter: hue-rotate(50deg) blur(calc(10px * var(--jp-blur)));
+            }
+
+            100% {
+                transform: scale(2);
+                opacity: 0;
+                filter: blur(calc(40px * var(--jp-blur)));
+            }
+        }
+
+        /* 10. Chrono */
+        #sfl-grid-wrapper[data-theme="custom"][data-jackpot="chrono"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before {
+            content: '';
+            position: absolute;
+            inset: -50vw;
+            background: repeating-conic-gradient(from 0deg, #fff 0 10deg, transparent 10deg 20deg);
+            z-index: 9999;
+            pointer-events: none;
+            animation: jpChrono var(--jackpot-duration) forwards steps(10);
+            mix-blend-mode: overlay;
+        }
+
+        @keyframes jpChrono {
+            0% {
+                transform: scale(0) rotate(0deg);
+                opacity: 0;
+            }
+
+            30% {
+                transform: scale(1) rotate(90deg);
+                opacity: 1;
+                filter: invert(1);
+            }
+
+            60% {
+                transform: scale(1.5) rotate(-180deg);
+                filter: invert(0) brightness(3);
+            }
+
+            100% {
+                transform: scale(3) rotate(360deg);
+                opacity: 0;
+                filter: blur(calc(20px * var(--jp-blur)));
+            }
+        }
+
+        /* 11. Void Tendrils */
+        #sfl-grid-wrapper[data-theme="custom"][data-jackpot="void-tendrils"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: calc(200vw * var(--jp-scale));
+            height: calc(200vw * var(--jp-scale));
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, #000 10%, var(--engine-primary) 20%, transparent 50%);
+            filter: contrast(10) blur(calc(10px * var(--jp-blur)));
+            z-index: 9999;
+            pointer-events: none;
+            animation: jpTendrils var(--jackpot-duration) forwards ease-in-out;
+        }
+
+        @keyframes jpTendrils {
+            0% {
+                transform: translate(-50%, -50%) scale(0) rotate(0deg);
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(1) rotate(180deg);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(2) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* 12. Cyber EMP */
+        #sfl-grid-wrapper[data-theme="custom"][data-jackpot="cyber-emp"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: calc(150vw * var(--jp-scale));
+            height: calc(150vw * var(--jp-scale));
+            transform: translate(-50%, -50%);
+            border: calc(100px * var(--jp-scale)) solid #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 calc(200px * var(--jp-shadow)) #00ffff, inset 0 0 calc(200px * var(--jp-shadow)) #00ffff;
+            z-index: 9999;
+            pointer-events: none;
+            animation: jpEmp var(--jackpot-duration) forwards cubic-bezier(0.1, 0.9, 0.2, 1);
+        }
+
+        @keyframes jpEmp {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 1;
+                border-width: calc(200px * var(--jp-scale));
+            }
+
+            20% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+                border-width: calc(20px * var(--jp-scale));
+                filter: brightness(5);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(3);
+                opacity: 0;
+                border-width: 0px;
+            }
+        }
+
+        /* 13. Solar Flare */
+        #sfl-grid-wrapper[data-theme="custom"][data-jackpot="solar-flare"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: calc(300vw * var(--jp-scale));
+            height: calc(300vw * var(--jp-scale));
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, #fff, #ffff00 20%, #ff4500 50%, transparent 80%);
+            z-index: 9999;
+            pointer-events: none;
+            mix-blend-mode: screen;
+            animation: jpSolar var(--jackpot-duration) forwards var(--ease-heavy);
+        }
+
+        @keyframes jpSolar {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+
+            30% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 1;
+                filter: brightness(4);
+            }
+
+            70% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.8;
+                filter: blur(calc(20px * var(--jp-blur)));
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(2);
+                opacity: 0;
+                filter: blur(calc(50px * var(--jp-blur)));
+            }
+        }
+
+        /* 14. Necrotic Pulse */
+        #sfl-grid-wrapper[data-theme="custom"][data-jackpot="necro-pulse"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: calc(200vw * var(--jp-scale));
+            height: calc(200vh * var(--jp-scale));
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, #33ff33 0%, #000 40%, transparent 100%);
+            z-index: 9999;
+            pointer-events: none;
+            mix-blend-mode: color-dodge;
+            animation: jpNucro var(--jackpot-duration) forwards ease-in-out;
+        }
+
+        @keyframes jpNucro {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                filter: hue-rotate(0deg);
+                opacity: 0;
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(1);
+                filter: hue-rotate(90deg) brightness(2);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(2);
+                filter: hue-rotate(180deg) brightness(0);
+                opacity: 0;
+            }
+        }
+
+        /* 15. Astral Projection */
+        #sfl-grid-wrapper[data-theme="custom"][data-jackpot="astral-proj"] .sfl-grid-cell.tier-1.digging .dig-fx-container::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: calc(300vw * var(--jp-scale));
+            height: calc(300vh * var(--jp-scale));
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, #fff, var(--engine-primary), transparent 70%);
+            z-index: 9999;
+            pointer-events: none;
+            mix-blend-mode: luminosity;
+            animation: jpAstral var(--jackpot-duration) forwards cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+
+        @keyframes jpAstral {
+            0% {
+                transform: translate(-50%, -50%) scale(0) rotate(0deg);
+                opacity: 0;
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(1) rotate(180deg);
+                opacity: 1;
+                filter: blur(calc(10px * var(--jp-blur)));
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(1.5) rotate(360deg);
+                opacity: 0;
+                filter: blur(calc(50px * var(--jp-blur)));
+            }
+        }
+
+
+        /* ==========================================================================
+           9. TIER-SPECIFIC DIG ANIMATION LOGIC (Tiers 2, 3, 4, 5)
+           The user controls EXACTLY what animation plays for each specific tier!
+           ========================================================================== */
+
+        /* The container setup for tier-specific digs */
+        .sfl-grid-cell.digging[class*="tier-2"],
+        .sfl-grid-cell.digging[class*="tier-3"],
+        .sfl-grid-cell.digging[class*="tier-4"],
+        .sfl-grid-cell.digging[class*="tier-5"] {
+            /* Handled dynamically by specific data-attributes below */
+        }
+
+        /* --- TIER 2: BONES (Heavy, Resonant, Superior) - 10 Options --- */
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t2="bone-shatter"] .sfl-grid-cell.tier-2.digging {
+            animation: t2Shatter var(--dig-duration) forwards;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t2="bone-shatter"] .sfl-grid-cell.tier-2.digging .dig-fx-container {
+            opacity: 1;
+            background: #fff;
+            box-shadow: 0 0 80px var(--engine-primary);
+            animation: fxT2Shatter var(--dig-duration) forwards;
+        }
+
+        @keyframes t2Shatter {
+            0% {
+                transform: scale(1);
+                filter: brightness(2) contrast(1.5);
+            }
+
+            20% {
+                transform: scale(1.4) skew(10deg);
+                background: #fff;
+            }
+
+            100% {
+                transform: scale(0) rotate(90deg);
+                opacity: 0;
+                filter: blur(10px);
+            }
+        }
+
+        @keyframes fxT2Shatter {
+            50% {
+                transform: scale(2);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t2="ethereal"] .sfl-grid-cell.tier-2.digging {
+            animation: t2Ethereal var(--dig-duration) forwards ease-in-out;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t2="ethereal"] .sfl-grid-cell.tier-2.digging .dig-fx-container {
+            opacity: 1;
+            background: radial-gradient(circle, #fff, transparent);
+            animation: fxT2Ethereal var(--dig-duration) forwards;
+        }
+
+        @keyframes t2Ethereal {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.5) translateY(-30px);
+                filter: brightness(3) drop-shadow(0 0 30px var(--engine-secondary));
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(0) translateY(-100px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes fxT2Ethereal {
+            100% {
+                transform: scale(3);
+                opacity: 0;
+                filter: blur(20px);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t2="grave"] .sfl-grid-cell.tier-2.digging {
+            animation: t2Grave var(--dig-duration) forwards cubic-bezier(0.5, 0, 1, 0.5);
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t2="grave"] .sfl-grid-cell.tier-2.digging .dig-fx-container {
+            opacity: 1;
+            box-shadow: inset 0 0 100px #000;
+            animation: fxT2Grave var(--dig-duration) forwards;
+        }
+
+        @keyframes t2Grave {
+            0% {
+                transform: scale(1);
+            }
+
+            20% {
+                transform: scale(1.3);
+                filter: grayscale(1) brightness(3);
+            }
+
+            80% {
+                transform: scale(0.5) rotateX(80deg);
+                filter: brightness(0);
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes fxT2Grave {
+            50% {
+                transform: scale(1.5);
+                opacity: 1;
+                background: #000;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t2="resonance"] .sfl-grid-cell.tier-2.digging {
+            animation: t2Res var(--dig-duration) forwards;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t2="resonance"] .sfl-grid-cell.tier-2.digging .dig-fx-container {
+            opacity: 1;
+            border: 5px solid var(--engine-primary);
+            border-radius: 50%;
+            animation: fxT2Res var(--dig-duration) forwards ease-out;
+        }
+
+        @keyframes t2Res {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            20%,
+            60% {
+                transform: scale(1.3);
+                filter: brightness(2);
+            }
+
+            40%,
+            80% {
+                transform: scale(0.9);
+                filter: brightness(0.5);
+            }
+
+            90% {
+                transform: scale(1.5);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes fxT2Res {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(4);
+                opacity: 0;
+                border-width: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t2="phantom"] .sfl-grid-cell.tier-2.digging {
+            animation: t2Phant var(--dig-duration) forwards;
+        }
+
+        @keyframes t2Phant {
+            0% {
+                transform: scale(1);
+                filter: invert(1);
+            }
+
+            50% {
+                transform: scale(1.5) skewX(30deg);
+                filter: blur(5px) invert(1);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(0) translateX(100px);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t2="heavy-implode"] .sfl-grid-cell.tier-2.digging {
+            animation: t2Implode var(--dig-duration) forwards;
+        }
+
+        @keyframes t2Implode {
+            0% {
+                transform: scale(1);
+            }
+
+            40% {
+                transform: scale(1.6);
+                box-shadow: 0 0 100px var(--engine-primary);
+                background: #fff;
+            }
+
+            100% {
+                transform: scale(0) rotate(1080deg);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t2="core-fracture"] .sfl-grid-cell.tier-2.digging {
+            animation: t2Frac var(--dig-duration) forwards steps(5);
+        }
+
+        @keyframes t2Frac {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.2);
+                filter: contrast(5);
+                background: #000;
+                border: 10px solid #fff;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t2="soul"] .sfl-grid-cell.tier-2.digging {
+            animation: t2Soul var(--dig-duration) forwards;
+            filter: hue-rotate(180deg);
+        }
+
+        @keyframes t2Soul {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(2) translateY(-100px);
+                opacity: 0;
+                filter: blur(10px);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t2="echo"] .sfl-grid-cell.tier-2.digging {
+            animation: t2Echo var(--dig-duration) forwards;
+        }
+
+        @keyframes t2Echo {
+
+            0%,
+            50%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            25%,
+            75% {
+                transform: scale(1.4);
+                opacity: 0.5;
+                box-shadow: 0 0 50px var(--engine-secondary);
+            }
+
+            99% {
+                transform: scale(0);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t2="fossil"] .sfl-grid-cell.tier-2.digging {
+            animation: t2Fossil var(--dig-duration) forwards;
+        }
+
+        @keyframes t2Fossil {
+            0% {
+                transform: scale(1);
+                filter: sepia(1);
+            }
+
+            50% {
+                transform: scale(1.2) rotateX(45deg);
+                filter: sepia(1) brightness(0.5);
+            }
+
+            100% {
+                transform: scale(0) rotateX(90deg);
+                opacity: 0;
+            }
+        }
+
+
+        /* --- TIER 3: MISC (Treasure, Medium Impact) - 10 Options --- */
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t3="gold-pop"] .sfl-grid-cell.tier-3.digging {
+            animation: t3Gold var(--dig-duration) forwards;
+        }
+
+        @keyframes t3Gold {
+            0% {
+                transform: scale(1);
+            }
+
+            30% {
+                transform: scale(1.3);
+                background: gold;
+                box-shadow: 0 0 40px gold;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t3="coin-fountain"] .sfl-grid-cell.tier-3.digging {
+            animation: t3Coin var(--dig-duration) forwards ease-out;
+        }
+
+        @keyframes t3Coin {
+            0% {
+                transform: scale(1);
+            }
+
+            40% {
+                transform: scale(1.2) translateY(-20px);
+                filter: brightness(2) drop-shadow(0 10px 10px gold);
+            }
+
+            100% {
+                transform: scale(0) translateY(50px);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t3="glimmer"] .sfl-grid-cell.tier-3.digging {
+            animation: t3Glimmer var(--dig-duration) forwards alternate;
+        }
+
+        @keyframes t3Glimmer {
+            0% {
+                filter: brightness(1);
+            }
+
+            50% {
+                filter: brightness(3);
+                transform: scale(1.2) rotate(5deg);
+                background: #fff;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t3="jewel"] .sfl-grid-cell.tier-3.digging {
+            animation: t3Jewel var(--dig-duration) forwards;
+        }
+
+        @keyframes t3Jewel {
+            0% {
+                transform: scale(1);
+            }
+
+            30% {
+                transform: scale(1.3) rotate(45deg);
+                background: var(--engine-primary);
+                border-radius: 0;
+            }
+
+            100% {
+                transform: scale(0) rotate(90deg);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t3="chest"] .sfl-grid-cell.tier-3.digging {
+            animation: t3Chest var(--dig-duration) forwards;
+        }
+
+        @keyframes t3Chest {
+            0% {
+                transform: scale(1);
+            }
+
+            20%,
+            40% {
+                transform: scale(1.1) rotate(-5deg);
+            }
+
+            30%,
+            50% {
+                transform: scale(1.1) rotate(5deg);
+            }
+
+            60% {
+                transform: scale(1.4);
+                filter: brightness(2);
+                background: gold;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t3="med-spin"] .sfl-grid-cell.tier-3.digging {
+            animation: t3Spin var(--dig-duration) forwards;
+        }
+
+        @keyframes t3Spin {
+            100% {
+                transform: scale(0) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t3="treasure-melt"] .sfl-grid-cell.tier-3.digging {
+            animation: t3Melt var(--dig-duration) forwards;
+        }
+
+        @keyframes t3Melt {
+            50% {
+                transform: scale(1.2) translateY(10px);
+                border-radius: 50%;
+                background: gold;
+            }
+
+            100% {
+                transform: scale(0) translateY(30px);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t3="sparkle"] .sfl-grid-cell.tier-3.digging {
+            animation: t3Sparkle var(--dig-duration) forwards steps(4);
+        }
+
+        @keyframes t3Sparkle {
+            50% {
+                transform: scale(1.3);
+                background: #fff;
+                box-shadow: 0 0 30px #fff;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t3="loot"] .sfl-grid-cell.tier-3.digging {
+            animation: t3Loot var(--dig-duration) forwards cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes t3Loot {
+            50% {
+                transform: scale(1.4) translateY(-15px);
+                filter: saturate(3);
+            }
+
+            100% {
+                transform: scale(0) translateY(10px);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t3="gem"] .sfl-grid-cell.tier-3.digging {
+            animation: t3Gem var(--dig-duration) forwards;
+        }
+
+        @keyframes t3Gem {
+            30% {
+                transform: scale(1.3);
+                clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+                background: var(--engine-secondary);
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+
+        /* --- TIER 4: CRABS (Aquatic, Snappy, Light) - 10 Options --- */
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t4="snap"] .sfl-grid-cell.tier-4.digging {
+            animation: t4Snap var(--dig-duration) forwards;
+        }
+
+        @keyframes t4Snap {
+
+            0%,
+            20%,
+            40% {
+                transform: scale(1);
+            }
+
+            10%,
+            30% {
+                transform: scale(0.8) scaleX(1.2);
+                background: #ff5555;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t4="bubble"] .sfl-grid-cell.tier-4.digging {
+            animation: t4Bubble var(--dig-duration) forwards ease-in;
+        }
+
+        @keyframes t4Bubble {
+            50% {
+                transform: scale(1.3) translateY(-20px);
+                border-radius: 50%;
+                background: transparent;
+                border: 2px solid #0ff;
+            }
+
+            51% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t4="scuttle"] .sfl-grid-cell.tier-4.digging {
+            animation: t4Scuttle var(--dig-duration) forwards;
+        }
+
+        @keyframes t4Scuttle {
+            20% {
+                transform: translateX(-10px) rotate(-10deg);
+            }
+
+            40% {
+                transform: translateX(10px) rotate(10deg);
+            }
+
+            60% {
+                transform: translateX(-10px) rotate(-10deg);
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t4="tide"] .sfl-grid-cell.tier-4.digging {
+            animation: t4Tide var(--dig-duration) forwards;
+            filter: hue-rotate(90deg);
+        }
+
+        @keyframes t4Tide {
+            50% {
+                transform: scaleX(1.5) scaleY(0.5) translateX(20px);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t4="shell"] .sfl-grid-cell.tier-4.digging {
+            animation: t4Shell var(--dig-duration) forwards steps(3);
+        }
+
+        @keyframes t4Shell {
+            50% {
+                transform: scale(1.1);
+                background: #fff;
+                border-radius: 50% 50% 0 0;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t4="jolt"] .sfl-grid-cell.tier-4.digging {
+            animation: t4Jolt var(--dig-duration) forwards;
+        }
+
+        @keyframes t4Jolt {
+            10% {
+                transform: scale(1.2) translateY(-10px);
+            }
+
+            15% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t4="ripple"] .sfl-grid-cell.tier-4.digging {
+            animation: t4Ripple var(--dig-duration) forwards;
+        }
+
+        @keyframes t4Ripple {
+            50% {
+                transform: scale(1.3);
+                filter: blur(5px) opacity(0.5);
+                border-radius: 50%;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t4="fade"] .sfl-grid-cell.tier-4.digging {
+            animation: t4Fade var(--dig-duration) forwards linear;
+        }
+
+        @keyframes t4Fade {
+            100% {
+                opacity: 0;
+                transform: translateY(10px);
+                filter: grayscale(1);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t4="foam"] .sfl-grid-cell.tier-4.digging {
+            animation: t4Foam var(--dig-duration) forwards;
+        }
+
+        @keyframes t4Foam {
+            40% {
+                transform: scale(1.2);
+                background: #fff;
+                box-shadow: 0 0 10px #fff;
+                border-radius: 20px;
+                filter: blur(2px);
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t4="splash"] .sfl-grid-cell.tier-4.digging {
+            animation: t4Splash var(--dig-duration) forwards;
+        }
+
+        @keyframes t4Splash {
+            30% {
+                transform: scale(1.3) scaleY(1.5);
+                background: #00ffff;
+            }
+
+            100% {
+                transform: scale(0) translateY(30px);
+                opacity: 0;
+            }
+        }
+
+
+        /* --- TIER 5: SAND (Melancholic, Dull, Sluggish) - 10 Options --- */
+        /* RULE APPLIED GLOBALLY TO TIER 5: Force dark red melancholic hue */
+        .sfl-grid-cell.tier-5.digging {
+            filter: sepia(1) hue-rotate(-40deg) saturate(3) brightness(0.4) contrast(1.2) !important;
+            box-shadow: inset 0 0 50px rgba(100, 0, 0, 0.8) !important;
+            z-index: 10 !important;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t5="thud"] .sfl-grid-cell.tier-5.digging {
+            animation: t5Thud var(--dig-duration) forwards;
+        }
+
+        @keyframes t5Thud {
+            10% {
+                transform: scale(1.05);
+            }
+
+            20% {
+                transform: scale(0.95) translateY(5px);
+            }
+
+            100% {
+                transform: scale(0) translateY(20px);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t5="dust"] .sfl-grid-cell.tier-5.digging {
+            animation: t5Dust var(--dig-duration) forwards;
+        }
+
+        @keyframes t5Dust {
+            50% {
+                transform: scale(1.1);
+                filter: blur(5px);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t5="ash"] .sfl-grid-cell.tier-5.digging {
+            animation: t5Ash var(--dig-duration) forwards linear;
+        }
+
+        @keyframes t5Ash {
+            100% {
+                transform: translateY(30px) rotate(10deg);
+                opacity: 0;
+                filter: grayscale(1);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t5="sink"] .sfl-grid-cell.tier-5.digging {
+            animation: t5Sink var(--dig-duration) forwards ease-in;
+        }
+
+        @keyframes t5Sink {
+            100% {
+                transform: scale(0.5) translateY(50px) translateZ(-50px);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t5="crimson"] .sfl-grid-cell.tier-5.digging {
+            animation: t5Crimson var(--dig-duration) forwards;
+        }
+
+        @keyframes t5Crimson {
+            50% {
+                background: #ff0000;
+                box-shadow: 0 0 20px #ff0000;
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t5="crumble"] .sfl-grid-cell.tier-5.digging {
+            animation: t5Crumble var(--dig-duration) forwards steps(4);
+        }
+
+        @keyframes t5Crumble {
+            50% {
+                transform: scale(0.8) skewX(10deg);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t5="sigh"] .sfl-grid-cell.tier-5.digging {
+            animation: t5Sigh var(--dig-duration) forwards ease-in-out;
+        }
+
+        @keyframes t5Sigh {
+            30% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(0.7) translateY(20px);
+                opacity: 0;
+                filter: blur(3px);
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t5="slump"] .sfl-grid-cell.tier-5.digging {
+            animation: t5Slump var(--dig-duration) forwards;
+        }
+
+        @keyframes t5Slump {
+            50% {
+                transform: scaleY(0.5) translateY(20px);
+                border-radius: 50% 50% 0 0;
+            }
+
+            100% {
+                transform: scaleY(0) translateY(40px);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t5="rot"] .sfl-grid-cell.tier-5.digging {
+            animation: t5Rot var(--dig-duration) forwards;
+        }
+
+        @keyframes t5Rot {
+            50% {
+                background: #000;
+                filter: contrast(3);
+                transform: scale(0.9);
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-dig-t5="blood-melt"] .sfl-grid-cell.tier-5.digging {
+            animation: t5Blood var(--dig-duration) forwards;
+        }
+
+        @keyframes t5Blood {
+            40% {
+                transform: scale(1.1) translateY(5px);
+                border-radius: 50%;
+                background: #500;
+            }
+
+            100% {
+                transform: scale(0) translateY(40px);
+                opacity: 0;
+            }
+        }
+
+
+        /* ==========================================================================
+           10. PARTICLE PHYSICS DOM & RENDERING OVERRIDES
+           ========================================================================== */
+        .dig-particle {
+            position: absolute;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 1;
+            will-change: transform, opacity;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-family: monospace;
+            color: #fff;
+        }
+
+        /* Composable Particle Shapes (15 Options) */
+        #sfl-grid-wrapper[data-theme="custom"][data-particles="standard"] .dig-particle {
+            border-radius: 50%;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-particles="shards"] .dig-particle {
+            border-radius: 0;
+            width: 4px !important;
+            height: 25px !important;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-particles="coins"] .dig-particle {
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #fff, var(--engine-primary) 60%, var(--engine-secondary) 100%) !important;
+            border: 2px solid var(--engine-primary);
+            animation: pSpin 0.4s linear infinite;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-particles="lava"] .dig-particle {
+            border-radius: 10%;
+            filter: contrast(2) brightness(1.5);
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-particles="stars"] .dig-particle {
+            border-radius: 50%;
+            box-shadow: -10px -10px 20px var(--engine-primary), -20px -20px 40px rgba(255, 255, 255, 0.5) !important;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-particles="bubbles"] .dig-particle {
+            border-radius: 50%;
+            background: transparent !important;
+            border: 2px solid #fff;
+            box-shadow: inset 0 0 5px #fff !important;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-particles="skulls"] .dig-particle {
+            background: transparent !important;
+            box-shadow: none !important;
+            font-size: 16px;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-particles="sparkles"] .dig-particle {
+            border-radius: 0;
+            clip-path: polygon(50% 0%, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0% 50%, 40% 40%);
+            background: #fff !important;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-particles="binary"] .dig-particle {
+            background: transparent !important;
+            box-shadow: none !important;
+            font-size: 14px;
+            text-shadow: 0 0 5px var(--engine-primary);
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-particles="snow"] .dig-particle {
+            background: transparent !important;
+            box-shadow: none !important;
+            font-size: 18px;
+            color: #fff;
+            animation: pSpin 2s linear infinite;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-particles="spores"] .dig-particle {
+            border-radius: 50%;
+            filter: blur(2px);
+            opacity: 0.8;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-particles="orbs"] .dig-particle {
+            border-radius: 50%;
+            background: #fff !important;
+            box-shadow: 0 0 20px var(--engine-primary) !important;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-particles="prisms"] .dig-particle {
+            border-radius: 0;
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            animation: pSpin 1s linear infinite;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-particles="blood"] .dig-particle {
+            border-radius: 50% 50% 10% 10%;
+            background: #ff0000 !important;
+            box-shadow: 0 0 10px #800000 !important;
+        }
+
+        #sfl-grid-wrapper[data-theme="custom"][data-particles="glitch"] .dig-particle {
+            border-radius: 0;
+            background: var(--engine-primary) !important;
+            box-shadow: 4px 4px 0 var(--engine-secondary) !important;
+        }
+
+        @keyframes pSpin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Quality Scaler Overrides for Particles */
+        #sfl-grid-wrapper[data-theme="custom"][data-quality="low"] .dig-particle {
+            box-shadow: none !important;
+            filter: none !important;
+        }
+    
