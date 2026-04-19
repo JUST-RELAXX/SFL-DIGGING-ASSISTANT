@@ -69,7 +69,7 @@ trackingIndicator.id = 'sfl-tracking-indicator';
 trackingIndicator.innerHTML = `
     <span class="indicator-dot"></span>
     <span id="sfl-mode-label">TRACKING</span>
-    <span class="indicator-hint">Alt+1 re-snap | E stop</span>
+    <span class="indicator-hint">Alt+1 re-snap</span>
 `;
 document.body.appendChild(trackingIndicator);
 
@@ -79,6 +79,35 @@ function updateIndicatorLabel() {
     const m = { low: 'LOW-END', mid: 'MID-RANGE', high: 'HIGH-END' };
     label.textContent = m[deviceMode] || 'TRACKING';
 }
+
+// =============================================================================
+// FULL-SCREEN VIEW DETECTION — Hide grid entirely for Marketplace, etc.
+// Grid z-index is set to 2 in CSS so it's ALWAYS behind game UI panels.
+// We only need to detect full-screen views where the grid makes no sense.
+// =============================================================================
+let gridPanelState = 'normal'; // 'normal' | 'hidden'
+
+function checkForFullScreenViews() {
+    const wrapper = document.getElementById('sfl-grid-wrapper');
+    if (!wrapper || appState !== 'TRACKING') return;
+
+    const svg = document.getElementById('sfl-silhouette-debug');
+    const hash = window.location.hash.toLowerCase();
+    const isFullScreen = hash.includes('marketplace') || hash.includes('/shop');
+
+    if (isFullScreen && gridPanelState !== 'hidden') {
+        wrapper.style.display = 'none';
+        if (svg) svg.style.display = 'none';
+        gridPanelState = 'hidden';
+    } else if (!isFullScreen && gridPanelState === 'hidden') {
+        wrapper.style.display = '';
+        if (svg) svg.style.display = '';
+        gridPanelState = 'normal';
+    }
+}
+
+setInterval(checkForFullScreenViews, 300);
+
 
 // =============================================================================
 // AUTO-ALIGNMENT: Alt+1 reads camera + uses known grid world coords
@@ -270,7 +299,7 @@ function ensureDebugSvg() {
     if (debugSvg) return debugSvg;
     debugSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     debugSvg.id = 'sfl-silhouette-debug';
-    debugSvg.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:999999;pointer-events:none;opacity:1;transition:opacity 0.4s ease;';
+    debugSvg.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:2;pointer-events:none;opacity:1;transition:opacity 0.4s ease;';;
     document.body.appendChild(debugSvg);
     return debugSvg;
 }
@@ -283,6 +312,13 @@ function updateCharacterCutout() {
     const w = document.getElementById('sfl-grid-wrapper');
     const camEl = document.getElementById('sfl-camera-data');
     const hasPlayer = camEl && camEl.dataset.pf === '1';
+
+    // When grid is hidden for full-screen views, skip silhouette
+    if (gridPanelState === 'hidden') {
+        if (w) w.style.clipPath = 'none';
+        hideAuraSvg();
+        return;
+    }
 
     // Determine if silhouette should be active
     const gridActive = !!(w && masterGrid && appState === 'TRACKING');
@@ -520,7 +556,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // KEYBOARD
 // =============================================================================
 window.addEventListener('keydown', (e) => {
-    // Alt+1: TOGGLE ΓÇö first press opens + aligns, second press hides
+    // Alt+1: TOGGLE — first press opens + aligns, second press hides
     if (e.altKey && e.key === '1') {
         e.preventDefault(); e.stopPropagation();
         if (masterGrid && appState === 'TRACKING') {
@@ -533,7 +569,7 @@ window.addEventListener('keydown', (e) => {
         }
         return;
     }
-    if (appState === 'TRACKING' && e.key.toLowerCase() === 'e') { stopTracking(); return; }
+    // (E key no longer stops tracking — tracking is persistent)
     if (appState === 'TRACKING' && masterGrid && deviceMode !== 'high') {
         const k = e.key.toLowerCase();
         if (e.code === 'Space') { keys.w=keys.a=keys.s=keys.d=false; return; }

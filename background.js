@@ -1,4 +1,15 @@
-chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(console.error);
+// Ensure side panel opens on icon click — register in multiple lifecycle hooks
+// to handle Chrome's lazy service worker startup reliably.
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+
+chrome.runtime.onInstalled.addListener(() => {
+    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+});
+
+// Fallback: if setPanelBehavior hasn't kicked in, force-open via action click
+chrome.action.onClicked.addListener((tab) => {
+    chrome.sidePanel.open({ tabId: tab.id }).catch(() => {});
+});
 
 const API_KEY = 'sfl.MTExMDI2MzcxMDQxNTI0OQ.Ih1bKhZtMNd30cdXvsoR6ajB1vkOpdDNblFiNUTnqLo';
 

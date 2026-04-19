@@ -7,7 +7,7 @@
     position: fixed;
     width: 640px;
     height: 640px;
-    z-index: 99999;
+    z-index: 2;
     border-radius: 4px;
     transition: box-shadow 0.3s ease, border 0.3s ease;
     transform-style: flat;
@@ -133,7 +133,7 @@
     top: 8px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 9999999;
+    z-index: 2;
     display: none;
     align-items: center;
     gap: 8px;
