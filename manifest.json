@@ -13,8 +13,17 @@
     "https://sunflower-land.com/play/*",
     "<all_urls>"
   ],
+  "icons": {
+    "16": "sand_shovel.png",
+    "48": "sand_shovel.png",
+    "128": "sand_shovel.png"
+  },
   "action": {
-    "default_title": "Open SFL Digging Helper"
+    "default_title": "Open SFL Digging Helper",
+    "default_icon": {
+      "16": "sand_shovel.png",
+      "48": "sand_shovel.png"
+    }
   },
   "side_panel": {
     "default_path": "sidepanel.html"
