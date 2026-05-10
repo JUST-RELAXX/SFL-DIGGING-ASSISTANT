@@ -405,7 +405,7 @@
             }
         }
 
-        /* TIER: RARE — EPIC animation (Ammonite Shell, Artefacts, Hieroglyphs) */
+        /* TIER: RARE — EPIC animation (Salt Dino Egg, Ammonite Shell, Artefacts, Hieroglyphs) */
         .sfl-grid-cell.digging.item-rare {
             animation-duration: 3.5s !important;
             z-index: 200 !important;

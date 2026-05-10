@@ -733,13 +733,15 @@ function getItemTier(itemName) {
     if (name.includes('camel bone') || name.includes('bone')) return 'bone';
     // Tier 1 (Rare/Jackpot) — EXTREME animations
     // Seasonal artefacts, puzzle pieces, hieroglyphs, pearls, bounty
+    // Each season has a chapter artefact: Salt Awakening → Salt Dino Egg, Crabs and Traps → Ammonite Shell, etc.
     if (name.includes('artefact') || name.includes('seasonal artefact') ||
         name.includes('hieroglyph') || name.includes('puzzle') ||
         name.includes('scarab') || name.includes('cow skull') ||
         name.includes('ancient clock') || name.includes('broken pillar') ||
         name.includes('coprolite') || name.includes('moon crystal') ||
+        name.includes('salt dino egg') ||
         name.includes('ammonite shell') || name.includes('pearl') ||
-        name.includes('pirate bounty')) return 'rare';
+        name.includes('pirate bounty') || name.includes('dino egg')) return 'rare';
     // Tier 3 (Misc) — treasure glow
     // Coins, compass, bottles, vases, shells, coral, sea cucumber, starfish, etc.
     return 'misc';

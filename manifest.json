@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SFL Game Assistant",
-  "version": "12.0",
+  "version": "12.1",
   "description": "Digging grid overlay with 30 premium themes, custom theme builder, auto-alignment and live dig tracking.",
   "permissions": [
     "storage",
