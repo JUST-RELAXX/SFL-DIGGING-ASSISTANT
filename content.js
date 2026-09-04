@@ -1,4 +1,4 @@
-console.log("SFL Grid Script Loaded (v11.3 — Auto-Align + Live Dig + Themes).");
+// (silent — script loaded)
 
 let currentTheme = 'none'; // 'none' = default basic grid, or a theme key
 let auraEnabled = false;     // manual toggle from sidepanel
@@ -6,6 +6,8 @@ let auraAutoActive = false;  // auto-enabled when grid is active + character is 
 let perfTier = 'high';       // ultra | high | medium | potato
 let preserveUnderlying = false; // when true, perf tiers skip underlying theme effects
 let customConfig = null; // custom theme config object from builder
+let predictionEnabled = true; // digging prediction solver toggle
+let lastSolvedBoard = null;   // cached solver result
 
 // Performance tier config — hover/glow ALWAYS enabled, only particle count scales
 const PERF_CONFIG = {
@@ -20,8 +22,14 @@ const PERF_CONFIG = {
 // =============================================================================
 const bridgeScript = document.createElement('script');
 bridgeScript.src = chrome.runtime.getURL('bridge.js');
-bridgeScript.onload = () => console.log("[Grid] Bridge injected.");
+bridgeScript.onload = () => {}; // (silent)
 (document.head || document.documentElement).appendChild(bridgeScript);
+
+// Inject prediction solver engine
+const solverScript = document.createElement('script');
+solverScript.src = chrome.runtime.getURL('digging-solver.js');
+solverScript.onload = () => {}; // (silent)
+(document.head || document.documentElement).appendChild(solverScript);
 
 // =============================================================================
 // STATE
@@ -49,7 +57,7 @@ let domIntervalMs = 0;
 let lastSeenTS = '0';
 
 // Load saved state
-chrome.storage.local.get(['walkSpeed', 'deviceMode', 'domIntervalMs', 'auraEnabled', 'perfTier', 'gridCalibX', 'gridCalibY', 'preserveUnderlying'], (r) => {
+chrome.storage.local.get(['walkSpeed', 'deviceMode', 'domIntervalMs', 'auraEnabled', 'perfTier', 'gridCalibX', 'gridCalibY', 'preserveUnderlying', 'predictionEnabled'], (r) => {
     if (r.walkSpeed !== undefined) walkSpeed = r.walkSpeed;
     if (r.deviceMode) deviceMode = r.deviceMode;
     if (r.domIntervalMs !== undefined) domIntervalMs = r.domIntervalMs;
@@ -58,7 +66,8 @@ chrome.storage.local.get(['walkSpeed', 'deviceMode', 'domIntervalMs', 'auraEnabl
     if (r.gridCalibX !== undefined) gridCalibX = r.gridCalibX;
     if (r.gridCalibY !== undefined) gridCalibY = r.gridCalibY;
     if (r.preserveUnderlying !== undefined) preserveUnderlying = r.preserveUnderlying;
-    console.log(`[Grid] Mode=${deviceMode} Speed=${walkSpeed} Aura=${auraEnabled} Perf=${perfTier} Preserve=${preserveUnderlying} Calib=(${gridCalibX},${gridCalibY})`);
+    if (r.predictionEnabled !== undefined) predictionEnabled = r.predictionEnabled;
+    // (silent — config loaded)
 });
 
 // =============================================================================
@@ -119,7 +128,7 @@ window.addEventListener('message', (e) => {
 
     // Live dig update: bridge.js intercepted updated grid from game API
     if (e.data.type === 'SFL_GRID_AUTO_UPDATE') {
-        console.log('[Grid] Auto-update received:', e.data.grid.length, 'dug cells');
+        // (silent — auto-update received)
         currentGridData = e.data.grid;
         currentPatterns = e.data.patterns || [];
         if (masterGrid) applyLiveGridState(currentGridData, currentPatterns);
@@ -143,7 +152,7 @@ function handleAutoAlign(cam) {
     gridWorldY = cam.gridWorldY;  // 128
     gridCellSize = cam.gridCellSize || 16;
 
-    console.log(`[Grid] Auto-align: grid at world(${gridWorldX}, ${gridWorldY}), cell=${gridCellSize}px`);
+    // (silent — auto-align)
 
     // Ensure the grid is visible
     if (!masterGrid) createGrid();
@@ -181,7 +190,7 @@ function snapToScreen(cam) {
     w.style.height = gridPixelH + 'px';
     w.style.transform = 'none';
 
-    console.log(`[Grid] Snapped: pos(${(gridX + gridCalibX).toFixed(1)}, ${(gridY + gridCalibY).toFixed(1)}), size(${gridPixelW.toFixed(1)}x${gridPixelH.toFixed(1)}), calib(${gridCalibX}, ${gridCalibY})`);
+    // (silent — snapped)
 }
 
 // =============================================================================
@@ -257,7 +266,7 @@ function startTracking() {
     updateIndicatorLabel();
     window.postMessage({ type: 'SFL_GRID_START_TRACKING', mode: deviceMode, interval: getIntervalForMode() }, '*');
     if (!animationFrameId) gameLoop();
-    console.log(`[Grid] Tracking ON [${deviceMode.toUpperCase()}]`);
+    // (silent — tracking on)
 }
 
 function stopTracking() {
@@ -267,7 +276,7 @@ function stopTracking() {
     keys.w = keys.a = keys.s = keys.d = false;
     trackingIndicator.style.display = 'none';
     window.postMessage({ type: 'SFL_GRID_STOP_TRACKING' }, '*');
-    console.log("[Grid] Tracking OFF.");
+    // (silent — tracking off)
 }
 
 // =============================================================================
@@ -521,14 +530,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             w.dataset.perf = perfTier;
             w.dataset.quality = perfTier;
         }
-        console.log(`[Grid] Performance tier: ${perfTier}`);
+        // (silent — perf tier)
     }
     else if (request.action === 'setPreserveEffects') {
         const preserve = request.preserve;
         chrome.storage.local.set({ preserveUnderlying: preserve });
         const w = document.getElementById('sfl-grid-wrapper');
         if (w) w.dataset.preserve = preserve ? 'true' : 'false';
-        console.log(`[Grid] Preserve underlying effects: ${preserve}`);
+        // (silent — preserve toggle)
+    }
+    else if (request.action === 'setPrediction') {
+        predictionEnabled = request.enabled;
+        chrome.storage.local.set({ predictionEnabled });
+        if (masterGrid && currentGridData) {
+            if (predictionEnabled) {
+                applyPredictionOverlay(currentGridData, currentPatterns);
+            } else {
+                clearPredictionOverlay();
+            }
+        }
+        // (silent — prediction toggle)
     }
     else if (request.action === 'setCustomTheme') {
         customConfig = request.config;
@@ -547,7 +568,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             w.style.left = (gridX + gridCalibX) + 'px';
             w.style.top = (gridY + gridCalibY) + 'px';
         }
-        console.log(`[Grid] Calibration: (${gridCalibX}, ${gridCalibY})`);
+        // (silent — calibration)
     }
     sendResponse({status:"ok"}); return true;
 });
@@ -698,7 +719,7 @@ function createGrid() {
     if (currentGridData) {
         applyLiveGridState(currentGridData, currentPatterns);
     }
-    console.log("[Grid] Grid created with theme support.");
+    // (silent — grid created)
 }
 
 function updateGridMode() {
@@ -739,7 +760,7 @@ function getItemTier(itemName) {
         name.includes('scarab') || name.includes('cow skull') ||
         name.includes('ancient clock') || name.includes('broken pillar') ||
         name.includes('coprolite') || name.includes('moon crystal') ||
-        name.includes('salt dino egg') ||
+        name.includes('salt dino egg') || name.includes('otter pebble') ||
         name.includes('ammonite shell') || name.includes('pearl') ||
         name.includes('pirate bounty') || name.includes('dino egg')) return 'rare';
     // Tier 3 (Misc) — treasure glow
@@ -826,7 +847,7 @@ function handleDigResult(row, col, item) {
         if (fxEl) fxEl.remove();
     }, animDuration);
 
-    console.log(`[Grid] Tile (${col},${row}) digging [${tier}/tier-${tierNum}] → revealed: ${item}`);
+    // (silent — tile dig animation)
 }
 
 function applyGridColors(data) {
@@ -836,8 +857,8 @@ function applyGridColors(data) {
     const cells = masterGrid.querySelectorAll('.sfl-grid-cell');
     cells.forEach(c => c.className = 'sfl-grid-cell');
 
-    // Priority: sand (highest) > crab > bone > misc (lowest)
-    const HINT_PRIORITY = { 'sfl-cell-sand': 4, 'sfl-cell-crab': 3, 'sfl-cell-bone': 2, 'sfl-cell-misc': 1 };
+    // Priority: sand (highest) > misc > crab > bone (lowest)
+    const HINT_PRIORITY = { 'sfl-cell-sand': 4, 'sfl-cell-misc': 3, 'sfl-cell-crab': 2, 'sfl-cell-bone': 1 };
     const ALL_HINT_CLASSES = Object.keys(HINT_PRIORITY);
 
     function getHintClass(name) {
@@ -888,8 +909,8 @@ function applyLiveGridState(gridData, patterns) {
     // Build a set of dug tile positions for quick lookup
     const dugSet = new Set(flat.map(h => `${h.x},${h.y}`));
 
-    // Priority: sand (highest) > crab > bone > misc (lowest)
-    const HINT_PRIORITY = { 'sfl-cell-sand': 4, 'sfl-cell-crab': 3, 'sfl-cell-bone': 2, 'sfl-cell-misc': 1 };
+    // Priority: sand (highest) > misc > crab > bone (lowest)
+    const HINT_PRIORITY = { 'sfl-cell-sand': 4, 'sfl-cell-misc': 3, 'sfl-cell-crab': 2, 'sfl-cell-bone': 1 };
     const ALL_HINT_CLASSES = Object.keys(HINT_PRIORITY);
 
     function getHintClass(name) {
@@ -954,7 +975,541 @@ function applyLiveGridState(gridData, patterns) {
         });
     }
 
-    console.log(`[Grid] Live state applied: ${flat.length} dug cells (theme: ${currentTheme})`);
+    // (silent — live state applied)
+
+    // Run prediction solver if enabled
+    if (predictionEnabled) {
+        applyPredictionOverlay(gridData, patterns);
+    }
+}
+
+// =============================================================================
+// PREDICTION OVERLAY
+// Runs the digging solver and applies visual prediction classes to grid cells
+// =============================================================================
+
+// Map item names to local icon base names in the ITEMS/ folder (no extension)
+// Loader tries .png first, then .webp fallback
+const ITEM_ICON_MAP = {
+    'Camel Bone': 'camel_bone',
+    'Salt Dino Egg': 'salt_dino_egg',
+    'Old Bottle': 'old_bottle',
+    'Cockle Shell': 'cockle_shell',
+    'Wooden Compass': 'wooden_compass',
+    'Sea Cucumber': 'sea_cucumber',
+    'Pipi': 'pipi',
+    'Seaweed': 'seaweed',
+    'Starfish': 'starfish',
+    'Clam Shell': 'clam_shell',
+    'Coral': 'coral',
+    'Pearl': 'pearl',
+    'Pirate Bounty': 'pirate_bounty',
+    'Stone': 'stone',
+    'Wood': 'wood',
+    'Vase': 'vase',
+    'Hieroglyph': 'hieroglyph',
+    'Cow Skull': 'cow_skull',
+    'Scarab': 'scarab',
+    'Ancient Clock': 'ancient_clock',
+    'Broken Pillar': 'broken_pillar',
+    'Coprolite': 'coprolite',
+    'Moon Crystal': 'moon_crystal',
+    'Ammonite Shell': 'ammonite_shell',
+    'Otter Pebble': 'otter_pebble',
+};
+
+const PREDICTION_CLASSES = [
+    'sfl-cell-guaranteed',
+    'sfl-cell-prediction-empty',
+    'sfl-cell-prediction-possible',
+    'sfl-cell-prediction-crab',
+    'sfl-cell-prediction-sand',
+];
+
+function clearPredictionOverlay() {
+    if (!masterGrid) return;
+    const cells = masterGrid.querySelectorAll('.sfl-grid-cell');
+    cells.forEach(cell => {
+        PREDICTION_CLASSES.forEach(cls => cell.classList.remove(cls));
+        // Remove prediction labels, icons, dig markers, sand/crab icons, morph containers
+        cell.querySelectorAll('.sfl-prediction-label, .sfl-prediction-icon, .sfl-prediction-dig-marker, .sfl-prediction-sand-icon, .sfl-prediction-crab-icon, .sfl-morph-container').forEach(el => el.remove());
+        cell.style.position = '';
+    });
+    lastSolvedBoard = null;
+    // (silent — overlay cleared)
+}
+
+// Append a sand icon to a cell (for empty/predicted-sand tiles)
+function appendSandIcon(cell) {
+    const icon = document.createElement('img');
+    icon.className = 'sfl-prediction-icon sfl-prediction-sand-icon';
+    icon.src = chrome.runtime.getURL('ITEMS/sand.png');
+    icon.alt = 'Sand';
+    icon.onerror = () => {
+        const webpSrc = chrome.runtime.getURL('ITEMS/sand.webp');
+        if (icon.src !== webpSrc) {
+            icon.src = webpSrc;
+        } else {
+            icon.remove();
+        }
+    };
+    cell.appendChild(icon);
+}
+
+// Append a crab icon to a cell (for predicted-crab tiles)
+function appendCrabIcon(cell) {
+    const icon = document.createElement('img');
+    icon.className = 'sfl-prediction-icon sfl-prediction-crab-icon';
+    icon.src = chrome.runtime.getURL('ITEMS/crab.png');
+    icon.alt = 'Crab';
+    icon.onerror = () => {
+        const webpSrc = chrome.runtime.getURL('ITEMS/crab.webp');
+        if (icon.src !== webpSrc) {
+            icon.src = webpSrc;
+        } else {
+            icon.remove();
+        }
+    };
+    cell.appendChild(icon);
+}
+
+// Append a morphing sand↔crab animation (for 'empty' tiles — our own predictions
+// where we know "no treasure" but can't determine sand vs crab yet)
+function appendMorphIcons(cell) {
+    const container = document.createElement('div');
+    container.className = 'sfl-morph-container';
+
+    // Sand icon (visible first)
+    const sandImg = document.createElement('img');
+    sandImg.className = 'sfl-morph-sand';
+    sandImg.src = chrome.runtime.getURL('ITEMS/sand.png');
+    sandImg.alt = 'Sand';
+    sandImg.onerror = () => {
+        const webpSrc = chrome.runtime.getURL('ITEMS/sand.webp');
+        if (sandImg.src !== webpSrc) sandImg.src = webpSrc;
+        else sandImg.remove();
+    };
+
+    // Crab icon (hidden first, fades in)
+    const crabImg = document.createElement('img');
+    crabImg.className = 'sfl-morph-crab';
+    crabImg.src = chrome.runtime.getURL('ITEMS/crab.png');
+    crabImg.alt = 'Crab';
+    crabImg.onerror = () => {
+        const webpSrc = chrome.runtime.getURL('ITEMS/crab.webp');
+        if (crabImg.src !== webpSrc) crabImg.src = webpSrc;
+        else crabImg.remove();
+    };
+
+    container.appendChild(sandImg);
+    container.appendChild(crabImg);
+    cell.appendChild(container);
+}
+
+function applyPredictionOverlay(gridData, patterns) {
+    if (!masterGrid || !gridData) return;
+
+    // Wait for solver to be injected (it runs in page context via bridge)
+    // The solver is injected into the page, but content script runs in isolated world.
+    // So we run the solver inline here instead — it's pure JS, no DOM needed.
+    // Since digging-solver.js is injected into the PAGE world (like bridge.js),
+    // we need to run the solver logic in content script context directly.
+    // We use a self-contained inline solver for the content script.
+
+    const flat = Array.isArray(gridData[0]) ? gridData.flat() : gridData;
+    if (flat.length === 0) return;
+
+    // Run solver (inline — same logic as digging-solver.js)
+    const solved = runContentSolver(flat, patterns || []);
+    if (!solved) return;
+    lastSolvedBoard = solved;
+
+    const cells = masterGrid.querySelectorAll('.sfl-grid-cell');
+
+    // Clear previous predictions
+    cells.forEach(cell => {
+        PREDICTION_CLASSES.forEach(cls => cell.classList.remove(cls));
+        cell.querySelectorAll('.sfl-prediction-label, .sfl-prediction-icon, .sfl-prediction-dig-marker, .sfl-morph-container').forEach(el => el.remove());
+    });
+
+    // Apply prediction classes
+    for (let y = 0; y < 10; y++) {
+        for (let x = 0; x < 10; x++) {
+            const sc = solved.cells[y][x];
+            const cell = cells[y * 10 + x];
+            if (!cell || sc.dug) continue;
+
+            if (sc.status === 'guaranteed' || sc.predicted) {
+                // position: relative is now handled by CSS
+            }
+
+            switch (sc.status) {
+                case 'guaranteed':
+                    cell.classList.add('sfl-cell-guaranteed');
+                    // Add item prediction label + icon if formation-proven
+                    if (sc.predicted) {
+                        const label = document.createElement('span');
+                        label.className = 'sfl-prediction-label';
+                        label.textContent = sc.predicted.item;
+                        cell.appendChild(label);
+
+                        // Try to load item icon from ITEMS/ folder (.png first, .webp fallback)
+                        const iconBase = ITEM_ICON_MAP[sc.predicted.item];
+                        if (iconBase) {
+                            const icon = document.createElement('img');
+                            icon.className = 'sfl-prediction-icon';
+                            icon.src = chrome.runtime.getURL('ITEMS/' + iconBase + '.png');
+                            icon.alt = sc.predicted.item;
+                            icon.onerror = () => {
+                                // Try .webp fallback
+                                const webpSrc = chrome.runtime.getURL('ITEMS/' + iconBase + '.webp');
+                                if (icon.src !== webpSrc) {
+                                    icon.src = webpSrc;
+                                } else {
+                                    icon.remove(); // neither format found
+                                }
+                            };
+                            cell.appendChild(icon);
+                        }
+                    } else {
+                        // Generic "dig here" marker
+                        const marker = document.createElement('span');
+                        marker.className = 'sfl-prediction-dig-marker';
+                        marker.textContent = '⛏️';
+                        cell.appendChild(marker);
+                    }
+                    break;
+                case 'empty':
+                    cell.classList.add('sfl-cell-prediction-empty');
+                    appendMorphIcons(cell);
+                    break;
+                case 'possible':
+                    cell.classList.add('sfl-cell-prediction-possible');
+                    break;
+                case 'crab':
+                    cell.classList.add('sfl-cell-prediction-crab');
+                    appendCrabIcon(cell);
+                    break;
+                case 'sand':
+                    cell.classList.add('sfl-cell-prediction-sand');
+                    appendSandIcon(cell);
+                    break;
+            }
+        }
+    }
+
+    if (solved.tally.dug > 0 && solved.tally.sand === 0 && solved.tally.crabs === 0) {
+        console.warn('%c[SFL HEALTH] ⚠️ SOLVER: Dug cells exist but NO Sand/Crab found!', 'color: #f59e0b; font-weight: bold');
+        console.warn('  → hItem() may not be reading item names correctly');
+        console.warn('  → Check if API changed how items are stored in grid tiles');
+    }
+    if (solved.tally.dug > 3 && solved.tally.guaranteed === 0 && solved.tally.empty === 0 && solved.tally.possible === 0) {
+        console.warn('%c[SFL HEALTH] ⚠️ SOLVER: Many tiles dug but zero predictions!', 'color: #f59e0b; font-weight: bold');
+        console.warn('  → Solver may not be classifying items correctly');
+    }
+
+    // (silent — prediction overlay applied)
+}
+
+// =============================================================================
+// INLINE SOLVER — runs in content script context (isolated world)
+// Full port of the digging solver for use without page-world injection
+// =============================================================================
+function runContentSolver(gridFlat, patterns) {
+    const DIG = 10;
+    const DIRS = [[0,-1],[0,1],[-1,0],[1,0]];
+
+    function nbrs(x, y) {
+        const out = [];
+        for (const [dx, dy] of DIRS) {
+            const nx = x+dx, ny = y+dy;
+            if (nx>=0 && nx<DIG && ny>=0 && ny<DIG) out.push([nx,ny]);
+        }
+        return out;
+    }
+
+    function hItem(hole) {
+        if (!hole) return null;
+        // Support both old format (hole.items) and new format (hole.name)
+        if (hole.items && typeof hole.items === 'object') {
+            const key = Object.keys(hole.items)[0];
+            if (key) return key;
+        }
+        if (hole.name) return hole.name;
+        return null;
+    }
+
+    // Build hole grid
+    const board = Array.from({length:DIG}, () => Array(DIG).fill(undefined));
+    for (const h of gridFlat) {
+        if (h.y>=0 && h.y<DIG && h.x>=0 && h.x<DIG) board[h.y][h.x] = h;
+    }
+
+    // Classify cells
+    const cells = [];
+    const itemsFound = [];
+    for (let y=0; y<DIG; y++) {
+        cells[y] = [];
+        for (let x=0; x<DIG; x++) {
+            const item = hItem(board[y][x]);
+            const dug = item !== null;
+            let kind = null;
+            if (item === 'Sand') kind = 'sand';
+            else if (item === 'Crab') kind = 'crab';
+            else if (dug) kind = 'treasure';
+            cells[y][x] = {x, y, item, dug, kind, status: 'unknown'};
+            if (dug) {
+                itemsFound.push(`(${x},${y})=${item}→${kind}`);
+                if (dug && kind === null) {
+                    console.warn(`%c[SFL HEALTH] ⚠️ SOLVER: Dug tile (${x},${y}) item "${item}" not classified as sand/crab/treasure`, 'color: #f59e0b; font-weight: bold');
+                    console.warn(`  → Add classification rule for "${item}" in runContentSolver()`);
+                }
+            }
+        }
+    }
+
+    // Status pass
+    for (let y=0; y<DIG; y++) for (let x=0; x<DIG; x++) {
+        const c = cells[y][x];
+        if (c.dug) { c.status = c.kind==='treasure'?'treasure':c.kind==='sand'?'clue-sand':'clue-crab'; continue; }
+        let hasSand=false, hasCrab=false;
+        for (const [nx,ny] of nbrs(x,y)) {
+            const k = cells[ny][nx].kind;
+            if (k==='sand') hasSand=true;
+            if (k==='crab') hasCrab=true;
+        }
+        c.status = hasSand?'empty':hasCrab?'possible':'unknown';
+    }
+
+    // Propagation: guaranteed
+    for (let y=0; y<DIG; y++) for (let x=0; x<DIG; x++) {
+        const cr = cells[y][x];
+        if (cr.kind !== 'crab') continue;
+        const ns = nbrs(x,y).map(([nx,ny])=>cells[ny][nx]);
+        if (ns.some(n=>n.kind==='treasure')) continue;
+        const cands = ns.filter(n=>!n.dug && n.status!=='empty');
+        if (cands.length===1 && cands[0].status!=='guaranteed') cands[0].status='guaranteed';
+    }
+
+    // Formation solver
+    const ARTEFACT = 'Otter Pebble';
+    const FORMATIONS = {
+        MONDAY_ARTEFACT_FORMATION:[{x:0,y:-1,name:'Camel Bone'},{x:1,y:-1,name:'Seasonal Artefact'}],
+        TUESDAY_ARTEFACT_FORMATION:[{x:1,y:0,name:'Seasonal Artefact'},{x:1,y:2,name:'Camel Bone'}],
+        WEDNESDAY_ARTEFACT_FORMATION:[{x:0,y:0,name:'Camel Bone'},{x:1,y:0,name:'Seasonal Artefact'}],
+        THURSDAY_ARTEFACT_FORMATION:[{x:0,y:0,name:'Camel Bone'},{x:1,y:-1,name:'Seasonal Artefact'}],
+        FRIDAY_ARTEFACT_FORMATION:[{x:2,y:0,name:'Camel Bone'},{x:3,y:0,name:'Seasonal Artefact'}],
+        SATURDAY_ARTEFACT_FORMATION:[{x:1,y:0,name:'Seasonal Artefact'},{x:1,y:-1,name:'Camel Bone'}],
+        SUNDAY_ARTEFACT_FORMATION:[{x:0,y:-2,name:'Seasonal Artefact'}],
+        ARTEFACT_ONE:[{x:0,y:0,name:'Seasonal Artefact'},{x:0,y:1,name:'Camel Bone'},{x:0,y:2,name:'Camel Bone'}],
+        ARTEFACT_TWO:[{x:0,y:0,name:'Seasonal Artefact'},{x:1,y:0,name:'Camel Bone'},{x:0,y:2,name:'Camel Bone'}],
+        ARTEFACT_THREE:[{x:0,y:0,name:'Seasonal Artefact'}],
+        ARTEFACT_FOUR:[{x:0,y:0,name:'Seasonal Artefact'},{x:0,y:1,name:'Camel Bone'},{x:0,y:2,name:'Camel Bone'},{x:0,y:3,name:'Camel Bone'}],
+        ARTEFACT_FIVE:[{x:0,y:0,name:'Seasonal Artefact'},{x:-1,y:0,name:'Camel Bone'},{x:-2,y:0,name:'Camel Bone'}],
+        ARTEFACT_SIX:[{x:0,y:0,name:'Seasonal Artefact'},{x:-1,y:0,name:'Camel Bone'},{x:-2,y:-1,name:'Camel Bone'}],
+        ARTEFACT_SEVEN:[{x:0,y:0,name:'Seasonal Artefact'},{x:1,y:1,name:'Camel Bone'}],
+        ARTEFACT_EIGHT:[{x:0,y:0,name:'Seasonal Artefact'},{x:1,y:0,name:'Camel Bone'},{x:0,y:2,name:'Camel Bone'}],
+        ARTEFACT_NINE:[{x:0,y:0,name:'Seasonal Artefact'},{x:0,y:1,name:'Camel Bone'},{x:0,y:-1,name:'Camel Bone'},{x:-1,y:-1,name:'Camel Bone'}],
+        ARTEFACT_TEN:[{x:0,y:0,name:'Seasonal Artefact'},{x:0,y:1,name:'Camel Bone'},{x:-1,y:0,name:'Camel Bone'},{x:-1,y:1,name:'Camel Bone'}],
+        ARTEFACT_ELEVEN:[{x:0,y:0,name:'Seasonal Artefact'},{x:0,y:1,name:'Camel Bone'},{x:1,y:1,name:'Camel Bone'}],
+        ARTEFACT_TWELVE:[{x:0,y:0,name:'Seasonal Artefact'},{x:0,y:1,name:'Camel Bone'},{x:-1,y:1,name:'Camel Bone'},{x:1,y:1,name:'Camel Bone'}],
+        ARTEFACT_THIRTEEN:[{x:0,y:0,name:'Seasonal Artefact'},{x:2,y:0,name:'Camel Bone'}],
+        ARTEFACT_FOURTEEN:[{x:0,y:0,name:'Seasonal Artefact'},{x:0,y:2,name:'Camel Bone'}],
+        ARTEFACT_FIFTEEN:[{x:0,y:0,name:'Camel Bone'},{x:1,y:0,name:'Seasonal Artefact'},{x:2,y:0,name:'Camel Bone'}],
+        ARTEFACT_SIXTEEN:[{x:0,y:0,name:'Seasonal Artefact'},{x:1,y:0,name:'Camel Bone'},{x:1,y:1,name:'Camel Bone'}],
+        ARTEFACT_SEVENTEEN:[{x:0,y:0,name:'Camel Bone'},{x:1,y:0,name:'Camel Bone'},{x:1,y:1,name:'Seasonal Artefact'}],
+        ARTEFACT_EIGHTEEN:[{x:0,y:0,name:'Seasonal Artefact'},{x:1,y:0,name:'Camel Bone'},{x:0,y:1,name:'Camel Bone'},{x:1,y:1,name:'Camel Bone'}],
+        ARTEFACT_NINETEEN:[{x:0,y:0,name:'Camel Bone'},{x:1,y:0,name:'Camel Bone'},{x:2,y:0,name:'Camel Bone'},{x:1,y:1,name:'Seasonal Artefact'}],
+        ARTEFACT_TWENTY:[{x:0,y:0,name:'Camel Bone'},{x:1,y:0,name:'Camel Bone'},{x:0,y:1,name:'Seasonal Artefact'},{x:1,y:1,name:'Camel Bone'}],
+        ARTEFACT_TWENTY_ONE:[{x:0,y:0,name:'Seasonal Artefact'},{x:1,y:0,name:'Camel Bone'},{x:2,y:0,name:'Camel Bone'},{x:0,y:1,name:'Camel Bone'},{x:1,y:1,name:'Camel Bone'}],
+        ARTEFACT_TWENTY_TWO:[{x:0,y:0,name:'Camel Bone'},{x:1,y:0,name:'Camel Bone'},{x:2,y:0,name:'Camel Bone'},{x:0,y:1,name:'Camel Bone'},{x:1,y:1,name:'Seasonal Artefact'}],
+        ARTEFACT_TWENTY_THREE:[{x:0,y:0,name:'Camel Bone'},{x:1,y:0,name:'Camel Bone'},{x:2,y:0,name:'Camel Bone'},{x:1,y:1,name:'Camel Bone'},{x:2,y:1,name:'Seasonal Artefact'}],
+        ARTEFACT_TWENTY_FOUR:[{x:0,y:0,name:'Camel Bone'},{x:1,y:0,name:'Seasonal Artefact'},{x:2,y:0,name:'Camel Bone'},{x:0,y:1,name:'Camel Bone'},{x:2,y:1,name:'Camel Bone'}],
+        HIEROGLYPH:[{x:0,y:0,name:'Vase'},{x:1,y:0,name:'Vase'},{x:0,y:1,name:'Hieroglyph'}],
+        OLD_BOTTLE:[{x:0,y:0,name:'Old Bottle'},{x:1,y:0,name:'Old Bottle'},{x:0,y:1,name:'Old Bottle'},{x:1,y:1,name:'Old Bottle'}],
+        COCKLE:[{x:0,y:0,name:'Cockle Shell'},{x:1,y:1,name:'Cockle Shell'},{x:2,y:2,name:'Cockle Shell'}],
+        WOODEN_COMPASS:[{x:0,y:0,name:'Wood'},{x:1,y:0,name:'Wooden Compass'},{x:2,y:0,name:'Wood'}],
+        SEA_CUCUMBERS:[{x:0,y:0,name:'Sea Cucumber'},{x:1,y:0,name:'Sea Cucumber'},{x:2,y:0,name:'Sea Cucumber'},{x:3,y:0,name:'Pipi'}],
+        SEAWEED:[{x:0,y:0,name:'Seaweed'},{x:1,y:0,name:'Seaweed'},{x:2,y:0,name:'Seaweed'},{x:2,y:1,name:'Starfish'}],
+        CLAM_SHELLS:[{x:0,y:0,name:'Clam Shell'},{x:1,y:0,name:'Clam Shell'},{x:0,y:-1,name:'Clam Shell'},{x:1,y:-1,name:'Clam Shell'}],
+        CORAL:[{x:0,y:1,name:'Stone'},{x:0,y:0,name:'Coral'},{x:0,y:-1,name:'Stone'}],
+        PEARL:[{x:0,y:1,name:'Stone'},{x:0,y:0,name:'Pearl'},{x:0,y:-1,name:'Stone'}],
+        PIRATE_BOUNTY:[{x:0,y:0,name:'Pirate Bounty'}],
+    };
+
+    const ky = (x,y)=>y*DIG+x;
+
+    // Resolve formations
+    const instances = (patterns||[]).map(name => {
+        const f = FORMATIONS[name];
+        if (!f) return null;
+        return {
+            name,
+            plots: f.map(p=>({dx:p.x,dy:p.y,item:p.name==='Seasonal Artefact'?ARTEFACT:p.name}))
+        };
+    }).filter(Boolean);
+
+    // Placements
+    function placements(cs, f) {
+        const xs=f.plots.map(p=>p.dx), ys=f.plots.map(p=>p.dy);
+        const mnX=Math.min(...xs),mxX=Math.max(...xs),mnY=Math.min(...ys),mxY=Math.max(...ys);
+        const out=[];
+        for (let dx=-mnX; dx<=DIG-1-mxX; dx++) {
+            for (let dy=-mnY; dy<=DIG-1-mxY; dy++) {
+                const all=[],dg=[],ud=[];
+                let ok=true;
+                for (const p of f.plots) {
+                    const px=p.dx+dx,py=p.dy+dy;
+                    const cl=cs[py][px], k=ky(px,py);
+                    all.push(k);
+                    if (cl.dug) { if (cl.item!==p.item){ok=false;break;} dg.push(k); }
+                    else { if (cl.status==='empty'){ok=false;break;} ud.push({x:px,y:py,item:p.item,formation:f.name}); }
+                }
+                if (ok) out.push({name:f.name,cells:all,dug:dg,undug:ud});
+            }
+        }
+        return out;
+    }
+
+    // Formation solver (with bail)
+    const need=[];
+    for (let y=0;y<DIG;y++) for (let x=0;x<DIG;x++) if (cells[y][x].kind==='treasure') need.push(ky(x,y));
+
+    let forced=[], excludedTreasure=new Set();
+    if (instances.length > 0) {
+        const perInst = instances.map(f=>placements(cells,f));
+        const allValid = !perInst.some(p=>p.length===0);
+
+        if (allValid) {
+            const order=perInst.map((_,i)=>i).sort((a,b)=>perInst[a].length-perInst[b].length);
+            const ordered=order.map(i=>perInst[i]);
+
+            const lastCov=new Map();
+            ordered.forEach((pls,d)=>{for (const pl of pls) for (const c of pl.dug) lastCov.set(c,Math.max(lastCov.get(c)??-1,d));});
+            let canSearch=true;
+            for (const c of need) if (!lastCov.has(c)){canSearch=false;break;}
+
+            if (canSearch) {
+                const deadAt=ordered.map(()=>[]);
+                for (const c of need) deadAt[lastCov.get(c)].push(c);
+                const occ=new Set(),cov=new Set(),chosen=[],solutions=[];
+                let steps=0,bailed=false;
+                const search=(d)=>{
+                    if(bailed)return;
+                    if(++steps>1000000){bailed=true;return;}
+                    if(d===ordered.length){for(const c of need)if(!cov.has(c))return;solutions.push(chosen.slice());if(solutions.length>4000)bailed=true;return;}
+                    for(const pl of ordered[d]){
+                        let clash=false;for(const c of pl.cells)if(occ.has(c)){clash=true;break;}
+                        if(clash)continue;
+                        const ac=[];for(const c of pl.cells)occ.add(c);for(const c of pl.dug)if(!cov.has(c)){cov.add(c);ac.push(c);}
+                        let dead=false;for(const c of deadAt[d])if(!cov.has(c)){dead=true;break;}
+                        if(!dead){chosen.push(pl);search(d+1);chosen.pop();}
+                        for(const c of pl.cells)occ.delete(c);for(const c of ac)cov.delete(c);
+                        if(bailed)return;
+                    }
+                };
+                search(0);
+
+                if (!bailed && solutions.length>0) {
+                    // Extract forced tiles
+                    const items=new Map(),names=new Map(),cc=new Map();
+                    for(const sol of solutions){const seen=new Set();for(const pl of sol)for(const u of pl.undug){const k=ky(u.x,u.y);let is=items.get(k);if(!is)items.set(k,is=new Set());is.add(u.item);let ns=names.get(k);if(!ns)names.set(k,ns=new Set());ns.add(u.formation);if(!seen.has(k)){seen.add(k);cc.set(k,(cc.get(k)??0)+1);}}}
+                    const fMap=new Map(),conflicts=new Set();
+                    for(const [k,is] of items){
+                        if(is.size!==1||cc.get(k)!==solutions.length)continue;
+                        const ns=names.get(k);
+                        const t={x:k%DIG,y:Math.floor(k/DIG),item:[...is][0],formation:ns.size===1?[...ns][0]:''};
+                        const tk=`${t.x}-${t.y}`;
+                        const ex=fMap.get(tk);
+                        if(ex&&ex.item!==t.item){conflicts.add(tk);continue;}
+                        if(!ex||(!ex.formation&&t.formation))fMap.set(tk,t);
+                    }
+                    for(const k of conflicts)fMap.delete(k);
+                    forced=[...fMap.values()];
+
+                    // Excluded treasure
+                    const possTreasure=new Set();
+                    for(const sol of solutions)for(const pl of sol)for(const c of pl.cells)possTreasure.add(c);
+                    for(let y=0;y<DIG;y++)for(let x=0;x<DIG;x++){const k=ky(x,y);if(!cells[y][x].dug&&!possTreasure.has(k))excludedTreasure.add(k);}
+                } else {
+                    // Fallback: fast forced
+                    forced = fastForcedInline(cells, instances);
+                }
+            } else {
+                forced = fastForcedInline(cells, instances);
+            }
+        } else {
+            forced = fastForcedInline(cells, instances);
+        }
+    }
+
+    // Apply forced tiles
+    for (const t of forced) {
+        const c = cells[t.y][t.x];
+        if (c.dug) continue;
+        cells[t.y][t.x] = {...c, status:'guaranteed', predicted:{item:t.item,formation:t.formation}};
+    }
+
+    // Mark predictions (crab/sand)
+    // CRITICAL: use a snapshot of cells for neighbour lookups so the pass is
+    // order-independent (matching Elias's original solver exactly).
+    const snapshot = cells.map(row => row.map(c => ({...c})));
+    const treasureFree = snapshot.map(row=>row.map(c=>c.status==='empty'||excludedTreasure.has(c.y*DIG+c.x)));
+    const canHold=(n)=>{if(n.dug)return n.kind==='treasure';if(n.status==='guaranteed')return true;return !treasureFree[n.y][n.x];};
+    for (let y=0;y<DIG;y++) for (let x=0;x<DIG;x++) {
+        const c=snapshot[y][x];
+        if (c.dug||c.status==='guaranteed') continue;
+        if (!treasureFree[y][x]) continue;
+        // Read neighbours from the SNAPSHOT, not the mutated cells array
+        const ns=nbrs(x,y).map(([nx,ny])=>snapshot[ny][nx]);
+        if (ns.some(n=>n.kind==='treasure'||n.status==='guaranteed')) cells[y][x]={...c,status:'crab'};
+        else if (ns.every(n=>!canHold(n))) cells[y][x]={...c,status:'sand'};
+    }
+
+    // Tally
+    const tally={guaranteed:0,possible:0,empty:0,dug:0,crabs:0,sand:0,crabPredicted:0,sandPredicted:0};
+    for (let y=0;y<DIG;y++) for (let x=0;x<DIG;x++) {
+        const c=cells[y][x];
+        if(c.dug)tally.dug++;
+        if(c.kind==='crab')tally.crabs++;
+        if(c.kind==='sand')tally.sand++;
+        if(c.status==='guaranteed')tally.guaranteed++;
+        else if(c.status==='possible')tally.possible++;
+        else if(c.status==='empty')tally.empty++;
+        else if(c.status==='crab')tally.crabPredicted++;
+        else if(c.status==='sand')tally.sandPredicted++;
+    }
+
+    return {cells, tally};
+}
+
+function fastForcedInline(cells, instances) {
+    const DIG=10, ky=(x,y)=>y*DIG+x;
+    function pl(cs,f){
+        const xs=f.plots.map(p=>p.dx),ys=f.plots.map(p=>p.dy);
+        const mnX=Math.min(...xs),mxX=Math.max(...xs),mnY=Math.min(...ys),mxY=Math.max(...ys);
+        const out=[];
+        for(let dx=-mnX;dx<=DIG-1-mxX;dx++)for(let dy=-mnY;dy<=DIG-1-mxY;dy++){
+            const all=[],dg=[],ud=[];let ok=true;
+            for(const p of f.plots){const px=p.dx+dx,py=p.dy+dy,cl=cs[py][px],k=ky(px,py);all.push(k);
+                if(cl.dug){if(cl.item!==p.item){ok=false;break;}dg.push(k);}
+                else{if(cl.status==='empty'){ok=false;break;}ud.push({x:px,y:py,item:p.item,formation:f.name});}}
+            if(ok)out.push({name:f.name,cells:all,dug:dg,undug:ud});
+        }
+        return out;
+    }
+    const byName=new Map();
+    for(const f of instances)if(!byName.has(f.name))byName.set(f.name,f);
+    const itemNames=new Map();
+    for(const f of byName.values())for(const p of f.plots){let s=itemNames.get(p.item);if(!s){s=new Set();itemNames.set(p.item,s);}s.add(f.name);}
+    const cache=new Map();
+    const getPl=(f)=>{let p=cache.get(f.name);if(!p){p=pl(cells,f);cache.set(f.name,p);}return p;};
+    const fMap=new Map(),conflicts=new Set();
+    const addForced=(t)=>{const k=`${t.x}-${t.y}`;const ex=fMap.get(k);if(ex&&ex.item!==t.item){conflicts.add(k);return;}if(!ex||(!ex.formation&&t.formation))fMap.set(k,t);};
+    for(const f of byName.values()){const ps=getPl(f);if(ps.length===1)for(const u of ps[0].undug)addForced(u);}
+    for(let y=0;y<DIG;y++)for(let x=0;x<DIG;x++){const c=cells[y][x];if(c.kind!=='treasure'||!c.item)continue;const ns=itemNames.get(c.item);if(!ns||ns.size!==1)continue;const f=byName.get([...ns][0]);if(!f)continue;const cov=getPl(f).filter(p=>p.dug.includes(ky(x,y)));if(cov.length===1)for(const u of cov[0].undug)addForced(u);}
+    for(const k of conflicts)fMap.delete(k);
+    return [...fMap.values()];
 }
 
 function makeDraggable(el) {

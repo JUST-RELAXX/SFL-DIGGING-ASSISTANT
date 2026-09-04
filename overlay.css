@@ -65,6 +65,7 @@
 
 /* --- Grid Cells --- */
 .sfl-grid-cell {
+    position: relative;
     border: 1px solid rgba(255, 255, 255, 0.15);
     box-sizing: border-box;
     pointer-events: none; /* Default: pass clicks through to game */
@@ -77,22 +78,23 @@
     cursor: crosshair;
 }
 
-.sfl-cell-sand {
+body #sfl-grid-wrapper:not([data-theme]) .sfl-cell-sand {
     background-color: rgba(239, 68, 68, 0.35) !important;
     box-shadow: inset 0 0 10px rgba(239, 68, 68, 0.2);
 }
 
-.sfl-cell-crab {
+body #sfl-grid-wrapper:not([data-theme]) .sfl-cell-crab {
     background-color: rgba(234, 179, 8, 0.35) !important;
     box-shadow: inset 0 0 10px rgba(234, 179, 8, 0.3);
 }
 
-.sfl-cell-misc {
-    background-color: rgba(14, 165, 233, 0.35) !important;
-    box-shadow: inset 0 0 10px rgba(14, 165, 233, 0.3);
+body #sfl-grid-wrapper:not([data-theme]) .sfl-cell-misc {
+    background-color: rgba(14, 165, 233, 0.50) !important;
+    border: 1px solid rgba(56, 189, 248, 0.4) !important;
+    box-shadow: inset 0 0 12px rgba(14, 165, 233, 0.45), 0 0 6px rgba(14, 165, 233, 0.3);
 }
 
-.sfl-cell-bone {
+body #sfl-grid-wrapper:not([data-theme]) .sfl-cell-bone {
     background-color: rgba(34, 197, 94, 0.6) !important;
     border: 1px solid #86efac !important;
     box-shadow: 0 0 15px rgba(34, 197, 94, 0.8), inset 0 0 15px rgba(34, 197, 94, 0.6) !important;
@@ -170,3 +172,172 @@
     0%, 100% { opacity: 1; }
     50% { opacity: 0.4; }
 }
+
+/* =============================================================================
+   PREDICTION OVERLAY CLASSES
+   These classes are applied by the digging solver on top of the base grid.
+   They use !important to override theme and default styling when predictions
+   are active.
+   ============================================================================= */
+
+/* --- Guaranteed: DIG HERE! (bright green pulsing glow) --- */
+#sfl-grid-wrapper:not([data-theme]) .sfl-cell-guaranteed {
+    background-color: rgba(34, 197, 94, 0.55) !important;
+    border: 1px solid #86efac !important;
+    box-shadow: 0 0 18px rgba(34, 197, 94, 0.9), inset 0 0 12px rgba(34, 197, 94, 0.5) !important;
+    z-index: 3;
+    animation: sflGuaranteedPulse 1.5s infinite alternate !important;
+}
+
+@keyframes sflGuaranteedPulse {
+    0%   { box-shadow: 0 0 12px rgba(34, 197, 94, 0.5), inset 0 0 8px rgba(34, 197, 94, 0.3); }
+    100% { box-shadow: 0 0 28px rgba(34, 197, 94, 1.0), inset 0 0 18px rgba(34, 197, 94, 0.7); }
+}
+
+/* --- Empty: proven no treasure (subtle red wash) --- */
+#sfl-grid-wrapper:not([data-theme]) .sfl-cell-prediction-empty {
+    background-color: rgba(239, 68, 68, 0.2) !important;
+    box-shadow: inset 0 0 6px rgba(239, 68, 68, 0.15) !important;
+}
+
+/* --- Possible: might have treasure (amber wash) --- */
+#sfl-grid-wrapper:not([data-theme]) .sfl-cell-prediction-possible {
+    background-color: rgba(234, 179, 8, 0.25) !important;
+    box-shadow: inset 0 0 8px rgba(234, 179, 8, 0.2) !important;
+}
+
+/* --- Predicted Crab: will reveal a crab (orange indicator) --- */
+#sfl-grid-wrapper:not([data-theme]) .sfl-cell-prediction-crab {
+    background-color: rgba(249, 115, 22, 0.25) !important;
+    box-shadow: inset 0 0 6px rgba(249, 115, 22, 0.2) !important;
+}
+
+/* --- Predicted Sand: will reveal sand (dim red) --- */
+#sfl-grid-wrapper:not([data-theme]) .sfl-cell-prediction-sand {
+    background-color: rgba(239, 68, 68, 0.12) !important;
+    box-shadow: inset 0 0 4px rgba(239, 68, 68, 0.1) !important;
+    opacity: 0.7;
+}
+
+/* --- Predicted Item Label (floating name on guaranteed tiles) --- */
+.sfl-prediction-label {
+    position: absolute;
+    bottom: 1px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 6px;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 0 0 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,0.8);
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 5;
+    letter-spacing: 0.3px;
+    line-height: 1;
+    text-transform: uppercase;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* --- Predicted Item Icon (small icon on guaranteed tiles) --- */
+.sfl-prediction-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -55%);
+    width: 60%;
+    height: 60%;
+    object-fit: contain;
+    pointer-events: none;
+    z-index: 4;
+    image-rendering: pixelated;
+    opacity: 0.55;
+    filter: drop-shadow(0 0 3px rgba(34, 197, 94, 0.6));
+}
+
+/* --- Status icon for guaranteed tiles without a specific item prediction --- */
+.sfl-prediction-dig-marker {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 14px;
+    pointer-events: none;
+    z-index: 4;
+    filter: drop-shadow(0 0 4px rgba(34, 197, 94, 0.8));
+    animation: sflDigMarkerBounce 2s ease-in-out infinite;
+}
+
+@keyframes sflDigMarkerBounce {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50%      { transform: translate(-50%, -55%) scale(1.15); }
+}
+
+/* --- Themed mode prediction overlays --- */
+#sfl-grid-wrapper[data-theme] .sfl-cell-guaranteed {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.8), inset 0 0 12px rgba(34, 197, 94, 0.4) !important;
+    z-index: 3;
+}
+
+#sfl-grid-wrapper[data-theme] .sfl-cell-prediction-empty {
+    box-shadow: inset 0 0 8px rgba(239, 68, 68, 0.3) !important;
+}
+
+#sfl-grid-wrapper[data-theme] .sfl-cell-prediction-possible {
+    box-shadow: inset 0 0 10px rgba(234, 179, 8, 0.3) !important;
+}
+
+/* --- Morph Container (holds two overlapping icons that crossfade) --- */
+.sfl-morph-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -55%);
+    width: 60%;
+    height: 60%;
+    pointer-events: none;
+    z-index: 4;
+}
+
+.sfl-morph-container img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    image-rendering: pixelated;
+    pointer-events: none;
+}
+
+/* Sand icon: shows first half of the cycle */
+.sfl-morph-sand {
+    animation: sflMorphFadeA 12s ease-in-out infinite;
+}
+
+/* Crab icon: shows second half of the cycle */
+.sfl-morph-crab {
+    animation: sflMorphFadeB 12s ease-in-out infinite;
+}
+
+/* 12s total cycle:
+   0s-1.5s   sand fades in   | 1.5s-4.5s sand holds
+   4.5s-6s   sand fades out  | 6s-7.5s   crab fades in
+   7.5s-10.5s crab holds     | 10.5s-12s crab fades out */
+
+@keyframes sflMorphFadeA {
+    0%     { opacity: 0; }
+    12.5%  { opacity: 0.55; }
+    37.5%  { opacity: 0.55; }
+    50%    { opacity: 0; }
+    100%   { opacity: 0; }
+}
+
+@keyframes sflMorphFadeB {
+    0%     { opacity: 0; }
+    50%    { opacity: 0; }
+    62.5%  { opacity: 0.55; }
+    87.5%  { opacity: 0.55; }
+    100%   { opacity: 0; }
+}

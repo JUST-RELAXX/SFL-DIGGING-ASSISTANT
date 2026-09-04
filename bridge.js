@@ -6,61 +6,309 @@
     'use strict';
 
     // =========================================================================
-    // FETCH INTERCEPTOR — Auto-detect grid updates from the game's own API
-    // When user digs, SFL sends a request → response has updated grid → we
-    // post it to content.js so the overlay updates instantly. Zero extra calls.
+    // FETCH INTERCEPTOR + SMART HEALTH MONITOR
+    // Silent when healthy. Loud when something breaks.
+    // Reports: API domain/endpoint changes, data format shifts, missing fields,
+    //          unknown item names, grid flow failures.
     // =========================================================================
     let lastGridSnapshot = '[]';
-    let previousGridLength = -1; // -1 = first load (skip dig results for initial state)
+    let previousGridLength = -1;
+    let fetchCallCount = 0;
+
+    // --- Health Monitor State ---
+    const health = {
+        interceptorInstalled: true,
+        firstGridSeen: false,          // Has the interceptor seen grid data at least once?
+        sflCallCount: 0,               // Total SFL API calls intercepted
+        gridUpdateCount: 0,            // Total grid updates processed
+        lastApiDomain: null,           // Track if API domain changes
+        lastTopLevelKeys: null,        // Track if response structure changes
+        lastStateKeys: null,           // Track if farm state structure changes
+        lastDiggingKeys: null,         // Track if digging object structure changes
+        lastGridItemFormat: null,      // 'items' | 'name' | 'both' — how grid tiles store item data
+        knownItems: new Set(),         // All item names encountered
+        unknownItems: new Set(),       // Items not in our expected list
+        failedFetches: 0,             // API call failures
+        nonJsonResponses: 0,          // Non-JSON responses from SFL
+        missingDesert: 0,             // Responses missing desert data
+        missingGrid: 0,               // Responses with digging but no grid
+        errors: [],                    // Recent processing errors
+    };
+
+    // Items we know how to handle
+    const EXPECTED_ITEMS = new Set([
+        'Sand', 'Crab', 'Camel Bone', 'Salt Dino Egg', 'Old Bottle',
+        'Cockle Shell', 'Wooden Compass', 'Sea Cucumber', 'Pipi',
+        'Seaweed', 'Starfish', 'Clam Shell', 'Coral', 'Pearl',
+        'Pirate Bounty', 'Stone', 'Wood', 'Vase', 'Hieroglyph',
+        'Cow Skull', 'Scarab', 'Ancient Clock', 'Broken Pillar',
+        'Coprolite', 'Moon Crystal', 'Ammonite Shell', 'Otter Pebble'
+    ]);
+
+
+    const DIAG_STYLE = 'color: #a78bfa; font-weight: bold';
+    const WARN_STYLE = 'color: #f59e0b; font-weight: bold';
+    const ERR_STYLE  = 'color: #ef4444; font-weight: bold; font-size: 13px';
+    const OK_STYLE   = 'color: #22c55e; font-weight: bold';
+
+    function detectItemFormat(tile) {
+        const hasItems = tile.items && typeof tile.items === 'object' && Object.keys(tile.items).length > 0;
+        const hasName = typeof tile.name === 'string' && tile.name.length > 0;
+        if (hasItems && hasName) return 'both';
+        if (hasItems) return 'items';
+        if (hasName) return 'name';
+        return 'none';
+    }
+
+    function getItemName(tile) {
+        if (tile.items && typeof tile.items === 'object') {
+            const key = Object.keys(tile.items)[0];
+            if (key) return key;
+        }
+        if (tile.name) return tile.name;
+        return 'Sand';
+    }
+
+    function printHealthReport(grid) {
+        const fmt = detectItemFormat(grid[0]);
+        const items = grid.map(t => getItemName(t));
+        const unique = [...new Set(items)];
+        const unknown = unique.filter(i => !EXPECTED_ITEMS.has(i));
+
+        console.log('%c═══════════════════════════════════════════════════', DIAG_STYLE);
+        console.log('%c  SFL EXTENSION — API HEALTH REPORT', DIAG_STYLE);
+        console.log('%c═══════════════════════════════════════════════════', DIAG_STYLE);
+        console.log(`  API Domain: ${health.lastApiDomain}`);
+        console.log(`  Response keys: [${health.lastTopLevelKeys}]`);
+        console.log(`  State path: data.farm.desert.digging.grid ✅`);
+        console.log(`  Grid tile format: ${fmt === 'items' ? 'tile.items (legacy)' : fmt === 'name' ? 'tile.name (current)' : fmt === 'both' ? 'tile.items + tile.name (hybrid)' : '⚠️ UNKNOWN'}`);
+        console.log(`  Grid size: ${grid.length} tiles dug`);
+        console.log(`  Items found: ${unique.join(', ')}`);
+        if (unknown.length > 0) {
+            console.warn(`%c  ⚠️ NEW UNKNOWN ITEMS: ${unknown.join(', ')}`, WARN_STYLE);
+            console.warn(`  → These items may not have icons in ITEMS/ folder`);
+            console.warn(`  → Solver may not classify them correctly`);
+        }
+        if (health.lastDiggingKeys) {
+            console.log(`  Digging object keys: [${health.lastDiggingKeys}]`);
+        }
+        console.log('%c═══════════════════════════════════════════════════', DIAG_STYLE);
+        console.log('%c  All systems operational ✅', OK_STYLE);
+        console.log('%c═══════════════════════════════════════════════════', DIAG_STYLE);
+    }
 
     const originalFetch = window.fetch;
     window.fetch = async function(...args) {
-        const response = await originalFetch.apply(this, args);
+        fetchCallCount++;
+        const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
+        const isSFL = url.includes('sunflower-land');
+
+        if (!isSFL) return originalFetch.apply(this, args);
+
+        health.sflCallCount++;
+
+        // --- Detect API domain changes ---
         try {
-            const url = typeof args[0] === 'string' ? args[0] : args[0]?.url;
-            if (url && url.includes('api.sunflower-land.com')) {
-                const clone = response.clone();
-                const data = await clone.json();
+            const domain = new URL(url).hostname;
+            if (health.lastApiDomain && domain !== health.lastApiDomain) {
+                console.error(`%c[SFL HEALTH] 🚨 API DOMAIN CHANGED: "${health.lastApiDomain}" → "${domain}"`, ERR_STYLE);
+                console.error(`  → Fetch interceptor may miss calls if URL filter is outdated`);
+                console.error(`  → Update bridge.js url.includes() check to match new domain`);
+            }
+            health.lastApiDomain = domain;
+        } catch(e) {}
 
-                const state = data?.farm || data?.state || data;
-                const grid = state?.desert?.digging?.grid;
+        let response;
+        try {
+            response = await originalFetch.apply(this, args);
+        } catch(fetchErr) {
+            health.failedFetches++;
+            console.error(`%c[SFL HEALTH] ❌ API CALL FAILED (${health.failedFetches} total failures)`, ERR_STYLE);
+            console.error(`  URL: ${url}`);
+            console.error(`  Error: ${fetchErr.message}`);
+            if (health.failedFetches >= 3) {
+                console.error(`%c  🚨 MULTIPLE API FAILURES — Game server may be down or URL changed`, ERR_STYLE);
+            }
+            throw fetchErr;
+        }
 
-                if (grid) {
-                    const snapshot = JSON.stringify(grid);
-                    if (snapshot !== lastGridSnapshot) {
-                        // On first load, set baseline — don't fire dig results for existing tiles
-                        if (previousGridLength === -1) {
-                            previousGridLength = grid.length;
-                            console.log(`[SFL Bridge] Initial grid baseline: ${grid.length} tiles already dug`);
-                        } else if (grid.length > previousGridLength) {
-                            // Only fire for truly NEW digs (usually 1 at a time)
-                            const newTiles = grid.slice(previousGridLength);
-                            newTiles.forEach(tile => {
-                                const itemName = tile.name || (tile.items ? Object.keys(tile.items)[0] : 'Sand');
-                                window.postMessage({
-                                    type: 'SFL_DIG_RESULT',
-                                    row: tile.y,
-                                    col: tile.x,
-                                    item: itemName
-                                }, '*');
-                                console.log(`[SFL Bridge] Dig result: (${tile.x},${tile.y}) = ${itemName}`);
-                            });
+        // --- Check HTTP status ---
+        if (!response.ok) {
+            console.warn(`%c[SFL HEALTH] ⚠️ API returned HTTP ${response.status} ${response.statusText}`, WARN_STYLE);
+            console.warn(`  URL: ${url}`);
+            return response;
+        }
+
+        try {
+            const clone = response.clone();
+            const rawText = await clone.text();
+
+            // --- Parse JSON ---
+            let data;
+            try {
+                data = JSON.parse(rawText);
+            } catch(jsonErr) {
+                health.nonJsonResponses++;
+                if (health.nonJsonResponses <= 3) {
+                    console.warn(`%c[SFL HEALTH] ⚠️ SFL response is NOT JSON (${health.nonJsonResponses}x)`, WARN_STYLE);
+                    console.warn(`  First 150 chars: ${rawText.substring(0, 150)}`);
+                }
+                if (health.nonJsonResponses === 5) {
+                    console.error(`%c[SFL HEALTH] 🚨 MANY NON-JSON RESPONSES — API may have switched to a different format (WebSocket? Protobuf?)`, ERR_STYLE);
+                }
+                return response;
+            }
+
+            // --- Detect response structure changes ---
+            const topKeys = Object.keys(data).sort().join(',');
+            if (health.lastTopLevelKeys && topKeys !== health.lastTopLevelKeys && topKeys.includes('farm')) {
+                console.warn(`%c[SFL HEALTH] ⚠️ API RESPONSE STRUCTURE CHANGED`, WARN_STYLE);
+                console.warn(`  Was: [${health.lastTopLevelKeys}]`);
+                console.warn(`  Now: [${topKeys}]`);
+            }
+            if (topKeys.includes('farm')) health.lastTopLevelKeys = topKeys;
+
+            // --- Navigate to grid data ---
+            const state = data?.farm || data?.state || data;
+
+            if (!state?.desert) {
+                // Not every API call has desert data — only warn if we expected it
+                return response;
+            }
+
+            // --- Detect desert structure changes ---
+            if (!state.desert?.digging) {
+                health.missingGrid++;
+                console.error(`%c[SFL HEALTH] 🚨 DESERT EXISTS BUT NO .digging PROPERTY!`, ERR_STYLE);
+                console.error(`  Desert keys: [${Object.keys(state.desert).join(', ')}]`);
+                console.error(`  → Game may have renamed/restructured the digging data`);
+                console.error(`  → Look for similar keys: ${Object.keys(state.desert).filter(k => k.includes('dig') || k.includes('grid') || k.includes('mine')).join(', ') || 'none found'}`);
+                return response;
+            }
+
+            const diggingKeys = Object.keys(state.desert.digging).sort().join(',');
+            if (health.lastDiggingKeys && diggingKeys !== health.lastDiggingKeys) {
+                console.warn(`%c[SFL HEALTH] ⚠️ DIGGING OBJECT STRUCTURE CHANGED`, WARN_STYLE);
+                console.warn(`  Was: [${health.lastDiggingKeys}]`);
+                console.warn(`  Now: [${diggingKeys}]`);
+                console.warn(`  → New keys may contain useful data we're not reading`);
+            }
+            health.lastDiggingKeys = diggingKeys;
+
+            const grid = state.desert.digging.grid;
+            const patterns = state.desert.digging.patterns;
+
+            if (!grid) {
+                health.missingGrid++;
+                console.error(`%c[SFL HEALTH] 🚨 .digging EXISTS BUT NO .grid ARRAY!`, ERR_STYLE);
+                console.error(`  Digging keys: [${diggingKeys}]`);
+                console.error(`  → Game may have renamed grid to something else`);
+                return response;
+            }
+
+            if (!Array.isArray(grid)) {
+                console.error(`%c[SFL HEALTH] 🚨 .grid IS NOT AN ARRAY! Type: ${typeof grid}`, ERR_STYLE);
+                console.error(`  → Grid format fundamentally changed`);
+                return response;
+            }
+
+            // --- Detect item format changes ---
+            if (grid.length > 0) {
+                const sampleTile = grid[0];
+                const fmt = detectItemFormat(sampleTile);
+
+                if (health.lastGridItemFormat && fmt !== health.lastGridItemFormat) {
+                    console.warn(`%c[SFL HEALTH] ⚠️ GRID TILE FORMAT CHANGED: "${health.lastGridItemFormat}" → "${fmt}"`, WARN_STYLE);
+                    console.warn(`  → Update hItem() in solver if needed`);
+                    console.warn(`  Sample tile: ${JSON.stringify(sampleTile).substring(0, 200)}`);
+                }
+                health.lastGridItemFormat = fmt;
+
+                if (fmt === 'none') {
+                    console.error(`%c[SFL HEALTH] 🚨 GRID TILES HAVE NO ITEM DATA! (no .items and no .name)`, ERR_STYLE);
+                    console.error(`  Sample tile keys: [${Object.keys(sampleTile).join(', ')}]`);
+                    console.error(`  Full sample: ${JSON.stringify(sampleTile)}`);
+                    console.error(`  → Game completely changed how items are stored in grid tiles`);
+                }
+
+                // --- Track new/unknown items ---
+                grid.forEach(tile => {
+                    const name = getItemName(tile);
+                    if (!health.knownItems.has(name)) {
+                        health.knownItems.add(name);
+                        if (!EXPECTED_ITEMS.has(name)) {
+                            health.unknownItems.add(name);
+                            console.warn(`%c[SFL HEALTH] 🆕 NEW ITEM DISCOVERED: "${name}"`, WARN_STYLE);
+                            console.warn(`  → No icon in ITEMS/ folder — add ${name.toLowerCase().replace(/ /g,'_')}.png`);
+                            console.warn(`  → Not in solver EXPECTED_ITEMS — add to ITEM_ICON_MAP in content.js`);
                         }
-                        previousGridLength = grid.length;
-
-                        lastGridSnapshot = snapshot;
-                        window.postMessage({
-                            type: 'SFL_GRID_AUTO_UPDATE',
-                            grid: grid,
-                            patterns: state?.desert?.digging?.patterns || []
-                        }, '*');
-                        console.log('[SFL Bridge] Grid auto-updated:', grid.length, 'dug cells');
                     }
+                });
+
+                // --- First-time health report ---
+                if (!health.firstGridSeen) {
+                    health.firstGridSeen = true;
+                    printHealthReport(grid);
                 }
             }
-        } catch(e) { /* ignore non-JSON responses */ }
+
+            // --- Process grid update (normal operation) ---
+            const snapshot = JSON.stringify(grid);
+            if (snapshot !== lastGridSnapshot) {
+                if (previousGridLength === -1) {
+                    previousGridLength = grid.length;
+                } else if (grid.length > previousGridLength) {
+                    const newTiles = grid.slice(previousGridLength);
+                    newTiles.forEach(tile => {
+                        const itemName = getItemName(tile);
+                        window.postMessage({
+                            type: 'SFL_DIG_RESULT',
+                            row: tile.y,
+                            col: tile.x,
+                            item: itemName
+                        }, '*');
+                    });
+                }
+                previousGridLength = grid.length;
+                lastGridSnapshot = snapshot;
+                health.gridUpdateCount++;
+                window.postMessage({
+                    type: 'SFL_GRID_AUTO_UPDATE',
+                    grid: grid,
+                    patterns: patterns || []
+                }, '*');
+            }
+        } catch(e) {
+            health.errors.push(e.message);
+            if (health.errors.length <= 3) {
+                console.error(`%c[SFL HEALTH] ❌ PROCESSING ERROR: ${e.message}`, ERR_STYLE);
+                console.error(`  Stack: ${e.stack?.split('\n').slice(0,3).join('\n  ')}`);
+            }
+            if (health.errors.length === 5) {
+                console.error(`%c[SFL HEALTH] 🚨 REPEATED PROCESSING ERRORS (${health.errors.length}x) — something fundamentally broke`, ERR_STYLE);
+            }
+        }
+
         return response;
     };
+
+    // --- Watchdog: Detect if game stops using fetch entirely ---
+    setTimeout(() => {
+        if (health.sflCallCount === 0) {
+            console.error('%c[SFL HEALTH] 🚨 NO SFL API CALLS INTERCEPTED AFTER 30s!', ERR_STYLE);
+            console.error('  Possible causes:');
+            console.error('  1. Game changed API domain (no longer "sunflower-land" in URL)');
+            console.error('  2. Game switched from fetch() to WebSocket/XMLHttpRequest');
+            console.error('  3. Bridge script failed to inject (check web_accessible_resources)');
+            console.error('  4. Game hasn\'t loaded yet — try refreshing the page');
+        } else if (!health.firstGridSeen) {
+            console.warn('%c[SFL HEALTH] ⚠️ API calls seen but NO GRID DATA found in any response', WARN_STYLE);
+            console.warn('  → Data path (farm.desert.digging.grid) may have changed');
+            console.warn('  → Check if desert/digging section was renamed or moved');
+        }
+    }, 30000);
+
+    console.log('%c[SFL] ✅ Health monitor active', 'color: #64748b; font-size: 11px');
 
     // =========================================================================
     // KNOWN GAME CONSTANTS (from sunflower-land source code)
@@ -146,8 +394,8 @@
     function writeCameraToDOM() {
         if (!game) {
             game = findPhaserGame();
-            if (game) { console.log('[SFL Bridge] Phaser game FOUND.'); camEl.dataset.found = '1'; }
-            else { findAttempts++; if (findAttempts <= 3) console.warn('[SFL Bridge] Game not found. Attempt ' + findAttempts); camEl.dataset.found = '0'; return; }
+            if (game) { camEl.dataset.found = '1'; }
+            else { findAttempts++; camEl.dataset.found = '0'; return; }
         }
         try {
             const scenes = game.scene.getScenes(true);
@@ -268,12 +516,12 @@
             const interval = e.data.interval || 0;
             if (mode === 'high') startHigh();
             else startInterval(interval);
-            console.log(`[SFL Bridge] ${mode.toUpperCase()} mode started.`);
+            // (silent)
         }
 
         if (e.data.type === 'SFL_GRID_STOP_TRACKING') {
             stopAll();
-            console.log('[SFL Bridge] Stopped.');
+            // (silent)
         }
 
         // Click forwarding: simulate a click on the game canvas at the specified grid tile
@@ -309,9 +557,9 @@
                 setTimeout(() => {
                     canvas.dispatchEvent(new PointerEvent('pointerup', opts));
                 }, 50);
-                console.log(`[SFL Bridge] Clicked tile (${col},${row}) → canvas(${canvasX.toFixed(0)},${canvasY.toFixed(0)})`);
+                // (silent)
             } catch(err) {
-                console.warn('[SFL Bridge] Click forwarding error:', err.message);
+                // (silent)
             }
         }
     });
@@ -346,10 +594,10 @@
             const hull = extractSilhouette(imgData.data, w, h);
 
             silhouetteCache.set(cacheKey, hull);
-            console.log(`[SFL Bridge] Silhouette: ${cacheKey} → ${hull.length} hull pts (frame ${w}x${h})`);
+            // (silent — cached silhouette)
             return { polygon: hull, frameW: w, frameH: h, flipX: sprite.flipX };
         } catch(e) {
-            console.warn('[SFL Bridge] Silhouette error:', e.message);
+            // (silent)
             silhouetteCache.set(cacheKey, []);
             return null;
         }
@@ -408,5 +656,5 @@
         return points;
     }
 
-    console.log('[SFL Bridge] Bridge loaded (v11.3 + Silhouette Engine). Grid at world(' + GRID_WORLD_X + ',' + GRID_WORLD_Y + ')');
+    // (silent — bridge loaded)
 })();

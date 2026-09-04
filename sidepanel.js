@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const auraToggle = document.getElementById('auraToggle');
     const perfTuning = document.getElementById('perfTuning');
     const preserveEffects = document.getElementById('preserveEffects');
+    const predictionToggle = document.getElementById('predictionToggle');
 
     // --- Custom Theme Builder elements ---
     const customToggle = document.getElementById('customToggle');
@@ -49,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
         statusDiv.style.color = color;
     }
 
-    chrome.storage.local.get(['sflFarmId', 'walkSpeed', 'deviceMode', 'domIntervalMs', 'gridTheme', 'auraEnabled', 'perfTier', 'preserveUnderlying'], (r) => {
+    chrome.storage.local.get(['sflFarmId', 'walkSpeed', 'deviceMode', 'domIntervalMs', 'gridTheme', 'auraEnabled', 'perfTier', 'preserveUnderlying', 'predictionEnabled'], (r) => {
         if (r.sflFarmId) farmInput.value = r.sflFarmId;
         if (r.walkSpeed !== undefined) {
             speedSlider.value = r.walkSpeed;
@@ -65,6 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (r.auraEnabled !== undefined) auraToggle.checked = r.auraEnabled;
         if (r.perfTier) perfTuning.value = r.perfTier;
         if (r.preserveUnderlying !== undefined) preserveEffects.checked = r.preserveUnderlying;
+        if (r.predictionEnabled !== undefined) predictionToggle.checked = r.predictionEnabled;
         updateModeUI(currentMode);
         updateSettingsVisibility();
     });
@@ -204,21 +206,42 @@ document.addEventListener('DOMContentLoaded', () => {
         logStatus(preserve ? 'Underlying FX: Preserved' : 'Underlying FX: Scaled', '#a5b4fc');
     });
 
+    // --- Dig Predictions ---
+    predictionToggle.addEventListener('change', (e) => {
+        const enabled = e.target.checked;
+        chrome.storage.local.set({ predictionEnabled: enabled });
+        sendCommand('setPrediction', { enabled });
+        logStatus(enabled ? '🔮 Predictions: ON' : '🔮 Predictions: OFF', '#a5b4fc');
+    });
+
     document.getElementById('btnSync').addEventListener('click', () => {
         const farmId = farmInput.value.trim();
         if (!farmId) return logStatus("Farm ID required.", "#ef4444");
         chrome.storage.local.set({ sflFarmId: farmId });
         logStatus("Fetching...", "#facc15");
         chrome.runtime.sendMessage({ action: 'fetch_farm_data', farmId }, (response) => {
+            if (chrome.runtime.lastError) {
+                logStatus(`Extension error: ${chrome.runtime.lastError.message}`, "#ef4444");
+                console.error('[SFL Panel] runtime.lastError:', chrome.runtime.lastError);
+                return;
+            }
             if (response && response.success) {
-                const digData = response.data.farm.desert.digging.grid;
+                const digData = response.data?.farm?.desert?.digging?.grid;
+                if (!digData || !Array.isArray(digData)) {
+                    logStatus("Farm has no dig data yet.", "#facc15");
+                    console.warn('[SFL Panel] Response shape:', JSON.stringify(Object.keys(response.data || {})));
+                    return;
+                }
                 logStatus(`Synced: ${digData.length} dug.`, "#4ade80");
                 sendCommand('colorGrid', { apiGridData: digData });
             } else {
-                logStatus("API error.", "#ef4444");
+                const errMsg = response?.error || 'Unknown error (no response from background)';
+                logStatus(`API error: ${errMsg}`, "#ef4444");
+                console.error('[SFL Panel] Sync failed:', errMsg);
             }
         });
     });
+
 
     function sendCommand(action, data = {}) {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {

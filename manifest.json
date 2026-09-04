@@ -42,7 +42,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["bridge.js"],
+      "resources": ["bridge.js", "digging-solver.js", "ITEMS/*"],
       "matches": ["https://sunflower-land.com/*"]
     }
   ]
