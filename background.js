@@ -67,4 +67,50 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         doFetch();
         return true; // keep message channel open for async sendResponse
     }
+
+    // --- sfl.world P2P Prices Fetch ---
+    if (request.action === 'fetch_sfl_prices') {
+        const url = 'https://sfl.world/api/v1/prices';
+        console.log('[SFL BG] Fetching P2P prices from sfl.world...');
+
+        fetch(url)
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
+            .then(json => {
+                const p2p = json?.data?.p2p || {};
+                console.log(`[SFL BG] ✅ P2P prices loaded: ${Object.keys(p2p).length} items`);
+                sendResponse({ success: true, data: p2p });
+            })
+            .catch(error => {
+                console.warn('[SFL BG] ❌ P2P price fetch failed:', error?.message || error);
+                sendResponse({ success: false, error: error?.message || String(error) });
+            });
+
+        return true; // async sendResponse
+    }
+
+    // --- sfl.world Exchange Rates Fetch ---
+    if (request.action === 'fetch_sfl_exchange') {
+        const url = 'https://sfl.world/api/v1.1/exchange';
+        console.log('[SFL BG] Fetching exchange rates from sfl.world...');
+
+        fetch(url)
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
+            .then(json => {
+                const data = json?.data || {};
+                console.log('[SFL BG] ✅ Exchange rates loaded');
+                sendResponse({ success: true, data: data });
+            })
+            .catch(error => {
+                console.warn('[SFL BG] ❌ Exchange rate fetch failed:', error?.message || error);
+                sendResponse({ success: false, error: error?.message || String(error) });
+            });
+
+        return true; // async sendResponse
+    }
 });

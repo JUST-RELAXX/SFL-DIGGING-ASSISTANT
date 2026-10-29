@@ -2,7 +2,7 @@
 // SFL Digging Helper - Phaser Bridge (v11.2)
 // Auto-alignment + live dig interception
 // =============================================================================
-(function() {
+(function () {
     'use strict';
 
     // =========================================================================
@@ -48,8 +48,8 @@
 
     const DIAG_STYLE = 'color: #a78bfa; font-weight: bold';
     const WARN_STYLE = 'color: #f59e0b; font-weight: bold';
-    const ERR_STYLE  = 'color: #ef4444; font-weight: bold; font-size: 13px';
-    const OK_STYLE   = 'color: #22c55e; font-weight: bold';
+    const ERR_STYLE = 'color: #ef4444; font-weight: bold; font-size: 13px';
+    const OK_STYLE = 'color: #22c55e; font-weight: bold';
 
     function detectItemFormat(tile) {
         const hasItems = tile.items && typeof tile.items === 'object' && Object.keys(tile.items).length > 0;
@@ -98,7 +98,7 @@
     }
 
     const originalFetch = window.fetch;
-    window.fetch = async function(...args) {
+    window.fetch = async function (...args) {
         fetchCallCount++;
         const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
         const isSFL = url.includes('sunflower-land');
@@ -116,12 +116,12 @@
                 console.error(`  → Update bridge.js url.includes() check to match new domain`);
             }
             health.lastApiDomain = domain;
-        } catch(e) {}
+        } catch (e) { }
 
         let response;
         try {
             response = await originalFetch.apply(this, args);
-        } catch(fetchErr) {
+        } catch (fetchErr) {
             health.failedFetches++;
             console.error(`%c[SFL HEALTH] ❌ API CALL FAILED (${health.failedFetches} total failures)`, ERR_STYLE);
             console.error(`  URL: ${url}`);
@@ -147,7 +147,7 @@
             let data;
             try {
                 data = JSON.parse(rawText);
-            } catch(jsonErr) {
+            } catch (jsonErr) {
                 health.nonJsonResponses++;
                 if (health.nonJsonResponses <= 3) {
                     console.warn(`%c[SFL HEALTH] ⚠️ SFL response is NOT JSON (${health.nonJsonResponses}x)`, WARN_STYLE);
@@ -239,7 +239,7 @@
                         if (!EXPECTED_ITEMS.has(name)) {
                             health.unknownItems.add(name);
                             console.warn(`%c[SFL HEALTH] 🆕 NEW ITEM DISCOVERED: "${name}"`, WARN_STYLE);
-                            console.warn(`  → No icon in ITEMS/ folder — add ${name.toLowerCase().replace(/ /g,'_')}.png`);
+                            console.warn(`  → No icon in ITEMS/ folder — add ${name.toLowerCase().replace(/ /g, '_')}.png`);
                             console.warn(`  → Not in solver EXPECTED_ITEMS — add to ITEM_ICON_MAP in content.js`);
                         }
                     }
@@ -278,11 +278,11 @@
                     patterns: patterns || []
                 }, '*');
             }
-        } catch(e) {
+        } catch (e) {
             health.errors.push(e.message);
             if (health.errors.length <= 3) {
                 console.error(`%c[SFL HEALTH] ❌ PROCESSING ERROR: ${e.message}`, ERR_STYLE);
-                console.error(`  Stack: ${e.stack?.split('\n').slice(0,3).join('\n  ')}`);
+                console.error(`  Stack: ${e.stack?.split('\n').slice(0, 3).join('\n  ')}`);
             }
             if (health.errors.length === 5) {
                 console.error(`%c[SFL HEALTH] 🚨 REPEATED PROCESSING ERRORS (${health.errors.length}x) — something fundamentally broke`, ERR_STYLE);
@@ -328,7 +328,7 @@
         try {
             if (window.Phaser && Array.isArray(window.Phaser.GAMES) && window.Phaser.GAMES.length > 0)
                 return window.Phaser.GAMES[0];
-        } catch(e) {}
+        } catch (e) { }
         return null;
     }
 
@@ -339,9 +339,9 @@
                     const val = window[key];
                     if (val && typeof val === 'object' && !Array.isArray(val) &&
                         val.scene && val.canvas && val.renderer && val.config) return val;
-                } catch(e) {}
+                } catch (e) { }
             }
-        } catch(e) {}
+        } catch (e) { }
         return null;
     }
 
@@ -368,7 +368,7 @@
                 }
                 fiber = fiber.return;
             }
-        } catch(e) {}
+        } catch (e) { }
         return null;
     }
 
@@ -391,23 +391,40 @@
 
     let writeCounter = 0;
 
+    let lastFindAt = 0;
     function writeCameraToDOM() {
+        // The Phaser game can be destroyed and re-created (leaving the world for the farm and coming back)
+        if (game && (!game.canvas || !game.canvas.isConnected)) {
+            game = null;
+            camEl.dataset.found = '0';
+            camEl.dataset.scene = '';
+        }
         if (!game) {
+            // look for a (new) game at most twice a second — scanning window is not free
+            const t = performance.now();
+            if (t - lastFindAt < 500) return;
+            lastFindAt = t;
             game = findPhaserGame();
             if (game) { camEl.dataset.found = '1'; }
-            else { findAttempts++; camEl.dataset.found = '0'; return; }
+            else { findAttempts++; camEl.dataset.found = '0'; camEl.dataset.scene = ''; return; }
         }
         try {
             const scenes = game.scene.getScenes(true);
-            if (!scenes || scenes.length === 0) return;
+            if (!scenes || scenes.length === 0) { camEl.dataset.scene = ''; return; }
             const scene = scenes.find(s => s.cameras && s.cameras.main);
-            if (!scene) return;
+            if (!scene) { camEl.dataset.scene = ''; return; }
+            // Canvas hidden (React farm view etc.) → the world is not on screen
+            const canvasBox = game.canvas.getBoundingClientRect();
+            if (canvasBox.width < 2 || canvasBox.height < 2) { camEl.dataset.scene = ''; return; }
+            // Which Phaser scene is on screen ('beach' = the dig site, 'plaza', …).
+            // content.js hides the grid + overlays everywhere except the Beach.
+            camEl.dataset.scene = (scene.scene && scene.scene.key) || (scene.sys && scene.sys.settings && scene.sys.settings.key) || '';
             const cam = scene.cameras.main;
             const canvas = game.canvas;
             const rect = canvas.getBoundingClientRect();
             camEl.dataset.sx = cam.worldView.x;
             camEl.dataset.sy = cam.worldView.y;
-            camEl.dataset.z  = cam.zoom;
+            camEl.dataset.z = cam.zoom;
             camEl.dataset.cx = cam.x;
             camEl.dataset.cy = cam.y;
             camEl.dataset.cl = rect.left;
@@ -449,9 +466,10 @@
                     camEl.dataset.pf = '0';
                     camEl.dataset.pSil = '0';
                 }
-            } catch(pe) { camEl.dataset.pf = '0'; camEl.dataset.pSil = '0'; }
-        } catch(e) {
+            } catch (pe) { camEl.dataset.pf = '0'; camEl.dataset.pSil = '0'; }
+        } catch (e) {
             camEl.dataset.found = '0';
+            camEl.dataset.scene = '';
         }
     }
 
@@ -558,7 +576,7 @@
                     canvas.dispatchEvent(new PointerEvent('pointerup', opts));
                 }, 50);
                 // (silent)
-            } catch(err) {
+            } catch (err) {
                 // (silent)
             }
         }
@@ -596,7 +614,7 @@
             silhouetteCache.set(cacheKey, hull);
             // (silent — cached silhouette)
             return { polygon: hull, frameW: w, frameH: h, flipX: sprite.flipX };
-        } catch(e) {
+        } catch (e) {
             // (silent)
             silhouetteCache.set(cacheKey, []);
             return null;

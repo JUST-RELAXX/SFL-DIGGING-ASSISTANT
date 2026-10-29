@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
     <title>SFL Game Assistant</title>
@@ -7,157 +8,498 @@
     <link rel="stylesheet" href="grid-themes.css">
     <link rel="stylesheet" href="custom-engine.css">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: 'Inter', 'Segoe UI', sans-serif;
             background: linear-gradient(160deg, #0c1222 0%, #162032 50%, #0c1222 100%);
-            color: #cbd5e1; margin: 0; padding: 0; min-height: 100vh;
+            color: #cbd5e1;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
         }
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: rgba(30,41,59,0.5); }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
 
-        .panel { padding: 16px; }
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(30, 41, 59, 0.5);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+
+        .panel {
+            padding: 16px;
+        }
 
         .header {
-            text-align: center; padding: 18px 16px 14px;
-            border-bottom: 1px solid rgba(99,102,241,0.15);
-            background: linear-gradient(180deg, rgba(99,102,241,0.08) 0%, transparent 100%);
+            text-align: center;
+            padding: 18px 16px 14px;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.15);
+            background: linear-gradient(180deg, rgba(99, 102, 241, 0.08) 0%, transparent 100%);
         }
-        .header h1 { font-size: 15px; font-weight: 700; letter-spacing: 2px; color: #e2e8f0; text-transform: uppercase; }
-        .header .version { font-size: 10px; color: #6366f1; font-weight: 600; margin-top: 2px; }
 
-        .input-group { margin-bottom: 12px; }
-        .input-group label { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        .input-field {
-            width: 100%; padding: 10px 12px; margin-top: 5px;
-            background: rgba(30,41,59,0.8); border: 1px solid #334155; color: #f1f5f9;
-            border-radius: 8px; font-size: 13px; font-weight: 500; transition: border-color 0.2s;
+        .header h1 {
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #e2e8f0;
+            text-transform: uppercase;
         }
-        .input-field:focus { outline: none; border-color: #6366f1; }
+
+        .header .version {
+            font-size: 10px;
+            color: #6366f1;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .input-group {
+            margin-bottom: 12px;
+        }
+
+        .input-group label {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 10px 12px;
+            margin-top: 5px;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid #334155;
+            color: #f1f5f9;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: border-color 0.2s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
 
         .btn {
-            width: 100%; padding: 10px; margin-bottom: 6px; font-weight: 600;
-            cursor: pointer; border-radius: 8px; border: none;
-            transition: all 0.15s ease; font-size: 12px;
-            letter-spacing: 0.6px; text-transform: uppercase;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            border: none;
+            transition: all 0.15s ease;
+            font-size: 12px;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
         }
-        .btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
-        .btn:active { transform: translateY(0); }
-        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; }
-        .btn-success { background: linear-gradient(135deg, #22c55e, #16a34a); color: #0f172a; }
-        .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
-        .btn-muted { background: rgba(51,65,85,0.6); color: #94a3b8; font-size: 11px; padding: 8px; }
+
+        .btn:hover {
+            filter: brightness(1.15);
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: #0f172a;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .btn-muted {
+            background: rgba(51, 65, 85, 0.6);
+            color: #94a3b8;
+            font-size: 11px;
+            padding: 8px;
+        }
 
         .card {
-            background: rgba(30,41,59,0.5); padding: 12px; border-radius: 10px;
-            margin-bottom: 10px; border: 1px solid rgba(51,65,85,0.6);
+            background: rgba(30, 41, 59, 0.5);
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(51, 65, 85, 0.6);
         }
-        .card-label { font-weight: 600; font-size: 12px; color: #e2e8f0; display: flex; align-items: center; gap: 8px; cursor: pointer; }
-        .card-hint { font-size: 10px; color: #64748b; margin-top: 5px; line-height: 1.5; }
+
+        .card-label {
+            font-weight: 600;
+            font-size: 12px;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .card-hint {
+            font-size: 10px;
+            color: #64748b;
+            margin-top: 5px;
+            line-height: 1.5;
+        }
 
         .howto {
-            background: rgba(34,197,94,0.06); padding: 12px; border-radius: 10px;
-            font-size: 11px; color: #94a3b8; border: 1px solid rgba(34,197,94,0.15);
-            margin-bottom: 12px; line-height: 1.7;
+            background: rgba(34, 197, 94, 0.06);
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 11px;
+            color: #94a3b8;
+            border: 1px solid rgba(34, 197, 94, 0.15);
+            margin-bottom: 12px;
+            line-height: 1.7;
         }
-        .howto-title { text-align: center; font-weight: 700; color: #4ade80; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
-        .key { color: #818cf8; font-weight: 700; }
-        .ok { color: #4ade80; font-weight: 600; }
+
+        .howto-title {
+            text-align: center;
+            font-weight: 700;
+            color: #4ade80;
+            font-size: 10px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .key {
+            color: #818cf8;
+            font-weight: 700;
+        }
+
+        .ok {
+            color: #4ade80;
+            font-weight: 600;
+        }
+
         .auto-badge {
-            display: inline-block; background: linear-gradient(135deg, #22c55e, #16a34a);
-            color: #0f172a; font-size: 9px; font-weight: 800; padding: 2px 6px;
-            border-radius: 4px; letter-spacing: 0.5px; vertical-align: middle;
+            display: inline-block;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: #0f172a;
+            font-size: 9px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+            vertical-align: middle;
         }
 
-        .settings-divider { text-align: center; margin: 16px 0 10px; position: relative; }
-        .settings-divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #334155; }
-        .settings-divider span { position: relative; background: #0f172a; padding: 0 12px; font-size: 10px; font-weight: 700; color: #64748b; letter-spacing: 1.5px; text-transform: uppercase; }
+        .settings-divider {
+            text-align: center;
+            margin: 16px 0 10px;
+            position: relative;
+        }
 
-        .mode-group { display: flex; gap: 6px; margin-bottom: 12px; }
+        .settings-divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #334155;
+        }
+
+        .settings-divider span {
+            position: relative;
+            background: #0f172a;
+            padding: 0 12px;
+            font-size: 10px;
+            font-weight: 700;
+            color: #64748b;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .mode-group {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
         .mode-btn {
-            flex: 1; padding: 10px 4px; border-radius: 8px; cursor: pointer;
-            border: 2px solid #334155; background: rgba(30,41,59,0.4);
-            text-align: center; transition: all 0.2s;
+            flex: 1;
+            padding: 10px 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid #334155;
+            background: rgba(30, 41, 59, 0.4);
+            text-align: center;
+            transition: all 0.2s;
         }
-        .mode-btn:hover { border-color: #475569; }
-        .mode-btn.active { border-color: #6366f1; background: rgba(99,102,241,0.12); }
-        .mode-btn .mode-icon { font-size: 16px; display: block; margin-bottom: 3px; }
-        .mode-btn .mode-name { font-size: 10px; font-weight: 700; color: #e2e8f0; letter-spacing: 0.5px; }
-        .mode-btn .mode-desc { font-size: 9px; color: #64748b; margin-top: 2px; }
-        .mode-btn.active .mode-name { color: #a5b4fc; }
-        .mode-btn.active .mode-desc { color: #818cf8; }
+
+        .mode-btn:hover {
+            border-color: #475569;
+        }
+
+        .mode-btn.active {
+            border-color: #6366f1;
+            background: rgba(99, 102, 241, 0.12);
+        }
+
+        .mode-btn .mode-icon {
+            font-size: 16px;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .mode-btn .mode-name {
+            font-size: 10px;
+            font-weight: 700;
+            color: #e2e8f0;
+            letter-spacing: 0.5px;
+        }
+
+        .mode-btn .mode-desc {
+            font-size: 9px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .mode-btn.active .mode-name {
+            color: #a5b4fc;
+        }
+
+        .mode-btn.active .mode-desc {
+            color: #818cf8;
+        }
 
         .advanced-toggle {
-            width: 100%; padding: 8px; background: rgba(30,41,59,0.3);
-            border: 1px dashed #334155; border-radius: 6px; cursor: pointer;
-            text-align: center; font-size: 10px; font-weight: 600; color: #64748b;
-            letter-spacing: 0.5px; transition: all 0.2s; margin-bottom: 10px;
+            width: 100%;
+            padding: 8px;
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px dashed #334155;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 10px;
+            font-weight: 600;
+            color: #64748b;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+            margin-bottom: 10px;
         }
-        .advanced-toggle:hover { border-color: #6366f1; color: #a5b4fc; }
-        .advanced-toggle.open { border-style: solid; border-color: #6366f1; color: #a5b4fc; }
-        .advanced-content { display: none; }
-        .advanced-content.visible { display: block; }
 
-        .slider-group { margin-bottom: 14px; }
-        .slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-        .slider-label { font-size: 11px; color: #94a3b8; font-weight: 500; }
+        .advanced-toggle:hover {
+            border-color: #6366f1;
+            color: #a5b4fc;
+        }
+
+        .advanced-toggle.open {
+            border-style: solid;
+            border-color: #6366f1;
+            color: #a5b4fc;
+        }
+
+        .advanced-content {
+            display: none;
+        }
+
+        .advanced-content.visible {
+            display: block;
+        }
+
+        .slider-group {
+            margin-bottom: 14px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .slider-label {
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
         .slider-value {
-            font-size: 14px; font-weight: 700; color: #a5b4fc;
+            font-size: 14px;
+            font-weight: 700;
+            color: #a5b4fc;
             font-family: 'Consolas', 'Courier New', monospace;
-            min-width: 50px; text-align: right; cursor: default;
-            padding: 2px 6px; border-radius: 4px; border: 1px solid transparent; transition: all 0.2s;
+            min-width: 50px;
+            text-align: right;
+            cursor: default;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
         }
-        .slider-value:hover { border-color: rgba(99,102,241,0.3); background: rgba(99,102,241,0.08); }
-        .slider-value.editing { border-color: #6366f1; background: rgba(99,102,241,0.15); outline: none; cursor: text; color: #e2e8f0; }
+
+        .slider-value:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+            background: rgba(99, 102, 241, 0.08);
+        }
+
+        .slider-value.editing {
+            border-color: #6366f1;
+            background: rgba(99, 102, 241, 0.15);
+            outline: none;
+            cursor: text;
+            color: #e2e8f0;
+        }
+
         input[type="range"] {
-            width: 100%; height: 5px; -webkit-appearance: none; appearance: none;
-            background: #1e293b; border-radius: 3px; outline: none;
+            width: 100%;
+            height: 5px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #1e293b;
+            border-radius: 3px;
+            outline: none;
         }
+
         input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none; appearance: none;
-            width: 16px; height: 16px; border-radius: 50%;
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
             background: linear-gradient(135deg, #6366f1, #4f46e5);
-            cursor: pointer; box-shadow: 0 0 8px rgba(99,102,241,0.4);
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
         }
-        .slider-hint { font-size: 9px; color: #475569; margin-top: 4px; line-height: 1.4; }
+
+        .slider-hint {
+            font-size: 9px;
+            color: #475569;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
 
         .info-card {
-            background: rgba(99,102,241,0.06); padding: 14px; border-radius: 10px;
-            border: 1px solid rgba(99,102,241,0.15); margin-bottom: 10px;
-            text-align: center; display: none;
+            background: rgba(99, 102, 241, 0.06);
+            padding: 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(99, 102, 241, 0.15);
+            margin-bottom: 10px;
+            text-align: center;
+            display: none;
         }
-        .info-card .info-icon { font-size: 22px; margin-bottom: 6px; }
-        .info-card .info-title { font-size: 12px; font-weight: 700; color: #a5b4fc; }
-        .info-card .info-desc { font-size: 10px; color: #64748b; margin-top: 4px; line-height: 1.5; }
 
-        #status { text-align: center; margin-top: 14px; font-size: 11px; font-weight: 600; color: #475569; }
+        .info-card .info-icon {
+            font-size: 22px;
+            margin-bottom: 6px;
+        }
+
+        .info-card .info-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #a5b4fc;
+        }
+
+        .info-card .info-desc {
+            font-size: 10px;
+            color: #64748b;
+            margin-top: 4px;
+            line-height: 1.5;
+        }
+
+        #status {
+            text-align: center;
+            margin-top: 14px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #475569;
+        }
 
         /* Theme Selector */
-        .theme-section { margin-bottom: 14px; }
+        .theme-section {
+            margin-bottom: 14px;
+        }
+
         .theme-section-title {
-            font-size: 11px; font-weight: 700; color: #e2e8f0; letter-spacing: 1.5px;
-            text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #e2e8f0;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+
         .theme-section-title::after {
-            content: ''; flex: 1; height: 1px;
-            background: linear-gradient(90deg, rgba(99,102,241,0.3), transparent);
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.3), transparent);
         }
+
         .theme-select {
-            width: 100%; padding: 10px 14px; background: rgba(30,41,59,0.8);
-            border: 1px solid #334155; color: #f1f5f9; border-radius: 8px;
-            font-size: 13px; font-weight: 500; cursor: pointer; outline: none;
-            transition: all 0.2s; appearance: none;
+            width: 100%;
+            padding: 10px 14px;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid #334155;
+            color: #f1f5f9;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s;
+            appearance: none;
             background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23a5b4fc%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-            background-repeat: no-repeat; background-position: right 12px center; background-size: 10px;
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 10px;
         }
-        .theme-select:hover, .theme-select:focus { border-color: #6366f1; box-shadow: 0 0 12px rgba(99,102,241,0.2); }
-        .theme-select option { background: #1e293b; color: #f1f5f9; padding: 8px; }
-        .theme-select optgroup { background: #0f172a; color: #6366f1; font-weight: 700; font-style: normal; }
+
+        .theme-select:hover,
+        .theme-select:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
+        }
+
+        .theme-select option {
+            background: #1e293b;
+            color: #f1f5f9;
+            padding: 8px;
+        }
+
+        .theme-select optgroup {
+            background: #0f172a;
+            color: #6366f1;
+            font-weight: 700;
+            font-style: normal;
+        }
+
         .theme-badge {
-            display: inline-block; font-size: 9px; font-weight: 800; padding: 2px 6px;
-            border-radius: 4px; letter-spacing: 0.5px; vertical-align: middle;
-            background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+            vertical-align: middle;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
         }
 
         /* --- PREVIEW ENGINE TILE STYLES --- */
@@ -165,444 +507,654 @@
             position: relative;
             overflow: visible;
         }
+
         #previewContent .sfl-grid-cell {
-            width: 100%; height: 100%;
-            background: linear-gradient(135deg, rgba(99,102,241,0.6), rgba(59,130,246,0.4));
-            border: 2px solid rgba(255,255,255,0.15);
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.6), rgba(59, 130, 246, 0.4));
+            border: 2px solid rgba(255, 255, 255, 0.15);
             border-radius: 6px;
             position: relative;
             transform-style: preserve-3d;
         }
-        #previewContent .sfl-grid-cell[data-type="blue"]  { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-        #previewContent .sfl-grid-cell[data-type="yellow"]{ background: linear-gradient(135deg, #f59e0b, #d97706); }
-        #previewContent .sfl-grid-cell[data-type="red"]   { background: linear-gradient(135deg, #ef4444, #dc2626); }
+
+        #previewContent .sfl-grid-cell[data-type="blue"] {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+
+        #previewContent .sfl-grid-cell[data-type="yellow"] {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        #previewContent .sfl-grid-cell[data-type="red"] {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
         #previewContent .dig-fx-container {
-            position: absolute; inset: 0;
-            pointer-events: none; z-index: 10;
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 10;
             overflow: visible;
         }
+
         #previewContent .dig-particle {
             position: absolute;
-            pointer-events: none; z-index: 9999;
+            pointer-events: none;
+            z-index: 9999;
             border-radius: 50%;
             will-change: transform, opacity;
-            display: flex; justify-content: center; align-items: center;
-            font-weight: bold; font-family: monospace; color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-family: monospace;
+            color: #fff;
         }
+
         #previewContent .jackpot-text {
             position: absolute;
-            top: 50%; left: 50%;
+            top: 50%;
+            left: 50%;
             transform: translate(-50%, -50%) scale(0);
-            font-size: 24px; font-weight: 900;
-            color: #fff; text-transform: uppercase;
-            z-index: 9999; pointer-events: none;
-            text-align: center; letter-spacing: 2px;
-            animation: jpText var(--jackpot-duration, 3.5s) cubic-bezier(0.8,0,0.2,1) forwards;
+            font-size: 24px;
+            font-weight: 900;
+            color: #fff;
+            text-transform: uppercase;
+            z-index: 9999;
+            pointer-events: none;
+            text-align: center;
+            letter-spacing: 2px;
+            animation: jpText var(--jackpot-duration, 3.5s) cubic-bezier(0.8, 0, 0.2, 1) forwards;
             text-shadow: 0 0 10px #fff, 0 0 30px var(--engine-primary, #0ff), 0 0 60px var(--engine-secondary, #f0f);
+        }
+
+        /* About Dev */
+        .about-dev {
+            margin-top: 4px;
+        }
+
+        .about-credit {
+            text-align: center;
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 10px;
+        }
+
+        .about-credit a,
+        .about-cheer a {
+            color: #fbbf24;
+            font-weight: 700;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(251, 191, 36, 0.4);
+        }
+
+        .about-credit a:hover,
+        .about-cheer a:hover {
+            border-bottom-color: #fbbf24;
+        }
+
+        .about-cheer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            color: #cbd5e1;
+            text-align: center;
+        }
+
+        .about-cheer .cheer-icon {
+            width: 22px;
+            height: 22px;
+            object-fit: contain;
+            image-rendering: pixelated;
+        }
+
+        .about-support {
+            font-size: 10px;
+            color: #64748b;
+            text-align: center;
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .wallet-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .wallet-addr {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding: 8px 10px;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            font-size: 10px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            color: #cbd5e1;
+        }
+
+        .wallet-copy-btn {
+            flex: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(74, 222, 128, 0.4);
+            background: rgba(74, 222, 128, 0.1);
+            color: #4ade80;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .wallet-copy-btn:hover {
+            background: rgba(74, 222, 128, 0.2);
+        }
+
+        .wallet-copy-btn.copied {
+            border-color: rgba(74, 222, 128, 0.7);
+            background: rgba(74, 222, 128, 0.3);
         }
     </style>
 </head>
+
 <body>
 
-<div class="header">
-    <h1>SFL Game Assistant</h1>
-    <div class="version">v12.0 &mdash; 30 Presets + Custom Builder</div>
-</div>
-
-<div class="panel">
-
-    <div class="input-group">
-        <label>Farm ID</label>
-        <input type="text" id="farmIdInput" class="input-field" placeholder="Enter your Farm ID">
+    <div class="header">
+        <h1>SFL Game Assistant</h1>
+        <div class="version">v12.0 &mdash; 30 Presets + Custom Builder</div>
     </div>
 
-    <button id="btnSync" class="btn btn-success">Sync Live API Data</button>
+    <div class="panel">
 
-    <!-- DIGGING THEMES -->
-    <div class="theme-section">
-        <div class="theme-section-title">Digging Themes <span class="theme-badge">30 PRESETS</span></div>
-        <select id="themeSelector" class="theme-select">
-            <option value="none">Default (Basic Grid)</option>
-            <optgroup label="Core Effects">
-                <option value="hellfire">01. Hellfire Edge</option>
-                <option value="electric">02. Electric Crackle</option>
-                <option value="spinning">03. Spinning Fire</option>
-                <option value="cyberpunk">04. Cyberpunk Neon</option>
-            </optgroup>
-            <optgroup label="Heavy Mutators">
-                <option value="toxic">05. Toxic Slime</option>
-                <option value="void">06. Quantum Void</option>
-                <option value="aurora">07. Aurora Borealis</option>
-                <option value="matrix">08. Glitch Matrix</option>
-            </optgroup>
-            <optgroup label="Ethereal">
-                <option value="holy">09. Holy Light</option>
-                <option value="blood">10. Blood Moon</option>
-                <option value="abyss">11. Abyssal Bio</option>
-                <option value="arcane">12. Arcane Rune Forge</option>
-            </optgroup>
-            <optgroup label="Industrial">
-                <option value="synthwave">13. Synthwave Overdrive</option>
-                <option value="mecha">14. Mecha Vault</option>
-                <option value="obsidian">15. Cursed Obsidian</option>
-                <option value="prismatic">16. Prismatic Shards</option>
-            </optgroup>
-            <optgroup label="Premium Collection">
-                <option value="frost">17. Permafrost Block</option>
-                <option value="molten">18. Molten Core</option>
-                <option value="disco">19. Disco Floor</option>
-                <option value="alien">20. Alien Bio-Ship</option>
-            </optgroup>
-            <optgroup label="Exotic">
-                <option value="hextech">21. Hextech Forge</option>
-                <option value="gold">22. El Dorado (Gold)</option>
-                <option value="nebula">23. Cosmic Nebula</option>
-                <option value="arcade">24. CRT Arcade</option>
-            </optgroup>
-            <optgroup label="Dimensional">
-                <option value="mirage">25. Desert Mirage</option>
-                <option value="crystal">26. Crystal Cavern</option>
-                <option value="steampunk">27. Steampunk Gears</option>
-                <option value="necro">28. Necropolis</option>
-                <option value="quantum">29. Quantum Superposition</option>
-                <option value="vaporwave">30. Vaporwave Sun</option>
-            </optgroup>
-            <optgroup label="✦ Custom(s)" id="customThemeGroup">
-            </optgroup>
-        </select>
-        <div style="margin-top:10px;">
-            <label style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;">Performance Tuning</label>
-            <select id="perfTuning" class="theme-select" style="margin-top:4px;">
-                <option value="ultra">Ultra (Massive 4K FX)</option>
-                <option value="high" selected>High (Standard Size)</option>
-                <option value="medium">Medium (Small FX)</option>
-                <option value="potato">Potato PC (Zero Lag)</option>
-            </select>
-            <label class="card-label" style="cursor:pointer;margin-top:8px;font-size:11px;">
-                <input type="checkbox" id="preserveEffects">
-                Preserve Underlying Effects
-            </label>
-            <div class="card-hint" style="margin-top:2px;">When checked, theme glows &amp; edges stay at full intensity. Only puzzle/dig FX scale.</div>
-            <label class="card-label" style="cursor:pointer;margin-top:8px;font-size:11px;">
-                <input type="checkbox" id="predictionToggle" checked>
-                🔮 Dig Predictions
-            </label>
-            <div class="card-hint" style="margin-top:2px;">Minesweeper-style solver: highlights guaranteed treasures, predicts items, marks safe/dangerous tiles.</div>
-    </div>
-
-    <!-- CUSTOM THEME BUILDER -->
-    <div class="advanced-toggle" id="customToggle" style="margin-top:12px; border-color: rgba(255,215,0,0.3); color: #ffd700;">✦ Custom Theme Builder</div>
-    <div class="advanced-content" id="customContent">
-        <div class="card" style="border-color: rgba(255,215,0,0.2); background: rgba(255,215,0,0.04);">
-            <!-- Colors -->
-            <div style="margin-bottom:12px;">
-                <label style="font-size:10px;color:#ffd700;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Appearance</label>
-            </div>
-            <div style="display:flex;gap:8px;margin-bottom:10px;">
-                <div style="flex:1;">
-                    <label style="font-size:10px;color:#94a3b8;">Primary Color</label>
-                    <input type="color" id="customPrimary" value="#00ffff" style="width:100%;height:32px;border:none;border-radius:6px;cursor:pointer;background:transparent;">
-                </div>
-                <div style="flex:1;">
-                    <label style="font-size:10px;color:#94a3b8;">Secondary Color</label>
-                    <input type="color" id="customSecondary" value="#ff00ff" style="width:100%;height:32px;border:none;border-radius:6px;cursor:pointer;background:transparent;">
-                </div>
-            </div>
-            <div class="slider-group" style="margin-bottom:10px;">
-                <div class="slider-header">
-                    <span class="slider-label" style="font-size:10px;">Glow Intensity</span>
-                    <span style="font-size:12px;color:#ffd700;font-weight:700;" id="glowVal">1.0</span>
-                </div>
-                <input type="range" id="customGlow" min="0" max="3" step="0.5" value="1">
-            </div>
-
-            <!-- Tile Shape -->
-            <div style="margin-bottom:10px;">
-                <label style="font-size:10px;color:#94a3b8;">Tile Geometry (10)</label>
-                <select id="customShape" class="theme-select" style="margin-top:4px;font-size:11px;padding:8px;">
-                    <option value="square">Strict Square</option>
-                    <option value="circle">Perfect Circle</option>
-                    <option value="diamond">Diamond</option>
-                    <option value="droplet">Droplet</option>
-                    <option value="hexagon">Hexagon</option>
-                    <option value="octagon">Octagon</option>
-                    <option value="star">4-Point Star</option>
-                    <option value="cross">Holy Cross</option>
-                    <option value="pill">Pill Shape</option>
-                    <option value="beveled">Beveled Edges</option>
-                </select>
-            </div>
-
-            <!-- Border Architecture -->
-            <div style="margin-bottom:10px;">
-                <label style="font-size:10px;color:#94a3b8;">Grid Border (15)</label>
-                <select id="customBorder" class="theme-select" style="margin-top:4px;font-size:11px;padding:8px;">
-                    <option value="neon">Neon Core</option>
-                    <option value="solid">Solid Frame</option>
-                    <option value="spiky">Spiky / Obsidian</option>
-                    <option value="scifi">Sci-Fi / Chamfered</option>
-                    <option value="crystal">Crystal Shard</option>
-                    <option value="circuit">Circuit Board</option>
-                    <option value="molten">Molten Rock</option>
-                    <option value="celtic">Celtic Runes</option>
-                    <option value="laser">Laser Grid</option>
-                    <option value="bio">Bio-Organic</option>
-                    <option value="steampunk">Steampunk Brass</option>
-                    <option value="frozen">Frozen Tundra</option>
-                    <option value="shadow">Shadow Realm</option>
-                    <option value="holographic">Holographic Glitch</option>
-                    <option value="divine">Divine Halo</option>
-                </select>
-            </div>
-
-            <!-- Particles -->
-            <div style="margin-bottom:12px;">
-                <label style="font-size:10px;color:#ffd700;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Physics & Effects</label>
-            </div>
-            <div style="margin-bottom:10px;">
-                <label style="font-size:10px;color:#94a3b8;">Particle Type (15)</label>
-                <select id="customParticles" class="theme-select" style="margin-top:4px;font-size:11px;padding:8px;">
-                    <option value="shards">Digital Shards</option>
-                    <option value="standard">Energy Dust</option>
-                    <option value="coins">3D Rotating Coins</option>
-                    <option value="lava">Lava Chunks</option>
-                    <option value="stars">Shooting Stars</option>
-                    <option value="bubbles">Floating Bubbles</option>
-                    <option value="skulls">Skulls 💀</option>
-                    <option value="sparkles">Sparkles</option>
-                    <option value="binary">Binary Code (1/0)</option>
-                    <option value="snow">Snowflakes ❄️</option>
-                    <option value="spores">Toxic Spores</option>
-                    <option value="orbs">Orbs of Light</option>
-                    <option value="prisms">Geometric Prisms</option>
-                    <option value="blood">Blood Drops</option>
-                    <option value="glitch">Glitch Artifacts</option>
-                </select>
-            </div>
-
-            <!-- Jackpot T1 -->
-            <div style="margin-bottom:10px;">
-                <label style="font-size:10px;color:#ff0055;font-weight:700;">T1: Jackpot Explosion (15)</label>
-                <select id="customJackpot" class="theme-select" style="margin-top:4px;font-size:11px;padding:8px;border-color:rgba(255,0,85,0.3);">
-                    <option value="gamma">Gamma Ray Burst</option>
-                    <option value="orbital">Orbital Neon Laser</option>
-                    <option value="supernova">Supernova Explosion</option>
-                    <option value="blackhole">Event Horizon / Black Hole</option>
-                    <option value="geyser">Eldritch Geyser</option>
-                    <option value="quantum-rift">Quantum Rift Shatter</option>
-                    <option value="divine-smite">Divine Orbital Smite</option>
-                    <option value="plasma-nova">Plasma Ring Nova</option>
-                    <option value="nuke">Nuclear Meltdown</option>
-                    <option value="chrono">Chrono-Shatter</option>
-                    <option value="void-tendrils">Void Tendrils</option>
-                    <option value="cyber-emp">Cyber EMP</option>
-                    <option value="solar-flare">Solar Flare</option>
-                    <option value="necro-pulse">Necrotic Pulse</option>
-                    <option value="astral-proj">Astral Projection</option>
-                </select>
-            </div>
-
-            <!-- Tier-Specific Dig Animations -->
-            <div style="margin-bottom:12px;">
-                <label style="font-size:10px;color:#ffd700;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Tier Dig Animations</label>
-            </div>
-            <div style="display:flex;gap:4px;margin-bottom:8px;" id="customTierTabs">
-                <button class="mode-btn active" data-tier-target="ct2" style="padding:6px 2px;flex:1;font-size:9px;"><span class="mode-name" style="color:#b100ff;">T2 Bones</span></button>
-                <button class="mode-btn" data-tier-target="ct3" style="padding:6px 2px;flex:1;font-size:9px;"><span class="mode-name" style="color:#ffd700;">T3 Misc</span></button>
-                <button class="mode-btn" data-tier-target="ct4" style="padding:6px 2px;flex:1;font-size:9px;"><span class="mode-name" style="color:#00ffcc;">T4 Crabs</span></button>
-                <button class="mode-btn" data-tier-target="ct5" style="padding:6px 2px;flex:1;font-size:9px;"><span class="mode-name" style="color:#ff4444;">T5 Sand</span></button>
-            </div>
-            <div id="ct2" class="custom-tier-panel">
-                <select id="customDigT2" class="theme-select" style="font-size:11px;padding:8px;">
-                    <option value="bone-shatter">Bone Shatter</option>
-                    <option value="ethereal">Ethereal Eruption</option>
-                    <option value="grave">Grave Burst</option>
-                    <option value="resonance">Resonance Wave</option>
-                    <option value="phantom">Phantom Strike</option>
-                    <option value="heavy-implode">Heavy Implode</option>
-                    <option value="core-fracture">Core Fracture</option>
-                    <option value="soul">Soul Release</option>
-                    <option value="echo">Deep Echo</option>
-                    <option value="fossil">Fossil Grind</option>
-                </select>
-            </div>
-            <div id="ct3" class="custom-tier-panel" style="display:none;">
-                <select id="customDigT3" class="theme-select" style="font-size:11px;padding:8px;">
-                    <option value="gold-pop">Gold Pop</option>
-                    <option value="coin-fountain">Coin Fountain</option>
-                    <option value="glimmer">Shiny Glimmer</option>
-                    <option value="jewel">Jewel Flash</option>
-                    <option value="chest">Chest Burst</option>
-                    <option value="med-spin">Medium Spin</option>
-                    <option value="treasure-melt">Treasure Melt</option>
-                    <option value="sparkle">Sparkle Fade</option>
-                    <option value="loot">Loot Drop</option>
-                    <option value="gem">Gem Shatter</option>
-                </select>
-            </div>
-            <div id="ct4" class="custom-tier-panel" style="display:none;">
-                <select id="customDigT4" class="theme-select" style="font-size:11px;padding:8px;">
-                    <option value="snap">Pincer Snap</option>
-                    <option value="bubble">Bubble Pop</option>
-                    <option value="scuttle">Sand Scuttle</option>
-                    <option value="tide">Tide Wash</option>
-                    <option value="shell">Shell Crack</option>
-                    <option value="jolt">Light Jolt</option>
-                    <option value="ripple">Wave Ripple</option>
-                    <option value="fade">Scurry Fade</option>
-                    <option value="foam">Foam Burst</option>
-                    <option value="splash">Water Splash</option>
-                </select>
-            </div>
-            <div id="ct5" class="custom-tier-panel" style="display:none;">
-                <select id="customDigT5" class="theme-select" style="font-size:11px;padding:8px;">
-                    <option value="thud">Dull Thud</option>
-                    <option value="dust">Red Dust</option>
-                    <option value="ash">Ash Collapse</option>
-                    <option value="sink">Melancholy Sink</option>
-                    <option value="crimson">Crimson Fade</option>
-                    <option value="crumble">Despair Crumble</option>
-                    <option value="sigh">Heavy Sigh</option>
-                    <option value="slump">Sand Slump</option>
-                    <option value="rot">Dry Rot</option>
-                    <option value="blood-melt">Blood Melt</option>
-                </select>
-            </div>
-
-            <!-- Save / Apply -->
-            <div style="margin-top:14px;display:flex;gap:6px;">
-                <input type="text" id="customThemeName" class="input-field" placeholder="Theme name..." style="flex:1;padding:8px;font-size:11px;">
-                <button id="btnSaveCustom" class="btn btn-success" style="width:auto;padding:8px 14px;font-size:10px;">SAVE</button>
-            </div>
-            <button id="btnApplyCustom" class="btn btn-primary" style="margin-top:6px;font-size:11px;">Apply Custom Theme Live</button>
-            <button id="btnDeleteCustom" class="btn btn-danger" style="font-size:10px;padding:6px;display:none;">Delete Selected Custom Theme</button>
+        <div class="input-group">
+            <label>Farm ID</label>
+            <input type="text" id="farmIdInput" class="input-field" placeholder="Enter your Farm ID">
         </div>
-    </div>
 
-    <!-- 3D ANIMATION PREVIEW ENGINE -->
-    <div class="advanced-toggle" id="previewToggle" style="margin-top:12px; border-color: rgba(0,255,204,0.3); color: #00ffcc;">🎬 Animation Preview Engine</div>
-    <div class="advanced-content" id="previewContent">
-        <div class="card" style="border-color: rgba(0,255,204,0.2); background: rgba(0,255,204,0.03); padding:10px;">
-            <!-- Tier Tabs -->
-            <div style="display:flex;gap:4px;margin-bottom:8px;" id="previewTierTabs">
-                <button class="mode-btn" data-preview-tier="1" style="padding:6px 2px;flex:1;font-size:9px;"><span class="mode-name" style="color:#ff0055;">T1 Jackpot</span></button>
-                <button class="mode-btn" data-preview-tier="2" style="padding:6px 2px;flex:1;font-size:9px;"><span class="mode-name" style="color:#b100ff;">T2 Bones</span></button>
-                <button class="mode-btn active" data-preview-tier="3" style="padding:6px 2px;flex:1;font-size:9px;"><span class="mode-name" style="color:#ffd700;">T3 Misc</span></button>
-                <button class="mode-btn" data-preview-tier="4" style="padding:6px 2px;flex:1;font-size:9px;"><span class="mode-name" style="color:#00ffcc;">T4 Crabs</span></button>
-                <button class="mode-btn" data-preview-tier="5" style="padding:6px 2px;flex:1;font-size:9px;"><span class="mode-name" style="color:#ff4444;">T5 Sand</span></button>
+        <button id="btnSync" class="btn btn-success">Sync Live API Data</button>
+
+        <!-- DIGGING THEMES -->
+        <div class="theme-section">
+            <div class="theme-section-title">Digging Themes <span class="theme-badge">30 PRESETS</span></div>
+            <select id="themeSelector" class="theme-select">
+                <option value="none">Default (Basic Grid)</option>
+                <optgroup label="Core Effects">
+                    <option value="hellfire">01. Hellfire Edge</option>
+                    <option value="electric">02. Electric Crackle</option>
+                    <option value="spinning">03. Spinning Fire</option>
+                    <option value="cyberpunk">04. Cyberpunk Neon</option>
+                </optgroup>
+                <optgroup label="Heavy Mutators">
+                    <option value="toxic">05. Toxic Slime</option>
+                    <option value="void">06. Quantum Void</option>
+                    <option value="aurora">07. Aurora Borealis</option>
+                    <option value="matrix">08. Glitch Matrix</option>
+                </optgroup>
+                <optgroup label="Ethereal">
+                    <option value="holy">09. Holy Light</option>
+                    <option value="blood">10. Blood Moon</option>
+                    <option value="abyss">11. Abyssal Bio</option>
+                    <option value="arcane">12. Arcane Rune Forge</option>
+                </optgroup>
+                <optgroup label="Industrial">
+                    <option value="synthwave">13. Synthwave Overdrive</option>
+                    <option value="mecha">14. Mecha Vault</option>
+                    <option value="obsidian">15. Cursed Obsidian</option>
+                    <option value="prismatic">16. Prismatic Shards</option>
+                </optgroup>
+                <optgroup label="Premium Collection">
+                    <option value="frost">17. Permafrost Block</option>
+                    <option value="molten">18. Molten Core</option>
+                    <option value="disco">19. Disco Floor</option>
+                    <option value="alien">20. Alien Bio-Ship</option>
+                </optgroup>
+                <optgroup label="Exotic">
+                    <option value="hextech">21. Hextech Forge</option>
+                    <option value="gold">22. El Dorado (Gold)</option>
+                    <option value="nebula">23. Cosmic Nebula</option>
+                    <option value="arcade">24. CRT Arcade</option>
+                </optgroup>
+                <optgroup label="Dimensional">
+                    <option value="mirage">25. Desert Mirage</option>
+                    <option value="crystal">26. Crystal Cavern</option>
+                    <option value="steampunk">27. Steampunk Gears</option>
+                    <option value="necro">28. Necropolis</option>
+                    <option value="quantum">29. Quantum Superposition</option>
+                    <option value="vaporwave">30. Vaporwave Sun</option>
+                </optgroup>
+                <optgroup label="✦ Custom(s)" id="customThemeGroup">
+                </optgroup>
+            </select>
+            <div style="margin-top:10px;">
+                <label style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;">Performance
+                    Tuning</label>
+                <select id="perfTuning" class="theme-select" style="margin-top:4px;">
+                    <option value="ultra">Ultra (Massive 4K FX)</option>
+                    <option value="high" selected>High (Standard Size)</option>
+                    <option value="medium">Medium (Small FX)</option>
+                    <option value="potato">Potato PC (Zero Lag)</option>
+                </select>
+                <label class="card-label" style="cursor:pointer;margin-top:8px;font-size:11px;">
+                    <input type="checkbox" id="preserveEffects">
+                    Preserve Underlying Effects
+                </label>
+                <div class="card-hint" style="margin-top:2px;">When checked, theme glows &amp; edges stay at full
+                    intensity. Only puzzle/dig FX scale.</div>
+                <label class="card-label" style="cursor:pointer;margin-top:8px;font-size:11px;">
+                    <input type="checkbox" id="predictionToggle" checked>
+                    🔮 Dig Predictions
+                </label>
+                <div class="card-hint" style="margin-top:2px;">Minesweeper-style solver: highlights guaranteed
+                    treasures, predicts items, marks safe/dangerous tiles.</div>
             </div>
-            <!-- 3D Viewport -->
-            <div id="previewViewport" style="width:100%;aspect-ratio:1;max-width:470px;border-radius:12px;border:1px solid rgba(0,255,204,0.15);overflow:hidden;position:relative;cursor:grab;background:radial-gradient(ellipse at center, #0a0f1a 0%, #000 100%);">
-                <!-- Theme name label (static 2D, doesn't orbit) -->
-                <div id="previewThemeLabel" style="position:absolute;top:10px;left:10px;font-size:11px;font-weight:800;color:#fff;font-family:'Inter',sans-serif;letter-spacing:0.5px;z-index:100;pointer-events:none;text-shadow:0 0 8px rgba(0,0,0,0.8);">No Theme</div>
-                <div id="previewScene" style="width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform 0.05s ease-out;display:flex;align-items:center;justify-content:center;">
-                    <div id="sfl-grid-wrapper" data-quality="high" style="position:relative;width:120px;height:120px;transform-style:preserve-3d;pointer-events:none;overflow:visible;">
-                        <div id="previewTile" class="sfl-grid-cell" data-type="blue" style="width:100%;height:100%;position:relative;border-radius:6px;transition:all 0.3s;transform-style:preserve-3d;"></div>
+
+            <!-- CUSTOM THEME BUILDER -->
+            <div class="advanced-toggle" id="customToggle"
+                style="margin-top:12px; border-color: rgba(255,215,0,0.3); color: #ffd700;">✦ Custom Theme Builder</div>
+            <div class="advanced-content" id="customContent">
+                <div class="card" style="border-color: rgba(255,215,0,0.2); background: rgba(255,215,0,0.04);">
+                    <!-- Colors -->
+                    <div style="margin-bottom:12px;">
+                        <label
+                            style="font-size:10px;color:#ffd700;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Appearance</label>
+                    </div>
+                    <div style="display:flex;gap:8px;margin-bottom:10px;">
+                        <div style="flex:1;">
+                            <label style="font-size:10px;color:#94a3b8;">Primary Color</label>
+                            <input type="color" id="customPrimary" value="#00ffff"
+                                style="width:100%;height:32px;border:none;border-radius:6px;cursor:pointer;background:transparent;">
+                        </div>
+                        <div style="flex:1;">
+                            <label style="font-size:10px;color:#94a3b8;">Secondary Color</label>
+                            <input type="color" id="customSecondary" value="#ff00ff"
+                                style="width:100%;height:32px;border:none;border-radius:6px;cursor:pointer;background:transparent;">
+                        </div>
+                    </div>
+                    <div class="slider-group" style="margin-bottom:10px;">
+                        <div class="slider-header">
+                            <span class="slider-label" style="font-size:10px;">Glow Intensity</span>
+                            <span style="font-size:12px;color:#ffd700;font-weight:700;" id="glowVal">1.0</span>
+                        </div>
+                        <input type="range" id="customGlow" min="0" max="3" step="0.5" value="1">
+                    </div>
+
+                    <!-- Tile Shape -->
+                    <div style="margin-bottom:10px;">
+                        <label style="font-size:10px;color:#94a3b8;">Tile Geometry (10)</label>
+                        <select id="customShape" class="theme-select"
+                            style="margin-top:4px;font-size:11px;padding:8px;">
+                            <option value="square">Strict Square</option>
+                            <option value="circle">Perfect Circle</option>
+                            <option value="diamond">Diamond</option>
+                            <option value="droplet">Droplet</option>
+                            <option value="hexagon">Hexagon</option>
+                            <option value="octagon">Octagon</option>
+                            <option value="star">4-Point Star</option>
+                            <option value="cross">Holy Cross</option>
+                            <option value="pill">Pill Shape</option>
+                            <option value="beveled">Beveled Edges</option>
+                        </select>
+                    </div>
+
+                    <!-- Border Architecture -->
+                    <div style="margin-bottom:10px;">
+                        <label style="font-size:10px;color:#94a3b8;">Grid Border (15)</label>
+                        <select id="customBorder" class="theme-select"
+                            style="margin-top:4px;font-size:11px;padding:8px;">
+                            <option value="neon">Neon Core</option>
+                            <option value="solid">Solid Frame</option>
+                            <option value="spiky">Spiky / Obsidian</option>
+                            <option value="scifi">Sci-Fi / Chamfered</option>
+                            <option value="crystal">Crystal Shard</option>
+                            <option value="circuit">Circuit Board</option>
+                            <option value="molten">Molten Rock</option>
+                            <option value="celtic">Celtic Runes</option>
+                            <option value="laser">Laser Grid</option>
+                            <option value="bio">Bio-Organic</option>
+                            <option value="steampunk">Steampunk Brass</option>
+                            <option value="frozen">Frozen Tundra</option>
+                            <option value="shadow">Shadow Realm</option>
+                            <option value="holographic">Holographic Glitch</option>
+                            <option value="divine">Divine Halo</option>
+                        </select>
+                    </div>
+
+                    <!-- Particles -->
+                    <div style="margin-bottom:12px;">
+                        <label
+                            style="font-size:10px;color:#ffd700;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Physics
+                            & Effects</label>
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <label style="font-size:10px;color:#94a3b8;">Particle Type (15)</label>
+                        <select id="customParticles" class="theme-select"
+                            style="margin-top:4px;font-size:11px;padding:8px;">
+                            <option value="shards">Digital Shards</option>
+                            <option value="standard">Energy Dust</option>
+                            <option value="coins">3D Rotating Coins</option>
+                            <option value="lava">Lava Chunks</option>
+                            <option value="stars">Shooting Stars</option>
+                            <option value="bubbles">Floating Bubbles</option>
+                            <option value="skulls">Skulls </option>
+                            <option value="sparkles">Sparkles</option>
+                            <option value="binary">Binary Code (1/0)</option>
+                            <option value="snow">Snowflakes</option>
+                            <option value="spores">Toxic Spores</option>
+                            <option value="orbs">Orbs of Light</option>
+                            <option value="prisms">Geometric Prisms</option>
+                            <option value="blood">Blood Drops</option>
+                            <option value="glitch">Glitch Artifacts</option>
+                        </select>
+                    </div>
+
+                    <!-- Jackpot T1 -->
+                    <div style="margin-bottom:10px;">
+                        <label style="font-size:10px;color:#ff0055;font-weight:700;">T1: Jackpot Explosion (15)</label>
+                        <select id="customJackpot" class="theme-select"
+                            style="margin-top:4px;font-size:11px;padding:8px;border-color:rgba(255,0,85,0.3);">
+                            <option value="gamma">Gamma Ray Burst</option>
+                            <option value="orbital">Orbital Neon Laser</option>
+                            <option value="supernova">Supernova Explosion</option>
+                            <option value="blackhole">Event Horizon / Black Hole</option>
+                            <option value="geyser">Eldritch Geyser</option>
+                            <option value="quantum-rift">Quantum Rift Shatter</option>
+                            <option value="divine-smite">Divine Orbital Smite</option>
+                            <option value="plasma-nova">Plasma Ring Nova</option>
+                            <option value="nuke">Nuclear Meltdown</option>
+                            <option value="chrono">Chrono-Shatter</option>
+                            <option value="void-tendrils">Void Tendrils</option>
+                            <option value="cyber-emp">Cyber EMP</option>
+                            <option value="solar-flare">Solar Flare</option>
+                            <option value="necro-pulse">Necrotic Pulse</option>
+                            <option value="astral-proj">Astral Projection</option>
+                        </select>
+                    </div>
+
+                    <!-- Tier-Specific Dig Animations -->
+                    <div style="margin-bottom:12px;">
+                        <label
+                            style="font-size:10px;color:#ffd700;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Tier
+                            Dig Animations</label>
+                    </div>
+                    <div style="display:flex;gap:4px;margin-bottom:8px;" id="customTierTabs">
+                        <button class="mode-btn active" data-tier-target="ct2"
+                            style="padding:6px 2px;flex:1;font-size:9px;"><span class="mode-name"
+                                style="color:#b100ff;">T2 Bones</span></button>
+                        <button class="mode-btn" data-tier-target="ct3"
+                            style="padding:6px 2px;flex:1;font-size:9px;"><span class="mode-name"
+                                style="color:#ffd700;">T3 Misc</span></button>
+                        <button class="mode-btn" data-tier-target="ct4"
+                            style="padding:6px 2px;flex:1;font-size:9px;"><span class="mode-name"
+                                style="color:#00ffcc;">T4 Crabs</span></button>
+                        <button class="mode-btn" data-tier-target="ct5"
+                            style="padding:6px 2px;flex:1;font-size:9px;"><span class="mode-name"
+                                style="color:#ff4444;">T5 Sand</span></button>
+                    </div>
+                    <div id="ct2" class="custom-tier-panel">
+                        <select id="customDigT2" class="theme-select" style="font-size:11px;padding:8px;">
+                            <option value="bone-shatter">Bone Shatter</option>
+                            <option value="ethereal">Ethereal Eruption</option>
+                            <option value="grave">Grave Burst</option>
+                            <option value="resonance">Resonance Wave</option>
+                            <option value="phantom">Phantom Strike</option>
+                            <option value="heavy-implode">Heavy Implode</option>
+                            <option value="core-fracture">Core Fracture</option>
+                            <option value="soul">Soul Release</option>
+                            <option value="echo">Deep Echo</option>
+                            <option value="fossil">Fossil Grind</option>
+                        </select>
+                    </div>
+                    <div id="ct3" class="custom-tier-panel" style="display:none;">
+                        <select id="customDigT3" class="theme-select" style="font-size:11px;padding:8px;">
+                            <option value="gold-pop">Gold Pop</option>
+                            <option value="coin-fountain">Coin Fountain</option>
+                            <option value="glimmer">Shiny Glimmer</option>
+                            <option value="jewel">Jewel Flash</option>
+                            <option value="chest">Chest Burst</option>
+                            <option value="med-spin">Medium Spin</option>
+                            <option value="treasure-melt">Treasure Melt</option>
+                            <option value="sparkle">Sparkle Fade</option>
+                            <option value="loot">Loot Drop</option>
+                            <option value="gem">Gem Shatter</option>
+                        </select>
+                    </div>
+                    <div id="ct4" class="custom-tier-panel" style="display:none;">
+                        <select id="customDigT4" class="theme-select" style="font-size:11px;padding:8px;">
+                            <option value="snap">Pincer Snap</option>
+                            <option value="bubble">Bubble Pop</option>
+                            <option value="scuttle">Sand Scuttle</option>
+                            <option value="tide">Tide Wash</option>
+                            <option value="shell">Shell Crack</option>
+                            <option value="jolt">Light Jolt</option>
+                            <option value="ripple">Wave Ripple</option>
+                            <option value="fade">Scurry Fade</option>
+                            <option value="foam">Foam Burst</option>
+                            <option value="splash">Water Splash</option>
+                        </select>
+                    </div>
+                    <div id="ct5" class="custom-tier-panel" style="display:none;">
+                        <select id="customDigT5" class="theme-select" style="font-size:11px;padding:8px;">
+                            <option value="thud">Dull Thud</option>
+                            <option value="dust">Red Dust</option>
+                            <option value="ash">Ash Collapse</option>
+                            <option value="sink">Melancholy Sink</option>
+                            <option value="crimson">Crimson Fade</option>
+                            <option value="crumble">Despair Crumble</option>
+                            <option value="sigh">Heavy Sigh</option>
+                            <option value="slump">Sand Slump</option>
+                            <option value="rot">Dry Rot</option>
+                            <option value="blood-melt">Blood Melt</option>
+                        </select>
+                    </div>
+
+                    <!-- Save / Apply -->
+                    <div style="margin-top:14px;display:flex;gap:6px;">
+                        <input type="text" id="customThemeName" class="input-field" placeholder="Theme name..."
+                            style="flex:1;padding:8px;font-size:11px;">
+                        <button id="btnSaveCustom" class="btn btn-success"
+                            style="width:auto;padding:8px 14px;font-size:10px;">SAVE</button>
+                    </div>
+                    <button id="btnApplyCustom" class="btn btn-primary" style="margin-top:6px;font-size:11px;">Apply
+                        Custom Theme Live</button>
+                    <button id="btnDeleteCustom" class="btn btn-danger"
+                        style="font-size:10px;padding:6px;display:none;">Delete Selected Custom Theme</button>
+                </div>
+            </div>
+
+            <!-- 3D ANIMATION PREVIEW ENGINE -->
+            <div class="advanced-toggle" id="previewToggle"
+                style="margin-top:12px; border-color: rgba(0,255,204,0.3); color: #00ffcc;">🎬 Animation Preview Engine
+            </div>
+            <div class="advanced-content" id="previewContent">
+                <div class="card"
+                    style="border-color: rgba(0,255,204,0.2); background: rgba(0,255,204,0.03); padding:10px;">
+                    <!-- Tier Tabs -->
+                    <div style="display:flex;gap:4px;margin-bottom:8px;" id="previewTierTabs">
+                        <button class="mode-btn" data-preview-tier="1"
+                            style="padding:6px 2px;flex:1;font-size:9px;"><span class="mode-name"
+                                style="color:#ff0055;">T1 Jackpot</span></button>
+                        <button class="mode-btn" data-preview-tier="2"
+                            style="padding:6px 2px;flex:1;font-size:9px;"><span class="mode-name"
+                                style="color:#b100ff;">T2 Bones</span></button>
+                        <button class="mode-btn active" data-preview-tier="3"
+                            style="padding:6px 2px;flex:1;font-size:9px;"><span class="mode-name"
+                                style="color:#ffd700;">T3 Misc</span></button>
+                        <button class="mode-btn" data-preview-tier="4"
+                            style="padding:6px 2px;flex:1;font-size:9px;"><span class="mode-name"
+                                style="color:#00ffcc;">T4 Crabs</span></button>
+                        <button class="mode-btn" data-preview-tier="5"
+                            style="padding:6px 2px;flex:1;font-size:9px;"><span class="mode-name"
+                                style="color:#ff4444;">T5 Sand</span></button>
+                    </div>
+                    <!-- 3D Viewport -->
+                    <div id="previewViewport"
+                        style="width:100%;aspect-ratio:1;max-width:470px;border-radius:12px;border:1px solid rgba(0,255,204,0.15);overflow:hidden;position:relative;cursor:grab;background:radial-gradient(ellipse at center, #0a0f1a 0%, #000 100%);">
+                        <!-- Theme name label (static 2D, doesn't orbit) -->
+                        <div id="previewThemeLabel"
+                            style="position:absolute;top:10px;left:10px;font-size:11px;font-weight:800;color:#fff;font-family:'Inter',sans-serif;letter-spacing:0.5px;z-index:100;pointer-events:none;text-shadow:0 0 8px rgba(0,0,0,0.8);">
+                            No Theme</div>
+                        <div id="previewScene"
+                            style="width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform 0.05s ease-out;display:flex;align-items:center;justify-content:center;">
+                            <div id="sfl-grid-wrapper" data-quality="high"
+                                style="position:relative;width:120px;height:120px;transform-style:preserve-3d;pointer-events:none;overflow:visible;">
+                                <div id="previewTile" class="sfl-grid-cell" data-type="blue"
+                                    style="width:100%;height:100%;position:relative;border-radius:6px;transition:all 0.3s;transform-style:preserve-3d;">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Grid floor for depth reference -->
+                        <div id="previewFloor"
+                            style="position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,255,204,0.15),transparent);pointer-events:none;">
+                        </div>
+                        <!-- Axis indicator -->
+                        <div id="previewAxis"
+                            style="position:absolute;bottom:8px;left:8px;font-size:9px;color:rgba(255,255,255,0.25);font-family:monospace;pointer-events:none;">
+                            X: 0° Y: 0°</div>
+                        <!-- Loop counter -->
+                        <div id="previewLoopCounter"
+                            style="position:absolute;top:8px;right:8px;font-size:9px;color:rgba(255,255,255,0.3);font-family:monospace;pointer-events:none;">
+                            Loop: 0/5</div>
+                    </div>
+                    <!-- Controls -->
+                    <div style="display:flex;gap:6px;margin-top:8px;align-items:center;">
+                        <button id="btnPreviewPlay" class="btn btn-primary" style="flex:1;padding:8px;font-size:16px;"
+                            title="Play">▶</button>
+                        <button id="btnPreviewPause" class="btn"
+                            style="flex:1;padding:8px;font-size:16px;border-color:rgba(255,255,255,0.15);"
+                            title="Pause">⏸</button>
+                        <button id="btnPreviewReset" class="btn"
+                            style="width:auto;padding:8px 12px;font-size:10px;border-color:rgba(0,255,204,0.2);color:#00ffcc;"
+                            title="Reset Camera">⟲ Reset</button>
+                    </div>
+                    <div class="card-hint" style="margin-top:6px;text-align:center;">Drag viewport to orbit • Select
+                        tier to preview animation</div>
+                </div>
+            </div>
+
+            <!-- CHARACTER AURA -->
+            <div class="theme-section">
+                <div class="theme-section-title">Character Aura</div>
+                <div class="card" style="margin-top:8px;">
+                    <label class="card-label" style="cursor:pointer;">
+                        <input type="checkbox" id="auraToggle">
+                        Show Character Silhouette
+                    </label>
+                    <div class="card-hint">Displays a glowing outline around your character. Auto-enables in the digging
+                        area.</div>
+                </div>
+            </div>
+
+            <!-- How To Use — Updated for auto-alignment -->
+            <div class="howto">
+                <div class="howto-title">&#10024; One-Press Setup</div>
+                1. Open the game and go to the <strong>Desert dig site</strong>.<br>
+                2. Press <span class="key">Alt+1</span> : grid auto-aligns to dig tiles. <span
+                    class="auto-badge">AUTO</span><br>
+                3. <span class="ok">Walk around, the grid follows perfectly.</span><br>
+                4. Press <span class="key">Alt+1</span> to re-snap anytime.<br>
+                5. Press <span class="key">Alt+2</span> : shows digs left, time left, treasures, artefacts and
+                streak.<br>
+                6. Press <span class="key">Alt+3</span> : shows the tile-colour legend.<br>
+                7. Press <span class="key">Alt+4</span> : shows today's dig formations.<br>
+                8. Press <span class="key">Alt+5</span> : shows exchange rates and treasure earnings.<br>
+                9. Press <span class="key">Alt+E</span> : shows everything at once.
+            </div>
+
+            <!-- SETTINGS -->
+            <div class="settings-divider"><span>Settings</span></div>
+
+            <div class="mode-group">
+                <div class="mode-btn" data-mode="low">
+                    <span class="mode-icon">&#9889;</span>
+                    <span class="mode-name">Low-End</span>
+                    <span class="mode-desc">WASD + periodic sync</span>
+                </div>
+                <div class="mode-btn active" data-mode="mid">
+                    <span class="mode-icon">&#9878;</span>
+                    <span class="mode-name">Mid-Range</span>
+                    <span class="mode-desc">WASD + live sync</span>
+                </div>
+                <div class="mode-btn" data-mode="high">
+                    <span class="mode-icon">&#128640;</span>
+                    <span class="mode-name">High-End</span>
+                    <span class="mode-desc">Pure camera sync</span>
+                </div>
+            </div>
+
+            <div class="info-card" id="highEndInfo">
+                <div class="info-icon">&#128640;</div>
+                <div class="info-title">Full Camera Tracking Active</div>
+                <div class="info-desc">
+                    Grid is synced to the game camera every frame at 60fps.
+                    No manual speed tuning needed.
+                </div>
+            </div>
+
+            <div class="advanced-toggle" id="advancedToggle">Advanced Settings (Dev-Level)</div>
+
+            <div class="advanced-content" id="advancedContent">
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <span class="slider-label">Walk Speed (px / frame)</span>
+                        <span class="slider-value" id="speedDisplay">3.300</span>
+                    </div>
+                    <input type="range" id="speedSlider" min="0" max="10" step="0.001" value="3.3">
+                    <div class="slider-hint">
+                        Fine-tune to match character walk speed.
+                        Applies to Low-End and Mid-Range modes.
+                        Double-click the value to type manually.
                     </div>
                 </div>
-                <!-- Grid floor for depth reference -->
-                <div id="previewFloor" style="position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,255,204,0.15),transparent);pointer-events:none;"></div>
-                <!-- Axis indicator -->
-                <div id="previewAxis" style="position:absolute;bottom:8px;left:8px;font-size:9px;color:rgba(255,255,255,0.25);font-family:monospace;pointer-events:none;">X: 0° Y: 0°</div>
-                <!-- Loop counter -->
-                <div id="previewLoopCounter" style="position:absolute;top:8px;right:8px;font-size:9px;color:rgba(255,255,255,0.3);font-family:monospace;pointer-events:none;">Loop: 0/5</div>
+
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <span class="slider-label">Camera Sync Interval (seconds)</span>
+                        <span class="slider-value" id="domIntervalDisplay">Live</span>
+                    </div>
+                    <input type="range" id="domIntervalSlider" min="0" max="10" step="0.5" value="0">
+                    <div class="slider-hint">
+                        How often camera position is checked for drift correction.
+                        0 = live (every frame). Higher = less CPU.
+                        Double-click the value to type manually.
+                    </div>
+                </div>
             </div>
-            <!-- Controls -->
-            <div style="display:flex;gap:6px;margin-top:8px;align-items:center;">
-                <button id="btnPreviewPlay" class="btn btn-primary" style="flex:1;padding:8px;font-size:16px;" title="Play">▶</button>
-                <button id="btnPreviewPause" class="btn" style="flex:1;padding:8px;font-size:16px;border-color:rgba(255,255,255,0.15);" title="Pause">⏸</button>
-                <button id="btnPreviewReset" class="btn" style="width:auto;padding:8px 12px;font-size:10px;border-color:rgba(0,255,204,0.2);color:#00ffcc;" title="Reset Camera">⟲ Reset</button>
-            </div>
-            <div class="card-hint" style="margin-top:6px;text-align:center;">Drag viewport to orbit • Select tier to preview animation</div>
-        </div>
-    </div>
 
-    <!-- CHARACTER AURA -->
-    <div class="theme-section">
-        <div class="theme-section-title">Character Aura</div>
-        <div class="card" style="margin-top:8px;">
-            <label class="card-label" style="cursor:pointer;">
-                <input type="checkbox" id="auraToggle">
-                Show Character Silhouette
-            </label>
-            <div class="card-hint">Displays a glowing outline around your character. Auto-enables in the digging area.</div>
-        </div>
-    </div>
+            <button id="btnHide" class="btn btn-danger">Hide All</button>
 
-    <!-- How To Use — Updated for auto-alignment -->
-    <div class="howto">
-        <div class="howto-title">&#10024; One-Press Setup</div>
-        1. Open the game and go to the <strong>Desert dig site</strong>.<br>
-        2. Press <span class="key">Alt+1</span> : grid auto-aligns to dig tiles. <span class="auto-badge">AUTO</span><br>
-        3. <span class="ok">Walk around, the grid follows perfectly.</span><br>
-        4. Press <span class="key">Alt+1</span> to re-snap anytime.
-    </div>
+            <div id="status">Ready. Press Alt+1 in the desert to start.</div>
 
-    <!-- SETTINGS -->
-    <div class="settings-divider"><span>Settings</span></div>
-
-    <div class="mode-group">
-        <div class="mode-btn" data-mode="low">
-            <span class="mode-icon">&#9889;</span>
-            <span class="mode-name">Low-End</span>
-            <span class="mode-desc">WASD + periodic sync</span>
-        </div>
-        <div class="mode-btn active" data-mode="mid">
-            <span class="mode-icon">&#9878;</span>
-            <span class="mode-name">Mid-Range</span>
-            <span class="mode-desc">WASD + live sync</span>
-        </div>
-        <div class="mode-btn" data-mode="high">
-            <span class="mode-icon">&#128640;</span>
-            <span class="mode-name">High-End</span>
-            <span class="mode-desc">Pure camera sync</span>
-        </div>
-    </div>
-
-    <div class="info-card" id="highEndInfo">
-        <div class="info-icon">&#128640;</div>
-        <div class="info-title">Full Camera Tracking Active</div>
-        <div class="info-desc">
-            Grid is synced to the game camera every frame at 60fps.
-            No manual speed tuning needed.
-        </div>
-    </div>
-
-    <div class="advanced-toggle" id="advancedToggle">Advanced Settings (Dev-Level)</div>
-
-    <div class="advanced-content" id="advancedContent">
-        <div class="slider-group">
-            <div class="slider-header">
-                <span class="slider-label">Walk Speed (px / frame)</span>
-                <span class="slider-value" id="speedDisplay">3.300</span>
-            </div>
-            <input type="range" id="speedSlider" min="0" max="10" step="0.001" value="3.3">
-            <div class="slider-hint">
-                Fine-tune to match character walk speed.
-                Applies to Low-End and Mid-Range modes.
-                Double-click the value to type manually.
+            <div class="settings-divider"><span>About Dev</span></div>
+            <div class="about-dev">
+                <div class="about-credit">With Love By <a
+                        href="https://sunflower-land.com/play/#/visit/1110263710415249" target="_blank"
+                        rel="noopener noreferrer">AADARSH</a></div>
+                <div class="about-cheer">
+                    <img src="ITEMS/Cheer.webp" alt="" class="cheer-icon">
+                    <span>Wanna cheer <a href="https://sunflower-land.com/play/#/visit/1110263710415249" target="_blank"
+                            rel="noopener noreferrer">me</a>? ✨</span>
+                </div>
+                <div class="about-support">Made it this far and enjoying the tool? Feel free to help me level up in game
+                    (optional):</div>
+                <div class="wallet-row">
+                    <code class="wallet-addr">0x7E6596bd78afEA0dcb9Ad093E035e09c728738dD</code>
+                    <button type="button" class="wallet-copy-btn" id="btnCopyWallet"
+                        data-copy="0x7E6596bd78afEA0dcb9Ad093E035e09c728738dD">Copy</button>
+                </div>
             </div>
         </div>
 
-        <div class="slider-group">
-            <div class="slider-header">
-                <span class="slider-label">Camera Sync Interval (seconds)</span>
-                <span class="slider-value" id="domIntervalDisplay">Live</span>
-            </div>
-            <input type="range" id="domIntervalSlider" min="0" max="10" step="0.5" value="0">
-            <div class="slider-hint">
-                How often camera position is checked for drift correction.
-                0 = live (every frame). Higher = less CPU.
-                Double-click the value to type manually.
-            </div>
-        </div>
-    </div>
-
-    <button id="btnHide" class="btn btn-danger">Hide All</button>
-
-    <div id="status">Ready. Press Alt+1 in the desert to start.</div>
-</div>
-
-<script src="sidepanel.js"></script>
+        <script src="sidepanel.js"></script>
 </body>
+
 </html>

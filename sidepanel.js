@@ -40,8 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentMode = 'mid';
 
     const DEFAULTS = {
-        low:  { speed: 3.3, intervalS: 5 },
-        mid:  { speed: 3.3, intervalS: 0 },
+        low: { speed: 3.3, intervalS: 5 },
+        mid: { speed: 3.3, intervalS: 0 },
         high: { speed: 3.3, intervalS: 0 }
     };
 
@@ -178,7 +178,27 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     // --- Core buttons ---
-    document.getElementById('btnHide').addEventListener('click', () => sendCommand('hideAll'));
+    document.getElementById('btnHide').addEventListener('click', () => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (!tabs[0] || !tabs[0].url.includes('sunflower-land.com')) return;
+            chrome.tabs.sendMessage(tabs[0].id, { action: 'hideAll' }, (response) => {
+                const btn = document.getElementById('btnHide');
+                const nowHidden = response && response.nowHidden;
+                const flashColor = nowHidden ? '#ef4444' : '#22c55e';
+                btn.style.transition = 'background-color 0.15s ease, box-shadow 0.15s ease';
+                btn.style.backgroundColor = flashColor;
+                btn.style.boxShadow = '0 0 16px ' + flashColor;
+                setTimeout(() => {
+                    btn.textContent = nowHidden ? 'Show All' : 'Hide All';
+                    btn.classList.toggle('btn-danger', !nowHidden);
+                    btn.classList.toggle('btn-success', nowHidden);
+                    btn.style.transition = 'background-color 0.4s ease, box-shadow 0.4s ease';
+                    btn.style.backgroundColor = '';
+                    btn.style.boxShadow = '';
+                }, 250);
+            });
+        });
+    });
 
     // --- Aura Toggle ---
     auraToggle.addEventListener('change', (e) => {
@@ -226,14 +246,44 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             if (response && response.success) {
-                const digData = response.data?.farm?.desert?.digging?.grid;
-                if (!digData || !Array.isArray(digData)) {
+                const digging = response.data?.farm?.desert?.digging;
+                const farm = response.data?.farm;
+                if (!digging?.grid || !Array.isArray(digging.grid)) {
                     logStatus("Farm has no dig data yet.", "#facc15");
                     console.warn('[SFL Panel] Response shape:', JSON.stringify(Object.keys(response.data || {})));
                     return;
                 }
-                logStatus(`Synced: ${digData.length} dug.`, "#4ade80");
-                sendCommand('colorGrid', { apiGridData: digData });
+                logStatus(`Synced: ${digging.grid.length} dug.`, "#4ade80");
+
+                // Merge collectibles from all 4 locations the game checks:
+                // farm.collectibles, farm.home.collectibles, farm.interior.ground.collectibles,
+                // farm.interior.level_one.collectibles
+                const mergedCollectibles = {};
+                const sources = [
+                    farm?.collectibles,
+                    farm?.home?.collectibles,
+                    farm?.interior?.ground?.collectibles,
+                    farm?.interior?.level_one?.collectibles,
+                ];
+                for (const src of sources) {
+                    if (!src || typeof src !== 'object') continue;
+                    for (const [name, arr] of Object.entries(src)) {
+                        if (!Array.isArray(arr)) continue;
+                        mergedCollectibles[name] = (mergedCollectibles[name] || []).concat(arr);
+                    }
+                }
+
+                sendCommand('syncFarmData', {
+                    apiGridData: digging.grid,
+                    patterns: digging.patterns || [],
+                    completedPatterns: digging.completedPatterns || [],
+                    streak: digging.streak || { count: 0, collectedAt: 0, totalClaimed: 0 },
+                    extraDigs: digging.extraDigs || 0,
+                    collectibles: mergedCollectibles,
+                    bumpkin: farm?.bumpkin || {},
+                    farmHands: farm?.farmHands || {},
+                    inventory: farm?.inventory || {},
+                });
             } else {
                 const errMsg = response?.error || 'Unknown error (no response from background)';
                 logStatus(`API error: ${errMsg}`, "#ef4444");
@@ -495,21 +545,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Built-in theme particle color map (matches content.js)
     const THEME_COLORS = {
-        hellfire: ['#ff4500','#ff0000'], molten: ['#ff4500','#ff6a00'],
-        electric: ['#00ffff','#ffffff'], cyberpunk: ['#00ffff','#ff00ff'],
-        toxic: ['#39ff14','#00ff00'], matrix: ['#00ff00','#39ff14'],
-        void: ['#8a2be2','#4b0082'], aurora: ['#00ffcc','#ff69b4'],
-        blood: ['#ff0000','#8a0303'], holy: ['#ffd700','#ffffff'],
-        abyss: ['#00bfff','#001a33'], arcane: ['#b100ff','#ff00ff'],
-        synthwave: ['#ff00ff','#00ffff'], mecha: ['#ff6a00','#ffffff'],
-        obsidian: ['#4b0082','#000000'], prismatic: ['#ff0000','#00ff00'],
-        frost: ['#00ffff','#ffffff'], disco: ['#ff00ff','#ffff00'],
-        alien: ['#39ff14','#00ffcc'], hextech: ['#00ffff','#ffd700'],
-        gold: ['#ffd700','#ffffff'], nebula: ['#9b59b6','#3498db'],
-        arcade: ['#00ff00','#ffffff'], mirage: ['#ff8c00','#ffd700'],
-        crystal: ['#00bfff','#ffffff'], steampunk: ['#b87333','#ffd700'],
-        necro: ['#8a2be2','#39ff14'], quantum: ['#00ffff','#b100ff'],
-        vaporwave: ['#ff71ce','#01cdfe'], spinning: ['#ff4500','#ffd700'],
+        hellfire: ['#ff4500', '#ff0000'], molten: ['#ff4500', '#ff6a00'],
+        electric: ['#00ffff', '#ffffff'], cyberpunk: ['#00ffff', '#ff00ff'],
+        toxic: ['#39ff14', '#00ff00'], matrix: ['#00ff00', '#39ff14'],
+        void: ['#8a2be2', '#4b0082'], aurora: ['#00ffcc', '#ff69b4'],
+        blood: ['#ff0000', '#8a0303'], holy: ['#ffd700', '#ffffff'],
+        abyss: ['#00bfff', '#001a33'], arcane: ['#b100ff', '#ff00ff'],
+        synthwave: ['#ff00ff', '#00ffff'], mecha: ['#ff6a00', '#ffffff'],
+        obsidian: ['#4b0082', '#000000'], prismatic: ['#ff0000', '#00ff00'],
+        frost: ['#00ffff', '#ffffff'], disco: ['#ff00ff', '#ffff00'],
+        alien: ['#39ff14', '#00ffcc'], hextech: ['#00ffff', '#ffd700'],
+        gold: ['#ffd700', '#ffffff'], nebula: ['#9b59b6', '#3498db'],
+        arcade: ['#00ff00', '#ffffff'], mirage: ['#ff8c00', '#ffd700'],
+        crystal: ['#00bfff', '#ffffff'], steampunk: ['#b87333', '#ffd700'],
+        necro: ['#8a2be2', '#39ff14'], quantum: ['#00ffff', '#b100ff'],
+        vaporwave: ['#ff71ce', '#01cdfe'], spinning: ['#ff4500', '#ffd700'],
     };
 
     let previewTier = '3';
@@ -579,7 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Clear previous state
         w.removeAttribute('data-theme');
-        ['shape','border','particles','jackpot','digT2','digT3','digT4','digT5'].forEach(k => delete w.dataset[k]);
+        ['shape', 'border', 'particles', 'jackpot', 'digT2', 'digT3', 'digT4', 'digT5'].forEach(k => delete w.dataset[k]);
         w.style.removeProperty('--engine-primary');
         w.style.removeProperty('--engine-secondary');
         w.style.removeProperty('--engine-glow-intensity');
@@ -619,7 +669,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- ANIMATION CORE ---
     function resetTile() {
         previewTile.className = 'sfl-grid-cell';
-        previewTile.dataset.type = ['blue','yellow','red'][Math.floor(Math.random()*3)];
+        previewTile.dataset.type = ['blue', 'yellow', 'red'][Math.floor(Math.random() * 3)];
         previewTile.style.cssText = 'width:100%;height:100%;position:relative;border-radius:6px;transform-style:preserve-3d;';
         previewWrapper.querySelectorAll('.dig-fx-container, .dig-particle, .jackpot-text').forEach(e => e.remove());
         previewWrapper.classList.remove('jackpot-active');
@@ -681,7 +731,7 @@ document.addEventListener('DOMContentLoaded', () => {
             p.style.width = `${size}px`; p.style.height = `${size}px`;
             p.style.backgroundColor = bg;
             if (quality !== 'potato') p.style.boxShadow = `0 0 10px ${shadow}`;
-            p.style.left = `${cx - size/2}px`; p.style.top = `${cy - size/2}px`;
+            p.style.left = `${cx - size / 2}px`; p.style.top = `${cy - size / 2}px`;
             previewWrapper.appendChild(p);
 
             const angle = Math.random() * Math.PI * 2;
@@ -693,9 +743,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             p.animate([
                 { transform: 'translate(0,0) rotate(0deg) scale(1)', opacity: 1 },
-                { transform: `translate(${dx}px,${dy}px) rotate(${Math.random()*720-360}deg) scale(0)`, opacity: 0 }
-            ], { duration: (600 + Math.random()*800) * (previewTier==='1'?1.5:1), easing: 'cubic-bezier(0.175,0.885,0.32,1.275)', fill: 'forwards' });
-            setTimeout(() => { if(p.parentNode) p.remove(); }, 3000);
+                { transform: `translate(${dx}px,${dy}px) rotate(${Math.random() * 720 - 360}deg) scale(0)`, opacity: 0 }
+            ], { duration: (600 + Math.random() * 800) * (previewTier === '1' ? 1.5 : 1), easing: 'cubic-bezier(0.175,0.885,0.32,1.275)', fill: 'forwards' });
+            setTimeout(() => { if (p.parentNode) p.remove(); }, 3000);
         }
     }
 
@@ -749,7 +799,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // All custom builder controls -> auto-play
     [customPrimary, customSecondary, customGlow, customShape, customBorder,
-     customParticles, customJackpot, customDigT2, customDigT3, customDigT4, customDigT5
+        customParticles, customJackpot, customDigT2, customDigT3, customDigT4, customDigT5
     ].forEach(el => {
         el.addEventListener('input', () => setTimeout(autoPlayPreview, 50));
         el.addEventListener('change', () => setTimeout(autoPlayPreview, 50));
@@ -760,3 +810,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateOrbitTransform();
 });
+
+
+// --- About Dev: copy wallet address ---
+const btnCopyWallet = document.getElementById('btnCopyWallet');
+if (btnCopyWallet) {
+    btnCopyWallet.addEventListener('click', () => {
+        const text = btnCopyWallet.dataset.copy;
+        const flash = (ok) => {
+            btnCopyWallet.textContent = ok ? 'Copied!' : 'Copy failed';
+            btnCopyWallet.classList.toggle('copied', !!ok);
+            setTimeout(() => { btnCopyWallet.textContent = 'Copy'; btnCopyWallet.classList.remove('copied'); }, 1400);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => flash(true)).catch(() => flash(false));
+        } else {
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta); ta.select();
+                flash(document.execCommand('copy'));
+                ta.remove();
+            } catch (err) { flash(false); }
+        }
+    });
+}

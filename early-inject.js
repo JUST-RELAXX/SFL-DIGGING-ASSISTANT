@@ -52,10 +52,16 @@ inlineScript.textContent = `
 
                         lastGridSnapshot = snapshot;
                         var patterns = (state.desert && state.desert.digging && state.desert.digging.patterns) || [];
+                        var completedPatterns = (state.desert && state.desert.digging && state.desert.digging.completedPatterns) || [];
+                        var streak = (state.desert && state.desert.digging && state.desert.digging.streak) || null;
+                        var extraDigs = (state.desert && state.desert.digging && state.desert.digging.extraDigs) || 0;
                         window.postMessage({
                             type: 'SFL_GRID_AUTO_UPDATE',
                             grid: grid,
-                            patterns: patterns
+                            patterns: patterns,
+                            completedPatterns: completedPatterns,
+                            streak: streak,
+                            extraDigs: extraDigs
                         }, '*');
                         console.log('[SFL Interceptor] Grid auto-updated: ' + grid.length + ' dug cells');
                     }

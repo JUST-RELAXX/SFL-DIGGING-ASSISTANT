@@ -30,9 +30,18 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://sunflower-land.com/play/*"],
-      "js": ["content.js"],
-      "css": ["overlay.css", "grid-themes.css", "custom-engine.css"],
+      "matches": [
+        "https://sunflower-land.com/play/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "overlay.css",
+        "grid-themes.css",
+        "custom-engine.css",
+        "panels.css"
+      ],
       "all_frames": true,
       "run_at": "document_idle"
     }
@@ -42,8 +51,15 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["bridge.js", "digging-solver.js", "ITEMS/*"],
-      "matches": ["https://sunflower-land.com/*"]
+      "resources": [
+        "bridge.js",
+        "digging-solver.js",
+        "ITEMS/*",
+        "sand_shovel.png"
+      ],
+      "matches": [
+        "https://sunflower-land.com/*"
+      ]
     }
   ]
 }

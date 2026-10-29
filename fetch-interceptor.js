@@ -46,7 +46,10 @@
                         window.postMessage({
                             type: 'SFL_GRID_AUTO_UPDATE',
                             grid: grid,
-                            patterns: state?.desert?.digging?.patterns || []
+                            patterns: state?.desert?.digging?.patterns || [],
+                            completedPatterns: state?.desert?.digging?.completedPatterns || [],
+                            streak: state?.desert?.digging?.streak || null,
+                            extraDigs: state?.desert?.digging?.extraDigs || 0,
                         }, '*');
                         console.log('[SFL Interceptor] Grid auto-updated:', grid.length, 'dug cells');
                     }

@@ -1,0 +1,402 @@
+/* =============================================================================
+   SFL side panels (stats · hints · formations) — fluid, self-fitting layout
+
+   HOW IT WORKS
+   • Every size inside a panel is written in `em`, or as calc(var(--sfl-u) * N).
+     The panel's font-size is  13px × --sfl-s,  so changing ONE number (--sfl-s)
+     scales text, icons, gaps, formation cells… everything — with real, crisp
+     font sizes and real text re-wrapping (no transform: scale(), no blur).
+   • content.js → fitPanel() measures the content in a hidden clone and picks the
+     LARGEST --sfl-s at which it still fits the panel box (width AND height).
+   • --sfl-s is a registered <number> property, so the browser can animate it.
+     Together with the box transition (.sfl-animating) the content grows/shrinks
+     smoothly while the panel itself resizes.
+
+   • The panels live in #sfl-overlay-layer: a SIBLING of #sfl-grid-wrapper at the same stacking
+     level (so they sit behind game popups like the grid) whose box content.js keeps identical to
+     the wrapper's. NOT inside the wrapper, because the wrapper has a clip-path (character
+     cut-out) that would chop them at 300px and kill their backdrop blur.
+
+   To change how big things get, edit FIT_S_MIN / FIT_S_MAX / PANEL_MAX_W in
+   content.js. To change the look, edit this file — never use fixed px inside
+   panel content, always em or var(--sfl-u).
+   ============================================================================= */
+
+@property --sfl-s {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 1;
+}
+
+/* --- The overlay layer: same stacking level as the grid, box mirrored by content.js ---- */
+.sfl-overlay-layer {
+    position: fixed;
+    z-index: 2;                    /* = #sfl-grid-wrapper → behind the game's popups, above the world */
+    pointer-events: none;          /* the panels inside switch it back on for themselves */
+    border: 0 solid transparent;   /* widths are copied from the wrapper */
+}
+
+/* --- The panel shell ------------------------------------------------------- */
+.sfl-side-panel {
+    --sfl-s: 1;                                   /* set by fitPanel() */
+    --sfl-u: calc(1px * var(--sfl-s));            /* one "design pixel" */
+    --sfl-ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --sfl-cell: calc(var(--sfl-u) * 31);          /* formation mini-grid cell */
+
+    position: absolute;   /* inside #sfl-overlay-layer, which mirrors the grid's box */
+    z-index: 10001;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: calc(var(--sfl-u) * 14);
+    border-radius: calc(var(--sfl-u) * 12);
+    pointer-events: auto;
+
+    color: #fff;
+    font-family: monospace;
+    font-size: calc(var(--sfl-u) * 13);
+    line-height: 1.4;
+
+    background: rgba(15, 23, 42, 0.45);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    backdrop-filter: blur(16px) saturate(140%);
+    box-shadow:
+        0 0 0 0.5px rgba(255, 255, 255, 0.2) inset,
+        0 1px 4px rgba(255, 255, 255, 0.1) inset,
+        0 4px 16px rgba(0, 0, 0, 0.4),
+        0 12px 40px rgba(0, 0, 0, 0.25);
+
+    /* content re-scales gently whenever data changes */
+    transition: --sfl-s 0.3s var(--sfl-ease);
+}
+
+/* Added by JS for ~0.45s when a panel changes slot (e.g. hints closes and
+   formations takes the full height). Box and content scale animate together. */
+.sfl-side-panel.sfl-animating {
+    transition:
+        top    0.42s var(--sfl-ease),
+        left   0.42s var(--sfl-ease),
+        width  0.42s var(--sfl-ease),
+        height 0.42s var(--sfl-ease),
+        --sfl-s 0.42s var(--sfl-ease);
+}
+
+/* .sfl-pfit     = the area the content must fit in (panel padding removed)
+   .sfl-pcontent = the content at natural height; fitPanel() measures this   */
+.sfl-side-panel .sfl-pfit {
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+/* Only when even the smallest scale can't fit everything → scroll, don't clip */
+.sfl-side-panel[data-scroll="1"] .sfl-pfit { overflow-y: auto; }
+
+.sfl-side-panel .sfl-pcontent {
+    flex: 1 0 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+.sfl-side-panel .sfl-jc-start   { justify-content: flex-start; }
+.sfl-side-panel .sfl-jc-between { justify-content: space-between; }
+.sfl-side-panel .sfl-jc-evenly  { justify-content: space-evenly; }
+.sfl-side-panel .sfl-jc-center  { justify-content: center; }
+/* "no data yet" screens: title + message at the top, not spread out */
+.sfl-side-panel .sfl-pcontent:has(.sfl-empty) { justify-content: flex-start; }
+
+/* Hidden clone used by fitPanel() to measure — never visible, never animated */
+.sfl-side-panel.sfl-measuring {
+    left: -99999px;
+    top: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: none !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
+}
+.sfl-side-panel.sfl-measuring .sfl-pfit     { overflow: hidden; }
+.sfl-side-panel.sfl-measuring .sfl-pcontent { flex: 0 0 auto; }
+
+/* --- Typography ------------------------------------------------------------ */
+.sfl-side-panel .sfl-ptitle {
+    flex: none;
+    margin: 0 0 0.35em;
+    font-size: 1.45em;
+    font-weight: 800;
+    line-height: 1.15;
+    color: #fff;
+}
+.sfl-side-panel .sfl-psub {
+    flex: none;
+    margin: 0 0 0.5em;
+    font-size: 1.15em;
+    font-weight: 700;
+}
+.sfl-side-panel .sfl-sec {
+    flex: none;
+    margin: 0 0 0.4em;
+    font-size: 1.1em;
+    font-weight: 700;
+}
+.sfl-side-panel .sfl-muted { color: #a1a1aa; }
+.sfl-side-panel .sfl-note  { margin: 0.1em 0 0.35em; font-size: 0.8em; color: #a1a1aa; }
+.sfl-side-panel .sfl-boost { margin: 0 0 0.4em; font-size: 0.8em; color: #4ade80; }
+.sfl-side-panel .c-gold  { color: #fbbf24; }
+.sfl-side-panel .c-red   { color: #f87171; }
+.sfl-side-panel .c-green { color: #4ade80; }
+
+/* A block = one logical section; leftover space is shared BETWEEN blocks */
+.sfl-side-panel .sfl-block { flex: none; display: flex; flex-direction: column; }
+.sfl-side-panel .sfl-block + .sfl-block { margin-top: 0.5em; }   /* minimum gap between blocks */
+.sfl-side-panel .sfl-block-ruled {
+    padding-bottom: 0.6em;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+/* Icons are sized relative to the text next to them (1.4em), so they always
+   keep the same proportion to the font — at any scale.
+   They are CSS-background <span>s, not <img>: the game's Tailwind base CSS gives
+   every <img> max-width:100%, which makes browsers count it as 0px wide when they
+   size table cells / flex items / shrink-wrapped boxes → columns too narrow and
+   icons overflowing onto the text. A span has no such quirk. */
+.sfl-side-panel .sfl-ic {
+    display: inline-block;
+    flex: none;
+    width: 1.4em;
+    height: 1.4em;
+    margin: 0 0.3em 0 0;
+    vertical-align: -0.34em;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    image-rendering: pixelated;
+}
+
+/* --- label ........ value rows ------------------------------------------- */
+.sfl-side-panel .sfl-kv {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8em;
+    padding: 0.16em 0;
+}
+.sfl-side-panel .sfl-kv > :first-child { color: #d4d4d8; }
+.sfl-side-panel .sfl-kv > strong { text-align: right; white-space: nowrap; font-weight: 700; }
+
+/* --- Tables (real cell padding, numbers right-aligned) ------------------- */
+.sfl-side-panel .sfl-tbl {
+    width: 100%;
+    margin: 0 0 0.3em;
+    border-collapse: collapse;
+}
+.sfl-side-panel .sfl-tbl th,
+.sfl-side-panel .sfl-tbl td {
+    padding: 0.24em 0.55em;
+    text-align: left;
+    vertical-align: middle;
+    font-weight: 400;
+}
+.sfl-side-panel .sfl-tbl th {
+    font-size: 0.8em;
+    font-weight: 600;
+    white-space: nowrap;
+    color: #a1a1aa;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+.sfl-side-panel .sfl-tbl th:first-child,
+.sfl-side-panel .sfl-tbl td:first-child { padding-left: 0; }
+.sfl-side-panel .sfl-tbl th:last-child,
+.sfl-side-panel .sfl-tbl td:last-child  { padding-right: 0; }
+.sfl-side-panel .sfl-tbl .n    { text-align: right; white-space: nowrap; }
+.sfl-side-panel .sfl-tbl .item { width: 100%; white-space: nowrap; }
+.sfl-side-panel .sfl-tbl tbody tr + tr td { border-top: 1px solid rgba(255, 255, 255, 0.06); }
+
+/* --- Active Boosts: name on the left, what it gives you on the right ---------- */
+.sfl-side-panel .sfl-boost-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.9em;
+    padding: 0.2em 0;
+}
+
+.sfl-side-panel .sfl-boost-row+.sfl-boost-row {
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sfl-side-panel .sfl-boost-name {
+    flex: none;
+    font-weight: 700;
+    color: #e2e8f0;
+}
+
+.sfl-side-panel .sfl-boost-fx {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0 0.7em;
+    min-width: 0;
+    text-align: right;
+    color: #4ade80;
+}
+
+.sfl-side-panel .sfl-boost-fx>span {
+    white-space: nowrap;
+}
+
+/* --- Hints legend --------------------------------------------------------- */
+.sfl-side-panel .sfl-legend {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    gap: 0.5em;
+}
+.sfl-side-panel .sfl-legend-row  { display: flex; align-items: flex-start; gap: 0.85em; }
+.sfl-side-panel .sfl-swatch {
+    flex: none;
+    box-sizing: border-box;
+    width: 1.7em;
+    height: 1.7em;
+    margin-top: 0.12em;
+    border-radius: 0.3em;
+}
+.sfl-side-panel .sfl-swatch.pulse { animation: sflPulse 2s infinite alternate; }
+.sfl-side-panel .sfl-legend-name { font-size: 1.15em; font-weight: 700; line-height: 1.25; color: #e2e8f0; }
+.sfl-side-panel .sfl-legend-desc { font-size: 0.9em; color: #a1a1aa; }
+
+/* --- Known formations ------------------------------------------------------ */
+.sfl-side-panel .sfl-formations {
+    flex: 1 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: center;
+    align-items: center;          /* cards keep their own height (don't stretch to the tallest in the row) */
+    justify-content: center;
+    gap: 0.8em;
+}
+.sfl-side-panel .sfl-fcard {
+    position: relative;
+    display: inline-flex;
+    padding: 0.4em;
+    border-radius: 0.6em;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.sfl-side-panel .sfl-mini {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), var(--sfl-cell));
+    grid-template-rows: repeat(var(--rows), var(--sfl-cell));
+    gap: calc(var(--sfl-u) * 2);
+    padding: calc(var(--sfl-u) * 2);
+    border-radius: calc(var(--sfl-u) * 6);
+    background: rgba(200, 200, 200, 0.15);
+}
+.sfl-side-panel .sfl-mcell {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: calc(var(--sfl-u) * 4);
+    background: rgba(255, 255, 255, 0.06);
+}
+.sfl-side-panel .sfl-mcell.on {
+    background: rgba(187, 247, 208, 0.25);
+    border: 1px solid rgba(74, 222, 128, 0.5);
+}
+.sfl-side-panel .sfl-mcell img {
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+    image-rendering: pixelated;
+}
+.sfl-side-panel .sfl-mcheck {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: inherit;
+    pointer-events: none;
+    font-size: calc(var(--sfl-cell) * 1.25);
+    font-weight: 900;
+    line-height: 1;
+    color: #4ade80;
+    background: rgba(0, 0, 0, 0.35);
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+.sfl-side-panel .sfl-mcheck.predicted {
+    color: #86efac;
+    background: rgba(0, 0, 0, 0.2);
+    opacity: 0.9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sfl-side-panel,
+    .sfl-side-panel.sfl-animating { transition: none; }
+}
+
+/* =============================================================================
+   Alt+2 top bar — digs left · time left · treasures · artefacts · streak
+   (sits above the grid, centred on it)
+   ============================================================================= */
+.sfl-bar {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translate(-50%, -12px);
+    z-index: 10000;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 28px;                 /* space BETWEEN items … */
+    width: max-content;        /* … and never squeezed to the grid's width */
+    max-width: none;
+    padding: 8px 28px;         /* same on both sides, so the last item has room */
+    border-radius: 12px;
+    pointer-events: none;
+    white-space: nowrap;
+    color: #fff;
+    font: 14px/1.4 monospace;
+    background: rgba(15, 23, 42, 0.45);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    backdrop-filter: blur(16px) saturate(140%);
+    box-shadow:
+        0 0 0 0.5px rgba(255, 255, 255, 0.2) inset,
+        0 1px 4px rgba(255, 255, 255, 0.1) inset,
+        0 4px 16px rgba(0, 0, 0, 0.4),
+        0 12px 40px rgba(0, 0, 0, 0.25);
+}
+
+/* icon + text travel together; the small gap is INSIDE the item, the big one between items */
+.sfl-bar .sfl-bar-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* room for a 3-digit streak (999) from the start */
+.sfl-bar .sfl-bar-num {
+    display: inline-block;
+    min-width: 3ch;
+}
+
+/* CSS-background icon (see the note on .sfl-ic above) */
+.sfl-ico {
+    display: inline-block;
+    flex: none;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    image-rendering: pixelated;
+}
+
+    background: rgba(74, 222, 128, 0.22);
+}
