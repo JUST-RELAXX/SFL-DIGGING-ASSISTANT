@@ -3,8 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>SFL Game Assistant</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>SFL Digging Assistant</title>
+    <!-- Inter font: system fallback (no external requests for CWS compliance) -->
     <link rel="stylesheet" href="grid-themes.css">
     <link rel="stylesheet" href="custom-engine.css">
     <style>
@@ -628,6 +628,7 @@
 
         .wallet-addr {
             flex: 1;
+            text-align: center;
             min-width: 0;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -670,8 +671,8 @@
 <body>
 
     <div class="header">
-        <h1>SFL Game Assistant</h1>
-        <div class="version">v12.0 &mdash; 30 Presets + Custom Builder</div>
+        <h1>SFL Digging Assistant</h1>
+        <div class="version" id="versionDisplay">v1.0.0</div>
     </div>
 
     <div class="panel">
@@ -679,6 +680,11 @@
         <div class="input-group">
             <label>Farm ID</label>
             <input type="text" id="farmIdInput" class="input-field" placeholder="Enter your Farm ID">
+        </div>
+
+        <div class="input-group" style="margin-top:8px">
+            <label>API Key <span style="font-size:9px;color:#64748b;font-weight:400">(for Sync button — get from community docs)</span></label>
+            <input type="password" id="apiKeyInput" class="input-field" placeholder="Paste your API key" style="font-size:10px">
         </div>
 
         <button id="btnSync" class="btn btn-success">Sync Live API Data</button>
@@ -1041,18 +1047,6 @@
                 </div>
             </div>
 
-            <!-- CHARACTER AURA -->
-            <div class="theme-section">
-                <div class="theme-section-title">Character Aura</div>
-                <div class="card" style="margin-top:8px;">
-                    <label class="card-label" style="cursor:pointer;">
-                        <input type="checkbox" id="auraToggle">
-                        Show Character Silhouette
-                    </label>
-                    <div class="card-hint">Displays a glowing outline around your character. Auto-enables in the digging
-                        area.</div>
-                </div>
-            </div>
 
             <!-- How To Use — Updated for auto-alignment -->
             <div class="howto">
@@ -1144,8 +1138,7 @@
                     <span>Wanna cheer <a href="https://sunflower-land.com/play/#/visit/1110263710415249" target="_blank"
                             rel="noopener noreferrer">me</a>? ✨</span>
                 </div>
-                <div class="about-support">Made it this far and enjoying the tool? Feel free to help me level up in game
-                    (optional):</div>
+                <div class="about-support">Made it this far and enjoying the tool? Feel free to help me to reach volcano island (optional):</div>
                 <div class="wallet-row">
                     <code class="wallet-addr">0x7E6596bd78afEA0dcb9Ad093E035e09c728738dD</code>
                     <button type="button" class="wallet-copy-btn" id="btnCopyWallet"

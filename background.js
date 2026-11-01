@@ -11,12 +11,18 @@ chrome.action.onClicked.addListener((tab) => {
     chrome.sidePanel.open({ tabId: tab.id }).catch(() => {});
 });
 
-const API_KEY = 'sfl.MTExMDI2MzcxMDQxNTI0OS4x.OCvWvWcOshzlpiY5ri4Y_7ZnZ--kxG2jS9VmwgJiiQs';
+// API key loaded from user settings (chrome.storage.local)
+let API_KEY = null;
+chrome.storage.local.get('sflApiKey', (r) => { if (r.sflApiKey) API_KEY = r.sflApiKey; });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     // --- API Fetch ---
     if (request.action === 'fetch_farm_data') {
+        if (!API_KEY) {
+            sendResponse({ success: false, error: 'No API key configured. Add your key in the side panel settings.' });
+            return true;
+        }
         const url = `https://api.sunflower-land.com/community/farms/${request.farmId}`;
         console.log(`[SFL BG] Fetching farm ${request.farmId} → ${url}`);
 
@@ -113,4 +119,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         return true; // async sendResponse
     }
+});
+
+// Listen for API key updates
+chrome.storage.onChanged.addListener((changes) => {
+    if (changes.sflApiKey) API_KEY = changes.sflApiKey.newValue || null;
 });

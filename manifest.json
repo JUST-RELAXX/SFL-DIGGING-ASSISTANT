@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "SFL Game Assistant",
-  "version": "12.1",
-  "description": "Digging grid overlay with 30 premium themes, custom theme builder, auto-alignment and live dig tracking.",
+  "name": "SFL Digging Assistant",
+  "version": "1.0.0",
+  "description": "Desert digging overlay with grid themes, live dig tracking, treasure stats and formation solver.",
   "permissions": [
     "storage",
     "sidePanel",
@@ -11,7 +11,7 @@
   "host_permissions": [
     "https://api.sunflower-land.com/*",
     "https://sunflower-land.com/play/*",
-    "<all_urls>"
+    "https://sfl.world/*"
   ],
   "icons": {
     "16": "sand_shovel.png",
@@ -19,7 +19,7 @@
     "128": "sand_shovel.png"
   },
   "action": {
-    "default_title": "Open SFL Digging Helper",
+    "default_title": "Open SFL Digging Assistant",
     "default_icon": {
       "16": "sand_shovel.png",
       "48": "sand_shovel.png"
@@ -55,11 +55,13 @@
         "bridge.js",
         "digging-solver.js",
         "ITEMS/*",
-        "sand_shovel.png"
+        "sand_shovel.png",
+        "sand_drill.png"
       ],
       "matches": [
         "https://sunflower-land.com/*"
       ]
     }
-  ]
+  ],
+  "minimum_chrome_version": "114"
 }

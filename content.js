@@ -1,7 +1,6 @@
 // (silent — script loaded)
 
 let currentTheme = 'none'; // 'none' = default basic grid, or a theme key
-let auraEnabled = false;     // manual toggle from sidepanel
 let auraAutoActive = false;  // auto-enabled when grid is active + character is in grid area
 let perfTier = 'high';       // ultra | high | medium | potato
 let preserveUnderlying = false; // when true, perf tiers skip underlying theme effects
@@ -77,11 +76,10 @@ let domIntervalMs = 0;
 let lastSeenTS = '0';
 
 // Load saved state
-chrome.storage.local.get(['walkSpeed', 'deviceMode', 'domIntervalMs', 'auraEnabled', 'perfTier', 'gridCalibX', 'gridCalibY', 'preserveUnderlying', 'predictionEnabled', 'sflFarmId'], (r) => {
+chrome.storage.local.get(['walkSpeed', 'deviceMode', 'domIntervalMs', 'perfTier', 'gridCalibX', 'gridCalibY', 'preserveUnderlying', 'predictionEnabled', 'sflFarmId'], (r) => {
     if (r.walkSpeed !== undefined) walkSpeed = r.walkSpeed;
     if (r.deviceMode) deviceMode = r.deviceMode;
     if (r.domIntervalMs !== undefined) domIntervalMs = r.domIntervalMs;
-    if (r.auraEnabled !== undefined) auraEnabled = r.auraEnabled;
     if (r.perfTier) perfTier = r.perfTier;
     if (r.gridCalibX !== undefined) gridCalibX = r.gridCalibX;
     if (r.gridCalibY !== undefined) gridCalibY = r.gridCalibY;
@@ -119,6 +117,9 @@ chrome.storage.local.get(['walkSpeed', 'deviceMode', 'domIntervalMs', 'auraEnabl
                 console.log('[SFL] Auto-sync complete:', digging.grid.length, 'dug');
             }
         });
+
+// Clean up stale auraEnabled key from old installs
+chrome.storage.local.remove('auraEnabled');
     }
     // (silent — config loaded)
 });
@@ -448,7 +449,7 @@ function updateCharacterCutout() {
 
     // Determine if silhouette should be active
     const gridActive = !!(w && masterGrid && appState === 'TRACKING');
-    const shouldShowAura = auraEnabled || gridActive;
+    const shouldShowAura = gridActive;
 
     if (!hasPlayer || !shouldShowAura) {
         // MASK ON WRAPPER: cuts through ALL layers (tiles + edge effects like fire/glow)
@@ -540,7 +541,7 @@ function updateCharacterCutout() {
     }
 
     // Visible silhouette aura (SVG polygon around character)
-    if ((auraEnabled || isOnGrid) && camEl.dataset.pSil === '1') {
+    if (isOnGrid && camEl.dataset.pSil === '1') {
         try {
             const rawPoly = camEl.dataset.pPoly;
             if (rawPoly !== cachedPolyStr) {
@@ -568,7 +569,7 @@ function updateCharacterCutout() {
                 // Silhouette tracking keeps running every frame (still needed below to punch the
                 // character-shaped hole in the grid) — only the VISIBLE gold outline is suppressed.
                 // stroke alpha = 0: same polygon, same fade timing, just invisible.
-                svg.style.opacity = isOnGrid ? '1' : (auraEnabled ? '0.5' : '0');
+                svg.style.opacity = isOnGrid ? '1' : '0';
                 svg.innerHTML = `<polygon points="${debugPoints}" fill="none" stroke="rgba(255,215,0,0)" stroke-width="2" stroke-linejoin="round"/>`;
                 return;
             }
@@ -576,7 +577,7 @@ function updateCharacterCutout() {
     }
 
     // No silhouette data or not needed
-    if (!isOnGrid && !auraEnabled) hideAuraSvg();
+    if (!isOnGrid) hideAuraSvg();
 }
 
 function applyWASD() {
@@ -682,11 +683,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         currentTheme = request.theme;
         chrome.storage.local.set({ gridTheme: currentTheme });
         applyTheme(currentTheme);
-    }
-    else if (request.action === 'setAura') {
-        auraEnabled = request.enabled;
-        chrome.storage.local.set({ auraEnabled });
-        if (!auraEnabled && appState !== 'TRACKING') hideAuraSvg();
     }
     else if (request.action === 'setPerformance') {
         perfTier = request.tier;
@@ -1068,7 +1064,7 @@ function handleDigResult(row, col, item) {
 function applyGridColors(data) {
     if (!data || !masterGrid) return;
     // Flatten in case API returns a 2D array
-    const flat = Array.isArray(data[0]) ? data.flat() : data;
+    const flat = flattenGrid(data);
     const cells = masterGrid.querySelectorAll('.sfl-grid-cell');
     cells.forEach(c => c.className = 'sfl-grid-cell');
 
@@ -1119,7 +1115,7 @@ function applyLiveGridState(gridData, patterns) {
 
     if (!gridData || gridData.length === 0) return;
 
-    const flat = Array.isArray(gridData[0]) ? gridData.flat() : gridData;
+    const flat = flattenGrid(gridData);
 
     // Build a set of dug tile positions for quick lookup
     const dugSet = new Set(flat.map(h => `${h.x},${h.y}`));
@@ -1258,7 +1254,7 @@ function clearPredictionOverlay() {
 function appendSandIcon(cell) {
     const icon = document.createElement('img');
     icon.className = 'sfl-prediction-icon sfl-prediction-sand-icon';
-    icon.src = chrome.runtime.getURL('ITEMS/sand.png');
+    icon.src = chrome.runtime.getURL('ITEMS/sand.webp');
     icon.alt = 'Sand';
     icon.onerror = () => {
         const webpSrc = chrome.runtime.getURL('ITEMS/sand.webp');
@@ -1297,7 +1293,7 @@ function appendMorphIcons(cell) {
     // Sand icon (visible first)
     const sandImg = document.createElement('img');
     sandImg.className = 'sfl-morph-sand';
-    sandImg.src = chrome.runtime.getURL('ITEMS/sand.png');
+    sandImg.src = chrome.runtime.getURL('ITEMS/sand.webp');
     sandImg.alt = 'Sand';
     sandImg.onerror = () => {
         const webpSrc = chrome.runtime.getURL('ITEMS/sand.webp');
@@ -1331,7 +1327,7 @@ function applyPredictionOverlay(gridData, patterns) {
     // we need to run the solver logic in content script context directly.
     // We use a self-contained inline solver for the content script.
 
-    const flat = Array.isArray(gridData[0]) ? gridData.flat() : gridData;
+    const flat = flattenGrid(gridData);
     if (flat.length === 0) return;
 
     // Run solver (inline — same logic as digging-solver.js)
@@ -1785,7 +1781,7 @@ const BASE_TREASURE_PRICES = {
 // Tool recipes from tools.ts
 const TREASURE_TOOLS = {
     'Sand Shovel': { coinCost: 20, ingredients: { Wood: 2, Stone: 1 } },
-    'Sand Drill': { coinCost: 40, ingredients: { Oil: 1, Crimstone: 1 } },
+    'Sand Drill': { coinCost: 40, ingredients: { Wood: 3, Leather: 1, Oil: 1, Crimstone: 1 } },
 };
 
 // =============================================================================
@@ -1844,6 +1840,218 @@ function getActiveDesertBoosts() {
 }
 
 // =============================================================================
+// DIGGING REWARDS DETECTION — conservative delta-matching system
+// =============================================================================
+const DESERT_REWARDS = {
+    Basic: [
+        {i:{'Clam Shell':1},w:20},{i:{Pipi:1},w:20},{i:{'Sand Shovel':10},w:15},{i:{'Sand Drill':2},w:10},
+        {i:{'Radish Cake':1},w:15},{i:{'Wheat Cake':1},w:20},{i:{'Treasure Key':1},w:10}],
+    Advanced: [
+        {i:{'Clam Shell':2},w:10},{i:{'Treasure Key':1},w:10},{i:{'Pirate Cake':1},w:10},{i:{'Sand Shovel':10},w:15},
+        {i:{'Sand Drill':2},w:15},{i:{'Prize Ticket':1},w:1},{i:{Pearl:1},w:5}],
+    Expert: [
+        {i:{'Pirate Bounty':1},w:5},{i:{Pearl:1},w:10},{i:{'Prize Ticket':1},w:5},{i:{'Rare Key':1},w:5},
+        {i:{'Sand Shovel':15},w:20},{i:{'Sand Drill':3},w:5},{i:{'Pirate Cake':1},w:5},{i:{'Shroom Syrup':1},w:1}],
+};
+
+// All possible prize item names (used to restrict inventory snapshots)
+const PRIZE_UNIVERSE = new Set();
+for (const tier of Object.values(DESERT_REWARDS)) {
+    for (const entry of tier) {
+        for (const name of Object.keys(entry.i)) PRIZE_UNIVERSE.add(name);
+    }
+}
+
+let rewardPreClaimSnapshot = null;   // inventory snapshot taken before claim
+let rewardClaimPending = false;       // true after we see the outgoing claim request
+let lastStreakSnapshot = null;        // last seen streak object
+let todayRewardRecord = null;        // persisted for the day
+
+// Get today's UTC date key for storage
+function getUTCDateKey() {
+    const d = new Date();
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+}
+
+// Load persisted reward for today
+function loadTodayReward() {
+    const farmKey = typeof currentFarmId !== 'undefined' ? currentFarmId : 'unknown';
+    const storageKey = `diggingReward_${farmKey}_${getUTCDateKey()}`;
+    chrome.storage.local.get(storageKey, (r) => {
+        if (r[storageKey]) {
+            todayRewardRecord = r[storageKey];
+            updateTreasureStatPanel();
+        }
+    });
+}
+
+// Persist reward record
+function saveTodayReward(record) {
+    todayRewardRecord = record;
+    const farmKey = typeof currentFarmId !== 'undefined' ? currentFarmId : 'unknown';
+    const storageKey = `diggingReward_${farmKey}_${getUTCDateKey()}`;
+    chrome.storage.local.set({ [storageKey]: record });
+    updateTreasureStatPanel();
+}
+
+// Extract relevant inventory subset
+function extractPrizeInventory(inventory) {
+    if (!inventory) return {};
+    const subset = {};
+    for (const name of PRIZE_UNIVERSE) {
+        if (inventory[name] !== undefined) {
+            subset[name] = Number(inventory[name]) || 0;
+        }
+    }
+    return subset;
+}
+
+// Compute inventory delta (after - before)
+function inventoryDelta(before, after) {
+    const delta = {};
+    const allKeys = new Set([...Object.keys(before), ...Object.keys(after)]);
+    for (const key of allKeys) {
+        const diff = (Number(after[key]) || 0) - (Number(before[key]) || 0);
+        if (diff > 0) delta[key] = diff;
+    }
+    return delta;
+}
+
+// Match delta against prize tables
+function matchReward(delta, streakCount) {
+    // Determine expected tier
+    let expectedTier;
+    if (streakCount >= 10) expectedTier = 'Expert';
+    else if (streakCount >= 4) expectedTier = 'Advanced';
+    else expectedTier = 'Basic';
+
+    const candidates = [];
+    // Check all tiers, prefer expected
+    for (const [tier, entries] of Object.entries(DESERT_REWARDS)) {
+        for (const entry of entries) {
+            const items = entry.i;
+            let matches = true;
+            for (const [name, qty] of Object.entries(items)) {
+                if ((delta[name] || 0) < qty) { matches = false; break; }
+            }
+            if (matches) {
+                // Check for exact match (delta has exactly these items, nothing extra)
+                const deltaKeys = Object.keys(delta);
+                const extraItems = deltaKeys.filter(k => !(k in items));
+                candidates.push({
+                    tier, items, exact: extraItems.length === 0,
+                    preferred: tier === expectedTier
+                });
+            }
+        }
+    }
+
+    // Exactly one exact match in expected tier = confirmed
+    const exactPreferred = candidates.filter(c => c.exact && c.preferred);
+    if (exactPreferred.length === 1) return { status: 'confirmed', items: exactPreferred[0].items, tier: exactPreferred[0].tier };
+
+    // Exactly one exact match in any tier = confirmed
+    const exactAny = candidates.filter(c => c.exact);
+    if (exactAny.length === 1) return { status: 'confirmed', items: exactAny[0].items, tier: exactAny[0].tier };
+
+    // Multiple matches or unexplained extras = unverified
+    if (candidates.length > 0) return { status: 'unverified', reason: 'Multiple possible matches or concurrent inventory change' };
+
+    // No match at all but claim happened
+    return { status: 'unverified', reason: 'Prize items not found in inventory change' };
+}
+
+// Handle reward snapshots from bridge
+function handleRewardSnapshot(data) {
+    const { streak, inventory, ts } = data;
+
+    // Update pre-claim snapshot when not in claim mode
+    if (!rewardClaimPending && inventory) {
+        rewardPreClaimSnapshot = extractPrizeInventory(inventory);
+    }
+
+    // Detect claim from streak change
+    if (streak && lastStreakSnapshot) {
+        const prevClaimed = lastStreakSnapshot.totalClaimed || 0;
+        const nowClaimed = streak.totalClaimed || 0;
+        const prevAt = lastStreakSnapshot.collectedAt || 0;
+        const nowAt = streak.collectedAt || 0;
+
+        if (nowClaimed > prevClaimed || (nowAt !== prevAt && nowAt > 0)) {
+            // Claim detected!
+            if (rewardPreClaimSnapshot && inventory) {
+                const postInventory = extractPrizeInventory(inventory);
+                const delta = inventoryDelta(rewardPreClaimSnapshot, postInventory);
+                const streakCount = streak.count || 1;
+                const result = matchReward(delta, streakCount);
+                saveTodayReward({
+                    ...result,
+                    streakCount,
+                    claimedAt: ts,
+                    dateKey: getUTCDateKey()
+                });
+            } else {
+                // No pre-claim snapshot — can't verify
+                saveTodayReward({
+                    status: 'unverified',
+                    reason: 'Extension was not running before claim',
+                    streakCount: streak.count || 1,
+                    claimedAt: ts,
+                    dateKey: getUTCDateKey()
+                });
+            }
+            rewardClaimPending = false;
+        }
+    }
+
+    lastStreakSnapshot = streak ? { ...streak } : lastStreakSnapshot;
+}
+
+// Handle outgoing claim detection
+function handleRewardClaimSent() {
+    rewardClaimPending = true;
+    // Freeze the pre-claim inventory snapshot
+    console.log('[SFL] Digging reward claim detected in outgoing request');
+}
+
+// Listen for reward messages from bridge
+window.addEventListener('message', (event) => {
+    if (event.data?.type === 'SFL_REWARD_SNAPSHOT') {
+        handleRewardSnapshot(event.data);
+    }
+    if (event.data?.type === 'SFL_REWARD_CLAIM_SENT') {
+        handleRewardClaimSent();
+    }
+});
+
+// Load today's reward on startup
+setTimeout(loadTodayReward, 2000);
+
+function buildDiggingRewardsHTML() {
+    if (!todayRewardRecord || todayRewardRecord.dateKey !== getUTCDateKey()) return '';
+
+    let html = '<section class="sfl-block"><div class="sfl-sec">Digging Rewards</div>';
+
+    if (todayRewardRecord.status === 'confirmed' && todayRewardRecord.items) {
+        html += '<table class="sfl-tbl"><tbody>';
+        for (const [name, qty] of Object.entries(todayRewardRecord.items)) {
+            html += `<tr><td class="item">${pItemIcon(name)}${escapeHtml(name)}</td><td class="n">×${qty}</td></tr>`;
+        }
+        html += '</tbody></table>';
+        html += `<div class="sfl-note" style="margin-top:4px">Streak ${todayRewardRecord.streakCount} · ${todayRewardRecord.tier} tier</div>`;
+    } else {
+        html += '<div class="sfl-muted">Reward claimed — items couldn\'t be verified</div>';
+        if (todayRewardRecord.reason) {
+            html += `<div class="sfl-note" style="font-size:9px">${escapeHtml(todayRewardRecord.reason)}</div>`;
+        }
+    }
+
+    html += '</section>';
+    return html;
+}
+
+
+// =============================================================================
 // Sell price with boosts — matches getSellPrice from treasureSold.ts
 // =============================================================================
 function getSellPriceWithBoosts(itemName) {
@@ -1892,12 +2100,17 @@ function getHoleItem(hole) {
     return null;
 }
 
+// Flatten a grid that may contain a mix of single DugHole objects and
+// DugHole[] arrays (drill digs).  Always safe to call â€” a grid that is
+// already flat stays flat.
+function flattenGrid(grid) {
+    if (!grid) return [];
+    if (!Array.isArray(grid)) return Object.values(grid);
+    return grid.flat();
+}
+
 function getFlatGrid() {
-    if (!currentGridData) return [];
-    if (Array.isArray(currentGridData)) {
-        return Array.isArray(currentGridData[0]) ? currentGridData.flat() : currentGridData;
-    }
-    return Object.values(currentGridData);
+    return flattenGrid(currentGridData);
 }
 
 // =============================================================================
@@ -2446,7 +2659,27 @@ function createTreasureStatPanel() {
     if (!cachedExchangeRates) fetchExchangeRates();
 }
 
-const COINS_PER_FLOWER = 1515.52;
+const COINS_PER_FLOWER_DEFAULT = 1515.52;
+
+// Coin rate settings — persisted in chrome.storage.local
+let coinRateSettings = { mode: 'auto', customRate: null, presets: [] };
+let liveCoinRate = null; // populated from exchange API
+
+// Load persisted rate settings
+chrome.storage.local.get('coinRateSettings', (r) => {
+    if (r.coinRateSettings) coinRateSettings = r.coinRateSettings;
+});
+
+function getEffectiveCoinRate() {
+    if (coinRateSettings.mode === 'custom' && coinRateSettings.customRate > 0 && isFinite(coinRateSettings.customRate)) {
+        return coinRateSettings.customRate;
+    }
+    return liveCoinRate || COINS_PER_FLOWER_DEFAULT;
+}
+
+function saveCoinRateSettings() {
+    chrome.storage.local.set({ coinRateSettings });
+}
 
 function getItemIconFile(itemName) {
     return getIconForFormationItem(itemName);
@@ -2474,12 +2707,14 @@ function buildTreasureStatHTML() {
     const ci = pGameIcon('coins.webp');
     const fi = pGameIcon('flower.webp');
     const si = pRootIcon('sand_shovel.png');
+    const COINS_PER_FLOWER = getEffectiveCoinRate();
+    const isCustomRate = coinRateSettings.mode === 'custom';
 
     // ── Section 1: Exchange Rates ──
     let html = '<section class="sfl-block sfl-block-ruled">';
-    html += '<div class="sfl-sec">Exchange Rates</div>';
+    html += '<div class="sfl-sec">Exchange Rates <svg class="sfl-pen-icon" id="sfl-rate-edit-btn" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="cursor:pointer;opacity:0.7;margin-left:6px;vertical-align:middle"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>' + (isCustomRate ? '<span class="sfl-custom-badge">custom</span>' : '') + '</div>';
     html += '<table class="sfl-tbl"><thead><tr><th class="item">Pair</th><th class="n">Rate</th></tr></thead><tbody>';
-    html += `<tr><td class="item">${ci}${COINS_PER_FLOWER} Coins</td><td class="n">= 1 ${fi}$flower</td></tr>`;
+    html += `<tr><td class="item">${ci}${COINS_PER_FLOWER.toLocaleString(undefined, {maximumFractionDigits: 2})} Coins</td><td class="n">= 1 ${fi}$flower</td></tr>`;
     html += '</tbody></table></section>';
 
     // ── Section 2: Treasure Stat ──
@@ -2519,27 +2754,59 @@ function buildTreasureStatHTML() {
 
     const totalDigs = flat.length;
 
+    // Count tool uses from the grid data.
+    // Each outer grid entry = 1 dig action.  A shovel dig is a single DugHole;
+    // a drill dig is an array of DugHoles.  We inspect hole.tool when available,
+    // falling back to "array => Sand Drill, object => Sand Shovel".
+    const toolUses = {};
+    if (Array.isArray(currentGridData)) {
+        for (const entry of currentGridData) {
+            let toolName;
+            if (Array.isArray(entry)) {
+                toolName = (entry[0] && entry[0].tool) || 'Sand Drill';
+            } else {
+                toolName = (entry && entry.tool) || 'Sand Shovel';
+            }
+            toolUses[toolName] = (toolUses[toolName] || 0) + 1;
+        }
+    }
+    // Ensure at least Sand Shovel appears if there are digs but no explicit tool
+    if (totalDigs > 0 && Object.keys(toolUses).length === 0) {
+        toolUses['Sand Shovel'] = totalDigs;
+    }
+
     // Tool cost calculation using COINS_PER_FLOWER
     const coinToFlower = 1 / COINS_PER_FLOWER;
-    let toolCostFlower = null;
-    let toolCostPerDig = null;
+    let totalToolCostFlower = null;
     let profitCoins = null;
+    const toolCostRows = [];
 
     if (cachedP2PPrices) {
-        const woodP2P = cachedP2PPrices['Wood'] || 0;
-        const stoneP2P = cachedP2PPrices['Stone'] || 0;
-        const shovelFlowerCost = (20 * coinToFlower) + (2 * woodP2P) + (1 * stoneP2P);
-        toolCostFlower = shovelFlowerCost * totalDigs;
-        toolCostPerDig = shovelFlowerCost;
-        profitCoins = totalCoins - (toolCostFlower / coinToFlower);
+        totalToolCostFlower = 0;
+        for (const [toolName, uses] of Object.entries(toolUses)) {
+            const recipe = TREASURE_TOOLS[toolName];
+            if (!recipe) { toolCostRows.push({ tool: toolName, uses, costFlower: null, perDig: null }); continue; }
+            let perDigFlower = recipe.coinCost * coinToFlower;
+            for (const [ing, qty] of Object.entries(recipe.ingredients)) {
+                perDigFlower += (cachedP2PPrices[ing] || 0) * qty;
+            }
+            const totalFlower = perDigFlower * uses;
+            totalToolCostFlower += totalFlower;
+            toolCostRows.push({ tool: toolName, uses, costFlower: totalFlower, perDig: perDigFlower });
+        }
+        profitCoins = totalCoins - (totalToolCostFlower / coinToFlower);
+    } else {
+        for (const [toolName, uses] of Object.entries(toolUses)) {
+            toolCostRows.push({ tool: toolName, uses, costFlower: null, perDig: null });
+        }
     }
 
     html += `<div class="sfl-kv"><span>Coins earned</span><strong class="c-gold">${ci}${totalCoins.toLocaleString()}</strong></div>`;
     const flowerVal = (totalCoins * coinToFlower).toFixed(4);
     html += `<div class="sfl-note">= ${flowerVal} ${fi}$flower (1:${COINS_PER_FLOWER})</div>`;
 
-    if (toolCostFlower !== null) {
-        html += `<div class="sfl-kv"><span>Tools cost (P2P)</span><strong class="c-red">${fi}${toolCostFlower.toFixed(4)}</strong></div>`;
+    if (totalToolCostFlower !== null) {
+        html += `<div class="sfl-kv"><span>Tools cost (P2P)</span><strong class="c-red">${fi}${totalToolCostFlower.toFixed(4)}</strong></div>`;
         html += `<div class="sfl-kv"><span>Profit</span><strong class="${profitCoins >= 0 ? 'c-green' : 'c-red'}">${ci}${Math.round(profitCoins).toLocaleString()}</strong></div>`;
     } else {
         html += '<div class="sfl-kv"><span>Tools cost (P2P)</span><span class="sfl-muted">N/A — loading prices…</span></div>';
@@ -2551,16 +2818,20 @@ function buildTreasureStatHTML() {
     // ── Section 3: Active Boosts ──
     html += buildActiveBoostsHTML();
 
-    // Per-tool table
+    // Per-tool table (dynamic — shows every tool used)
     html += '<section class="sfl-block"><div class="sfl-sec">Tool costs</div>';
     html += '<table class="sfl-tbl"><thead><tr><th class="item">Tool</th><th class="n">×</th><th class="n">Cost P2P</th><th class="n">Per dig</th></tr></thead><tbody>';
-    html += `<tr><td class="item">${si}Sand Shovel</td><td class="n">${totalDigs}</td>`;
-    if (toolCostFlower !== null) {
-        html += `<td class="n">${fi}${toolCostFlower.toFixed(4)}</td><td class="n">${fi}${toolCostPerDig.toFixed(4)}</td>`;
-    } else {
-        html += '<td class="n">N/A</td><td class="n">N/A</td>';
+    for (const tr of toolCostRows) {
+        const toolIcon = tr.tool === 'Sand Drill' ? pRootIcon('sand_drill.png') : si;
+        html += `<tr><td class="item">${toolIcon}${tr.tool}</td><td class="n">${tr.uses}</td>`;
+        if (tr.costFlower !== null) {
+            html += `<td class="n">${fi}${tr.costFlower.toFixed(4)}</td><td class="n">${fi}${tr.perDig.toFixed(4)}</td>`;
+        } else {
+            html += '<td class="n">N/A</td><td class="n">N/A</td>';
+        }
+        html += '</tr>';
     }
-    html += '</tr></tbody></table></section>';
+    html += '</tbody></table></section>';
 
     // Per-treasure table with item icons
     html += '<section class="sfl-block"><div class="sfl-sec">Treasures found</div>';
@@ -2570,6 +2841,9 @@ function buildTreasureStatHTML() {
             `<td class="n">${ci}${row.price}</td><td class="n">${ci}${row.sum.toLocaleString()}</td></tr>`;
     }
     html += '</tbody></table></section>';
+
+    // ── Section: Digging Rewards (below Treasures found) ──
+    html += buildDiggingRewardsHTML();
 
     return html;
 }
@@ -2608,6 +2882,12 @@ function fetchExchangeRates() {
         }
         if (response && response.success && response.data) {
             cachedExchangeRates = response.data;
+            // Extract live coin rate from exchange data
+            if (response.data.coinRate) {
+                liveCoinRate = response.data.coinRate;
+            } else if (response.data.sfl && response.data.sfl.usd) {
+                // Fallback: compute from SFL/USD if available
+            }
             updateTreasureStatPanel();
             console.log('[SFL] Exchange rates loaded');
         } else {
@@ -2615,6 +2895,186 @@ function fetchExchangeRates() {
         }
     });
 }
+
+
+// =============================================================================
+// COIN RATE EDITOR MODAL
+// =============================================================================
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function openCoinRateModal() {
+    // Remove existing modal if any
+    const existing = document.getElementById('sfl-rate-modal-overlay');
+    if (existing) existing.remove();
+
+    const rate = getEffectiveCoinRate();
+    const isCustom = coinRateSettings.mode === 'custom';
+
+    const overlay = document.createElement('div');
+    overlay.id = 'sfl-rate-modal-overlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:999999;display:flex;align-items:center;justify-content:center;font-family:Inter,system-ui,sans-serif';
+
+    const liveRate = liveCoinRate || COINS_PER_FLOWER_DEFAULT;
+    const presets = coinRateSettings.presets || [];
+
+    overlay.innerHTML = `
+    <div id="sfl-rate-modal" style="background:#0f172a;border:2px solid #f59e0b;border-radius:16px;width:380px;max-width:90vw;padding:0;color:#e2e8f0;box-shadow:0 25px 50px rgba(0,0,0,0.5)">
+      <div style="display:flex;align-items:center;padding:16px 20px 12px;gap:10px">
+        <span style="font-size:22px">🪙</span>
+        <span style="font-weight:700;font-size:16px;color:#fbbf24">Coin Rate Settings</span>
+        <span id="sfl-rate-close" style="margin-left:auto;cursor:pointer;opacity:0.5;font-size:18px">&times;</span>
+      </div>
+      <div style="display:flex;margin:0 16px 16px;border-radius:999px;overflow:hidden;border:1px solid #334155">
+        <button id="sfl-rate-tab-auto" class="sfl-rate-tab" data-tab="auto" style="flex:1;padding:8px;border:none;font-weight:600;font-size:12px;cursor:pointer;transition:all 0.2s;${!isCustom ? 'background:#059669;color:white' : 'background:transparent;color:#94a3b8'}">● AUTO (MARKET BEST)</button>
+        <button id="sfl-rate-tab-custom" class="sfl-rate-tab" data-tab="custom" style="flex:1;padding:8px;border:none;font-weight:600;font-size:12px;cursor:pointer;transition:all 0.2s;${isCustom ? 'background:#059669;color:white' : 'background:transparent;color:#94a3b8'}">● CUSTOM RATE</button>
+      </div>
+      <div id="sfl-rate-auto-view" style="padding:0 20px 16px;${isCustom ? 'display:none' : ''}">
+        <div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span style="font-size:11px;font-weight:600;letter-spacing:0.5px;color:#94a3b8">LIVE MARKET RATE</span>
+            <span style="background:#059669;color:white;font-size:9px;font-weight:700;padding:2px 8px;border-radius:999px">ACTIVE</span>
+          </div>
+          <div style="font-size:28px;font-weight:700;color:#fbbf24">${liveRate.toLocaleString(undefined, {maximumFractionDigits:2})} <span style="font-size:14px">🌸</span></div>
+          <div style="text-align:right;font-size:12px;color:#64748b">/ 1 🌸</div>
+          <div style="font-size:11px;color:#64748b;margin-top:8px">Automatically uses the live exchange rate from sfl.world.</div>
+        </div>
+      </div>
+      <div id="sfl-rate-custom-view" style="padding:0 20px;${!isCustom ? 'display:none' : ''}">
+        <div style="display:flex;gap:12px">
+          <div style="flex:1">
+            <div style="font-size:10px;font-weight:600;color:#94a3b8;margin-bottom:6px">CUSTOM COIN RATE <span style="color:#64748b">Coins / 1 🌸</span></div>
+            <div style="background:#1e293b;border:2px solid #334155;border-radius:12px;padding:12px;display:flex;align-items:center;gap:8px">
+              <input id="sfl-rate-input" type="number" min="1" step="0.01" value="${coinRateSettings.customRate || liveRate}" style="flex:1;background:transparent;border:none;color:#fbbf24;font-size:20px;font-weight:700;outline:none;width:80px" />
+              <span style="font-size:14px">🌸</span>
+            </div>
+            <div id="sfl-rate-error" style="color:#ef4444;font-size:10px;margin-top:4px;min-height:14px"></div>
+          </div>
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-size:10px;font-weight:600;color:#94a3b8">⚡ CUSTOM PRESETS</span>
+              <span id="sfl-rate-manage" style="font-size:9px;color:#64748b;border:1px solid #475569;border-radius:4px;padding:1px 6px;cursor:pointer">Manage</span>
+            </div>
+            <div id="sfl-rate-presets" style="display:flex;flex-wrap:wrap;gap:6px">
+              <button class="sfl-preset-btn sfl-preset-live" data-val="${liveRate}" style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:4px 10px;font-size:11px;color:#4ade80;cursor:pointer">● Use Live (${Math.round(liveRate)})</button>
+              ${presets.map(p => '<button class="sfl-preset-btn" data-val="' + p + '" style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:4px 10px;font-size:11px;color:#e2e8f0;cursor:pointer">' + p + '</button>').join('')}
+              <button id="sfl-rate-add-preset" style="background:transparent;border:1px dashed #475569;border-radius:8px;padding:4px 10px;font-size:11px;color:#64748b;cursor:pointer">+ Add Preset</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:12px;padding:16px 20px;align-items:center">
+        <span id="sfl-rate-reset" style="font-size:11px;color:#64748b;cursor:pointer;${!isCustom ? 'display:none' : ''}">Reset to Auto</span>
+        <button id="sfl-rate-save" style="background:#f59e0b;color:#0f172a;border:none;border-radius:8px;padding:8px 20px;font-weight:700;font-size:12px;cursor:pointer">${isCustom ? 'SAVE RATE' : 'CLOSE ▲'}</button>
+      </div>
+    </div>`;
+
+    document.body.appendChild(overlay);
+
+    // ── Modal event handlers ──
+    overlay.addEventListener('click', (e) => {
+        const t = e.target;
+        if (t.id === 'sfl-rate-modal-overlay') { overlay.remove(); return; }
+        if (t.id === 'sfl-rate-close') { overlay.remove(); return; }
+
+        // Tab switching
+        if (t.dataset.tab === 'auto') {
+            document.getElementById('sfl-rate-auto-view').style.display = '';
+            document.getElementById('sfl-rate-custom-view').style.display = 'none';
+            document.getElementById('sfl-rate-tab-auto').style.background = '#059669';
+            document.getElementById('sfl-rate-tab-auto').style.color = 'white';
+            document.getElementById('sfl-rate-tab-custom').style.background = 'transparent';
+            document.getElementById('sfl-rate-tab-custom').style.color = '#94a3b8';
+            document.getElementById('sfl-rate-save').textContent = 'CLOSE ▲';
+            document.getElementById('sfl-rate-reset').style.display = 'none';
+            coinRateSettings.mode = 'auto';
+        }
+        if (t.dataset.tab === 'custom') {
+            document.getElementById('sfl-rate-auto-view').style.display = 'none';
+            document.getElementById('sfl-rate-custom-view').style.display = '';
+            document.getElementById('sfl-rate-tab-custom').style.background = '#059669';
+            document.getElementById('sfl-rate-tab-custom').style.color = 'white';
+            document.getElementById('sfl-rate-tab-auto').style.background = 'transparent';
+            document.getElementById('sfl-rate-tab-auto').style.color = '#94a3b8';
+            document.getElementById('sfl-rate-save').textContent = 'SAVE RATE';
+            document.getElementById('sfl-rate-reset').style.display = '';
+            coinRateSettings.mode = 'custom';
+        }
+
+        // Preset click
+        if (t.classList.contains('sfl-preset-btn')) {
+            const val = parseFloat(t.dataset.val);
+            if (val > 0) document.getElementById('sfl-rate-input').value = val;
+        }
+
+        // Add preset
+        if (t.id === 'sfl-rate-add-preset') {
+            const input = document.getElementById('sfl-rate-input');
+            const val = parseFloat(input.value);
+            if (val > 0 && !coinRateSettings.presets.includes(val)) {
+                coinRateSettings.presets.push(val);
+                saveCoinRateSettings();
+                // Re-open modal to refresh presets
+                overlay.remove();
+                openCoinRateModal();
+            }
+        }
+
+        // Manage presets (toggle delete mode — simple: just clear all)
+        if (t.id === 'sfl-rate-manage') {
+            if (coinRateSettings.presets.length > 0 && confirm('Clear all custom presets?')) {
+                coinRateSettings.presets = [];
+                saveCoinRateSettings();
+                overlay.remove();
+                openCoinRateModal();
+            }
+        }
+
+        // Reset to auto
+        if (t.id === 'sfl-rate-reset') {
+            coinRateSettings.mode = 'auto';
+            coinRateSettings.customRate = null;
+            saveCoinRateSettings();
+            updateTreasureStatPanel();
+            overlay.remove();
+        }
+
+        // Save
+        if (t.id === 'sfl-rate-save') {
+            if (coinRateSettings.mode === 'auto') {
+                saveCoinRateSettings();
+                updateTreasureStatPanel();
+                overlay.remove();
+                return;
+            }
+            const input = document.getElementById('sfl-rate-input');
+            const val = parseFloat(input.value);
+            const errEl = document.getElementById('sfl-rate-error');
+            if (!val || val <= 0 || !isFinite(val)) {
+                errEl.textContent = 'Enter a valid positive number';
+                return;
+            }
+            if (val > 100000) {
+                errEl.textContent = 'Rate seems too high (max 100,000)';
+                return;
+            }
+            coinRateSettings.customRate = val;
+            saveCoinRateSettings();
+            updateTreasureStatPanel();
+            overlay.remove();
+        }
+    });
+}
+
+// Event delegation for pen icon click (panels re-render via innerHTML)
+document.addEventListener('click', (e) => {
+    if (e.target.closest('#sfl-rate-edit-btn')) {
+        openCoinRateModal();
+    }
+});
 
 // =============================================================================
 // VIEWPORT FIT — positions fixed panels relative to the grid wrapper rect

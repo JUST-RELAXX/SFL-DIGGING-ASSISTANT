@@ -1,5 +1,5 @@
 // =============================================================================
-// SFL Digging Helper - Phaser Bridge (v11.2)
+// SFL Digging Assistant - Phaser Bridge (v1.0)
 // Auto-alignment + live dig interception
 // =============================================================================
 (function () {
@@ -106,6 +106,14 @@
         if (!isSFL) return originalFetch.apply(this, args);
 
         health.sflCallCount++;
+
+        // Detect digging reward claim in outgoing request body
+        try {
+            const body = args[1]?.body;
+            if (body && typeof body === 'string' && body.includes('diggingReward.collected')) {
+                window.postMessage({ type: 'SFL_REWARD_CLAIM_SENT', ts: Date.now() }, '*');
+            }
+        } catch(e) {}
 
         // --- Detect API domain changes ---
         try {
@@ -258,7 +266,9 @@
                 if (previousGridLength === -1) {
                     previousGridLength = grid.length;
                 } else if (grid.length > previousGridLength) {
-                    const newTiles = grid.slice(previousGridLength);
+                    const newEntries = grid.slice(previousGridLength);
+                    // Each entry may be a single DugHole or an array (drill dig)
+                    const newTiles = newEntries.flat();
                     newTiles.forEach(tile => {
                         const itemName = getItemName(tile);
                         window.postMessage({
@@ -277,6 +287,18 @@
                     grid: grid,
                     patterns: patterns || []
                 }, '*');
+
+                // Forward streak + inventory snapshot for digging rewards detection
+                const streak = state.desert?.digging?.streak;
+                const inventory = state.inventory;
+                if (streak || inventory) {
+                    window.postMessage({
+                        type: 'SFL_REWARD_SNAPSHOT',
+                        streak: streak ? JSON.parse(JSON.stringify(streak)) : null,
+                        inventory: inventory ? JSON.parse(JSON.stringify(inventory)) : null,
+                        ts: Date.now()
+                    }, '*');
+                }
             }
         } catch (e) {
             health.errors.push(e.message);

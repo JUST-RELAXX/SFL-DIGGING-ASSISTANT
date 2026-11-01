@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const farmInput = document.getElementById('farmIdInput');
+    const apiKeyInput = document.getElementById('apiKeyInput');
     const statusDiv = document.getElementById('status');
     const speedSlider = document.getElementById('speedSlider');
     const speedDisplay = document.getElementById('speedDisplay');
@@ -10,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const highEndInfo = document.getElementById('highEndInfo');
     const modeBtns = document.querySelectorAll('.mode-btn');
     const themeSelector = document.getElementById('themeSelector');
-    const auraToggle = document.getElementById('auraToggle');
     const perfTuning = document.getElementById('perfTuning');
     const preserveEffects = document.getElementById('preserveEffects');
     const predictionToggle = document.getElementById('predictionToggle');
@@ -50,8 +50,13 @@ document.addEventListener('DOMContentLoaded', () => {
         statusDiv.style.color = color;
     }
 
-    chrome.storage.local.get(['sflFarmId', 'walkSpeed', 'deviceMode', 'domIntervalMs', 'gridTheme', 'auraEnabled', 'perfTier', 'preserveUnderlying', 'predictionEnabled'], (r) => {
+    // Display version from manifest
+    const verEl = document.getElementById('versionDisplay');
+    if (verEl) verEl.textContent = 'v' + chrome.runtime.getManifest().version;
+
+    chrome.storage.local.get(['sflFarmId', 'walkSpeed', 'deviceMode', 'domIntervalMs', 'gridTheme', 'perfTier', 'preserveUnderlying', 'predictionEnabled'], (r) => {
         if (r.sflFarmId) farmInput.value = r.sflFarmId;
+        chrome.storage.local.get('sflApiKey', (kr) => { if (kr.sflApiKey) apiKeyInput.value = kr.sflApiKey; });
         if (r.walkSpeed !== undefined) {
             speedSlider.value = r.walkSpeed;
             speedDisplay.textContent = Number(r.walkSpeed).toFixed(3);
@@ -63,12 +68,18 @@ document.addEventListener('DOMContentLoaded', () => {
             domIntervalDisplay.textContent = secs > 0 ? secs : 'Live';
         }
         if (r.gridTheme) themeSelector.value = r.gridTheme;
-        if (r.auraEnabled !== undefined) auraToggle.checked = r.auraEnabled;
         if (r.perfTier) perfTuning.value = r.perfTier;
         if (r.preserveUnderlying !== undefined) preserveEffects.checked = r.preserveUnderlying;
         if (r.predictionEnabled !== undefined) predictionToggle.checked = r.predictionEnabled;
         updateModeUI(currentMode);
         updateSettingsVisibility();
+    });
+
+
+    // --- API Key ---
+    apiKeyInput.addEventListener('change', () => {
+        const key = apiKeyInput.value.trim();
+        if (key) chrome.storage.local.set({ sflApiKey: key });
     });
 
     // --- Mode buttons ---
@@ -200,13 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- Aura Toggle ---
-    auraToggle.addEventListener('change', (e) => {
-        const enabled = e.target.checked;
-        chrome.storage.local.set({ auraEnabled: enabled });
-        sendCommand('setAura', { enabled });
-        logStatus(enabled ? 'Aura: ON' : 'Aura: OFF', '#a5b4fc');
-    });
+
 
 
     // --- Performance Tuning ---

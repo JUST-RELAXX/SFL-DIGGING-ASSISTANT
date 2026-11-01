@@ -400,3 +400,6 @@
 
     background: rgba(74, 222, 128, 0.22);
 }
+/* Coin Rate Editor */
+.sfl-custom-badge { font-size:9px; background:#f59e0b; color:#0f172a; padding:1px 6px; border-radius:999px; margin-left:6px; font-weight:700; vertical-align:middle; }
+.sfl-pen-icon:hover { opacity:1 !important; color:#f59e0b; }
