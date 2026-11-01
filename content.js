@@ -2913,62 +2913,91 @@ function openCoinRateModal() {
 
     const rate = getEffectiveCoinRate();
     const isCustom = coinRateSettings.mode === 'custom';
+    const liveRate = liveCoinRate || COINS_PER_FLOWER_DEFAULT;
 
     const overlay = document.createElement('div');
     overlay.id = 'sfl-rate-modal-overlay';
-    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:999999;display:flex;align-items:center;justify-content:center;font-family:Inter,system-ui,sans-serif';
+    Object.assign(overlay.style, {
+        position: 'fixed', top: '0', left: '0', right: '0', bottom: '0',
+        background: 'rgba(0,0,0,0.55)',
+        zIndex: '999999',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontFamily: 'monospace'
+    });
 
-    const liveRate = liveCoinRate || COINS_PER_FLOWER_DEFAULT;
-    const presets = coinRateSettings.presets || [];
+    // ── Block ALL clicks / pointerdowns from reaching the game canvas ──
+    overlay.addEventListener('pointerdown', e => e.stopPropagation(), true);
+    overlay.addEventListener('mousedown',   e => e.stopPropagation(), true);
+    overlay.addEventListener('click',       e => e.stopPropagation(), true);
 
     overlay.innerHTML = `
-    <div id="sfl-rate-modal" style="background:#0f172a;border:2px solid #f59e0b;border-radius:16px;width:380px;max-width:90vw;padding:0;color:#e2e8f0;box-shadow:0 25px 50px rgba(0,0,0,0.5)">
-      <div style="display:flex;align-items:center;padding:16px 20px 12px;gap:10px">
-        <span style="font-size:22px">🪙</span>
-        <span style="font-weight:700;font-size:16px;color:#fbbf24">Coin Rate Settings</span>
-        <span id="sfl-rate-close" style="margin-left:auto;cursor:pointer;opacity:0.5;font-size:18px">&times;</span>
+    <div id="sfl-rate-modal" style="
+        background: rgba(15,23,42,0.92);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 12px;
+        width: 310px; max-width: 90vw;
+        padding: 0;
+        color: #e2e8f0;
+        font-family: monospace;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.4), 0 12px 40px rgba(0,0,0,0.25);
+    ">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;padding:14px 16px 10px;gap:8px">
+        <span style="font-size:18px">🪙</span>
+        <span style="font-weight:700;font-size:14px;color:#fbbf24">Coin Rate Settings</span>
+        <span id="sfl-rate-close" style="margin-left:auto;cursor:pointer;opacity:0.5;font-size:16px;line-height:1">&times;</span>
       </div>
-      <div style="display:flex;margin:0 16px 16px;border-radius:999px;overflow:hidden;border:1px solid #334155">
-        <button id="sfl-rate-tab-auto" class="sfl-rate-tab" data-tab="auto" style="flex:1;padding:8px;border:none;font-weight:600;font-size:12px;cursor:pointer;transition:all 0.2s;${!isCustom ? 'background:#059669;color:white' : 'background:transparent;color:#94a3b8'}">● AUTO (MARKET BEST)</button>
-        <button id="sfl-rate-tab-custom" class="sfl-rate-tab" data-tab="custom" style="flex:1;padding:8px;border:none;font-weight:600;font-size:12px;cursor:pointer;transition:all 0.2s;${isCustom ? 'background:#059669;color:white' : 'background:transparent;color:#94a3b8'}">● CUSTOM RATE</button>
+
+      <!-- Tabs -->
+      <div style="display:flex;margin:0 14px 12px;border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,0.12)">
+        <button id="sfl-rate-tab-auto" class="sfl-rate-tab" data-tab="auto" style="
+            flex:1;padding:6px;border:none;font-weight:600;font-size:11px;font-family:monospace;cursor:pointer;
+            ${!isCustom ? 'background:#059669;color:white' : 'background:transparent;color:#a1a1aa'}
+        ">● AUTO (MARKET BEST)</button>
+        <button id="sfl-rate-tab-custom" class="sfl-rate-tab" data-tab="custom" style="
+            flex:1;padding:6px;border:none;font-weight:600;font-size:11px;font-family:monospace;cursor:pointer;
+            ${isCustom ? 'background:#059669;color:white' : 'background:transparent;color:#a1a1aa'}
+        ">● CUSTOM RATE</button>
       </div>
-      <div id="sfl-rate-auto-view" style="padding:0 20px 16px;${isCustom ? 'display:none' : ''}">
-        <div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <span style="font-size:11px;font-weight:600;letter-spacing:0.5px;color:#94a3b8">LIVE MARKET RATE</span>
-            <span style="background:#059669;color:white;font-size:9px;font-weight:700;padding:2px 8px;border-radius:999px">ACTIVE</span>
+
+      <!-- AUTO view -->
+      <div id="sfl-rate-auto-view" style="padding:0 16px 14px;${isCustom ? 'display:none' : ''}">
+        <div style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:10px;font-weight:600;letter-spacing:0.5px;color:#a1a1aa">LIVE MARKET RATE</span>
+            <span style="background:#059669;color:white;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px">ACTIVE</span>
           </div>
-          <div style="font-size:28px;font-weight:700;color:#fbbf24">${liveRate.toLocaleString(undefined, {maximumFractionDigits:2})} <span style="font-size:14px">🌸</span></div>
-          <div style="text-align:right;font-size:12px;color:#64748b">/ 1 🌸</div>
-          <div style="font-size:11px;color:#64748b;margin-top:8px">Automatically uses the live exchange rate from sfl.world.</div>
+          <div style="font-size:22px;font-weight:700;color:#fbbf24">${liveRate.toLocaleString(undefined, {maximumFractionDigits:2})} <span style="font-size:12px">🌸</span></div>
+          <div style="text-align:right;font-size:11px;color:#a1a1aa">/ 1 🌸</div>
+          <div style="font-size:10px;color:#a1a1aa;margin-top:6px">Uses the live exchange rate from sfl.world.</div>
         </div>
       </div>
-      <div id="sfl-rate-custom-view" style="padding:0 20px;${!isCustom ? 'display:none' : ''}">
-        <div style="display:flex;gap:12px">
-          <div style="flex:1">
-            <div style="font-size:10px;font-weight:600;color:#94a3b8;margin-bottom:6px">CUSTOM COIN RATE <span style="color:#64748b">Coins / 1 🌸</span></div>
-            <div style="background:#1e293b;border:2px solid #334155;border-radius:12px;padding:12px;display:flex;align-items:center;gap:8px">
-              <input id="sfl-rate-input" type="number" min="1" step="0.01" value="${coinRateSettings.customRate || liveRate}" style="flex:1;background:transparent;border:none;color:#fbbf24;font-size:20px;font-weight:700;outline:none;width:80px" />
-              <span style="font-size:14px">🌸</span>
-            </div>
-            <div id="sfl-rate-error" style="color:#ef4444;font-size:10px;margin-top:4px;min-height:14px"></div>
-          </div>
-          <div style="flex:1">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-              <span style="font-size:10px;font-weight:600;color:#94a3b8">⚡ CUSTOM PRESETS</span>
-              <span id="sfl-rate-manage" style="font-size:9px;color:#64748b;border:1px solid #475569;border-radius:4px;padding:1px 6px;cursor:pointer">Manage</span>
-            </div>
-            <div id="sfl-rate-presets" style="display:flex;flex-wrap:wrap;gap:6px">
-              <button class="sfl-preset-btn sfl-preset-live" data-val="${liveRate}" style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:4px 10px;font-size:11px;color:#4ade80;cursor:pointer">● Use Live (${Math.round(liveRate)})</button>
-              ${presets.map(p => '<button class="sfl-preset-btn" data-val="' + p + '" style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:4px 10px;font-size:11px;color:#e2e8f0;cursor:pointer">' + p + '</button>').join('')}
-              <button id="sfl-rate-add-preset" style="background:transparent;border:1px dashed #475569;border-radius:8px;padding:4px 10px;font-size:11px;color:#64748b;cursor:pointer">+ Add Preset</button>
-            </div>
-          </div>
+
+      <!-- CUSTOM view (simplified — no presets) -->
+      <div id="sfl-rate-custom-view" style="padding:0 16px;${!isCustom ? 'display:none' : ''}">
+        <div style="font-size:10px;font-weight:600;color:#a1a1aa;margin-bottom:6px">COIN RATE <span style="color:#64748b">Coins / 1 🌸</span></div>
+        <div style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px;display:flex;align-items:center;gap:8px">
+          <input id="sfl-rate-input" type="number" min="1" step="0.01" value="${coinRateSettings.customRate || liveRate}" style="
+              flex:1;background:transparent;border:none;color:#fbbf24;font-size:18px;font-weight:700;font-family:monospace;outline:none;width:80px
+          " />
+          <span style="font-size:12px">🌸</span>
         </div>
+        <div style="margin-top:6px">
+          <button id="sfl-rate-use-live" style="
+              background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.08);border-radius:6px;
+              padding:3px 10px;font-size:10px;font-family:monospace;color:#4ade80;cursor:pointer;
+          ">● Use Live (${Math.round(liveRate)})</button>
+        </div>
+        <div id="sfl-rate-error" style="color:#f87171;font-size:10px;margin-top:4px;min-height:14px"></div>
       </div>
-      <div style="display:flex;justify-content:flex-end;gap:12px;padding:16px 20px;align-items:center">
-        <span id="sfl-rate-reset" style="font-size:11px;color:#64748b;cursor:pointer;${!isCustom ? 'display:none' : ''}">Reset to Auto</span>
-        <button id="sfl-rate-save" style="background:#f59e0b;color:#0f172a;border:none;border-radius:8px;padding:8px 20px;font-weight:700;font-size:12px;cursor:pointer">${isCustom ? 'SAVE RATE' : 'CLOSE ▲'}</button>
+
+      <!-- Footer -->
+      <div style="display:flex;justify-content:flex-end;gap:12px;padding:14px 16px;align-items:center">
+        <span id="sfl-rate-reset" style="font-size:10px;color:#a1a1aa;cursor:pointer;${!isCustom ? 'display:none' : ''}">Reset to Auto</span>
+        <button id="sfl-rate-save" style="
+            background:#f59e0b;color:#0f172a;border:none;border-radius:6px;
+            padding:6px 16px;font-weight:700;font-size:11px;font-family:monospace;cursor:pointer;
+        ">${isCustom ? 'SAVE RATE' : 'CLOSE ▲'}</button>
       </div>
     </div>`;
 
@@ -2987,7 +3016,7 @@ function openCoinRateModal() {
             document.getElementById('sfl-rate-tab-auto').style.background = '#059669';
             document.getElementById('sfl-rate-tab-auto').style.color = 'white';
             document.getElementById('sfl-rate-tab-custom').style.background = 'transparent';
-            document.getElementById('sfl-rate-tab-custom').style.color = '#94a3b8';
+            document.getElementById('sfl-rate-tab-custom').style.color = '#a1a1aa';
             document.getElementById('sfl-rate-save').textContent = 'CLOSE ▲';
             document.getElementById('sfl-rate-reset').style.display = 'none';
             coinRateSettings.mode = 'auto';
@@ -2998,39 +3027,16 @@ function openCoinRateModal() {
             document.getElementById('sfl-rate-tab-custom').style.background = '#059669';
             document.getElementById('sfl-rate-tab-custom').style.color = 'white';
             document.getElementById('sfl-rate-tab-auto').style.background = 'transparent';
-            document.getElementById('sfl-rate-tab-auto').style.color = '#94a3b8';
+            document.getElementById('sfl-rate-tab-auto').style.color = '#a1a1aa';
             document.getElementById('sfl-rate-save').textContent = 'SAVE RATE';
             document.getElementById('sfl-rate-reset').style.display = '';
             coinRateSettings.mode = 'custom';
         }
 
-        // Preset click
-        if (t.classList.contains('sfl-preset-btn')) {
-            const val = parseFloat(t.dataset.val);
-            if (val > 0) document.getElementById('sfl-rate-input').value = val;
-        }
-
-        // Add preset
-        if (t.id === 'sfl-rate-add-preset') {
-            const input = document.getElementById('sfl-rate-input');
-            const val = parseFloat(input.value);
-            if (val > 0 && !coinRateSettings.presets.includes(val)) {
-                coinRateSettings.presets.push(val);
-                saveCoinRateSettings();
-                // Re-open modal to refresh presets
-                overlay.remove();
-                openCoinRateModal();
-            }
-        }
-
-        // Manage presets (toggle delete mode — simple: just clear all)
-        if (t.id === 'sfl-rate-manage') {
-            if (coinRateSettings.presets.length > 0 && confirm('Clear all custom presets?')) {
-                coinRateSettings.presets = [];
-                saveCoinRateSettings();
-                overlay.remove();
-                openCoinRateModal();
-            }
+        // Use Live rate button
+        if (t.id === 'sfl-rate-use-live') {
+            const inp = document.getElementById('sfl-rate-input');
+            if (inp) inp.value = liveRate;
         }
 
         // Reset to auto
