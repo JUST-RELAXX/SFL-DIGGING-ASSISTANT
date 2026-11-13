@@ -14,15 +14,15 @@
     "https://sfl.world/*"
   ],
   "icons": {
-    "16": "sand_shovel.png",
-    "48": "sand_shovel.png",
-    "128": "sand_shovel.png"
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
   },
   "action": {
     "default_title": "Open SFL Digging Assistant",
     "default_icon": {
-      "16": "sand_shovel.png",
-      "48": "sand_shovel.png"
+      "16": "icon16.png",
+      "48": "icon48.png"
     }
   },
   "side_panel": {
@@ -54,9 +54,43 @@
       "resources": [
         "bridge.js",
         "digging-solver.js",
-        "ITEMS/*",
         "sand_shovel.png",
-        "sand_drill.png"
+        "sand_drill.png",
+        "ITEMS/Cheer.webp",
+        "ITEMS/camel_bone.webp",
+        "ITEMS/clam_shell.webp",
+        "ITEMS/clover_coin.webp",
+        "ITEMS/cockle_shell.webp",
+        "ITEMS/coins.webp",
+        "ITEMS/coral.png",
+        "ITEMS/crab.png",
+        "ITEMS/flower.webp",
+        "ITEMS/happy.png",
+        "ITEMS/hieroglyph.webp",
+        "ITEMS/old_bottle.png",
+        "ITEMS/otter_pebble.webp",
+        "ITEMS/pearl.webp",
+        "ITEMS/pipi.webp",
+        "ITEMS/pirate_bounty.webp",
+        "ITEMS/pirate_cake.webp",
+        "ITEMS/prize_ticket.png",
+        "ITEMS/radish_cake.png",
+        "ITEMS/rare_key.png",
+        "ITEMS/salt_dino_egg.webp",
+        "ITEMS/sand.webp",
+        "ITEMS/sand_drill.png",
+        "ITEMS/sand_shovel.png",
+        "ITEMS/sea_cucumber.png",
+        "ITEMS/seaweed.webp",
+        "ITEMS/shroom_syrup.png",
+        "ITEMS/starfish.png",
+        "ITEMS/stone.png",
+        "ITEMS/stopwatch.png",
+        "ITEMS/treasure_key.png",
+        "ITEMS/vase.webp",
+        "ITEMS/wheat_cake.png",
+        "ITEMS/wood.png",
+        "ITEMS/wooden_compass.webp"
       ],
       "matches": [
         "https://sunflower-land.com/*"

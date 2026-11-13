@@ -42,7 +42,8 @@
         'Seaweed', 'Starfish', 'Clam Shell', 'Coral', 'Pearl',
         'Pirate Bounty', 'Stone', 'Wood', 'Vase', 'Hieroglyph',
         'Cow Skull', 'Scarab', 'Ancient Clock', 'Broken Pillar',
-        'Coprolite', 'Moon Crystal', 'Ammonite Shell', 'Otter Pebble'
+        'Coprolite', 'Moon Crystal', 'Ammonite Shell', 'Otter Pebble',
+        'Clover Coin'
     ]);
 
 
@@ -287,18 +288,20 @@
                     grid: grid,
                     patterns: patterns || []
                 }, '*');
+            }
 
-                // Forward streak + inventory snapshot for digging rewards detection
-                const streak = state.desert?.digging?.streak;
-                const inventory = state.inventory;
-                if (streak || inventory) {
-                    window.postMessage({
-                        type: 'SFL_REWARD_SNAPSHOT',
-                        streak: streak ? JSON.parse(JSON.stringify(streak)) : null,
-                        inventory: inventory ? JSON.parse(JSON.stringify(inventory)) : null,
-                        ts: Date.now()
-                    }, '*');
-                }
+            // Forward streak + inventory snapshot for digging rewards detection
+            // (OUTSIDE the grid-change check — the claim doesn't change the grid,
+            //  only streak.totalClaimed and inventory change)
+            const streak = state.desert?.digging?.streak;
+            const inventory = state.inventory;
+            if (streak || inventory) {
+                window.postMessage({
+                    type: 'SFL_REWARD_SNAPSHOT',
+                    streak: streak ? JSON.parse(JSON.stringify(streak)) : null,
+                    inventory: inventory ? JSON.parse(JSON.stringify(inventory)) : null,
+                    ts: Date.now()
+                }, '*');
             }
         } catch (e) {
             health.errors.push(e.message);

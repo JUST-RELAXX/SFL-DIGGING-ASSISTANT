@@ -664,6 +664,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     else if (request.action === 'setMode') {
         deviceMode = request.mode;
         chrome.storage.local.set({ deviceMode });
+        updateIndicatorLabel();
         if (appState === 'TRACKING') {
             window.postMessage({ type: 'SFL_GRID_STOP_TRACKING' }, '*');
             lastSeenTS = '0';
@@ -740,12 +741,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // KEYBOARD
 // =============================================================================
 window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeCoinRateModal();
+    }
     // Alt+1: TOGGLE — first press opens + aligns, second press hides
     if (e.altKey && e.key === '1') {
         e.preventDefault(); e.stopPropagation();
         if (masterGrid && appState === 'TRACKING') {
             removeGrid();
             stopTracking();
+            closeCoinRateModal();
             console.log("[Grid] Alt+1: Grid hidden.");
         } else {
             console.log("[Grid] Alt+1: Auto-aligning to dig grid...");
@@ -971,7 +976,7 @@ function getItemTier(itemName) {
         name.includes('scarab') || name.includes('cow skull') ||
         name.includes('ancient clock') || name.includes('broken pillar') ||
         name.includes('coprolite') || name.includes('moon crystal') ||
-        name.includes('salt dino egg') || name.includes('otter pebble') ||
+        name.includes('salt dino egg') || name.includes('otter pebble') || name.includes('clover coin') ||
         name.includes('ammonite shell') || name.includes('pearl') ||
         name.includes('pirate bounty') || name.includes('dino egg')) return 'rare';
     // Tier 3 (Misc) — treasure glow
@@ -1227,6 +1232,7 @@ const ITEM_ICON_MAP = {
     'Moon Crystal': 'moon_crystal',
     'Ammonite Shell': 'ammonite_shell',
     'Otter Pebble': 'otter_pebble',
+    'Clover Coin': 'clover_coin',
 };
 
 const PREDICTION_CLASSES = [
@@ -1503,7 +1509,7 @@ function runContentSolver(gridFlat, patterns) {
     }
 
     // Formation solver
-    const ARTEFACT = 'Otter Pebble';
+    const ARTEFACT = getCurrentArtefactName();
     const FORMATIONS = {
         MONDAY_ARTEFACT_FORMATION: [{ x: 0, y: -1, name: 'Camel Bone' }, { x: 1, y: -1, name: 'Seasonal Artefact' }],
         TUESDAY_ARTEFACT_FORMATION: [{ x: 1, y: 0, name: 'Seasonal Artefact' }, { x: 1, y: 2, name: 'Camel Bone' }],
@@ -1745,6 +1751,7 @@ const CHAPTER_DATES = {
     'Crabs and Traps': { start: '2026-02-02', end: '2026-05-04' },
     'Salt Awakening': { start: '2026-05-04', end: '2026-08-03' },
     'Ascension Age': { start: '2026-08-03', end: '2026-11-02' },
+    'Cave Dwellers': { start: '2026-11-02', end: '2027-02-01' },
 };
 
 const CHAPTER_ARTEFACT_MAP = {
@@ -1763,6 +1770,7 @@ const CHAPTER_ARTEFACT_MAP = {
     'Crabs and Traps': 'Ammonite Shell',
     'Salt Awakening': 'Salt Dino Egg',
     'Ascension Age': 'Otter Pebble',
+    'Cave Dwellers': 'Clover Coin',
 };
 
 // Official BASE sell prices from treasure.ts (before boosts)
@@ -1776,6 +1784,7 @@ const BASE_TREASURE_PRICES = {
     'Scarab': 200, 'Cow Skull': 200, 'Ancient Clock': 200,
     'Broken Pillar': 200, 'Coprolite': 200, 'Moon Crystal': 200,
     'Ammonite Shell': 200, 'Salt Dino Egg': 200, 'Otter Pebble': 200,
+    'Clover Coin': 200,
 };
 
 // Tool recipes from tools.ts
@@ -1970,6 +1979,12 @@ function handleRewardSnapshot(data) {
         rewardPreClaimSnapshot = extractPrizeInventory(inventory);
     }
 
+    // Debug: log streak changes
+    if (streak && lastStreakSnapshot) {
+        const tc = streak.totalClaimed || 0;
+        const ltc = lastStreakSnapshot.totalClaimed || 0;
+    }
+
     // Detect claim from streak change
     if (streak && lastStreakSnapshot) {
         const prevClaimed = lastStreakSnapshot.totalClaimed || 0;
@@ -2033,9 +2048,17 @@ function buildDiggingRewardsHTML() {
     let html = '<section class="sfl-block"><div class="sfl-sec">Digging Rewards</div>';
 
     if (todayRewardRecord.status === 'confirmed' && todayRewardRecord.items) {
+        const ci = pGameIcon('coins.webp');
+        const artefactName = getCurrentArtefactName();
+        // Merge reward items + guaranteed +1 season artefact
+        const rewardItems = { ...todayRewardRecord.items };
+        rewardItems[artefactName] = (rewardItems[artefactName] || 0) + 1;
+
         html += '<table class="sfl-tbl"><tbody>';
-        for (const [name, qty] of Object.entries(todayRewardRecord.items)) {
-            html += `<tr><td class="item">${pItemIcon(name)}${escapeHtml(name)}</td><td class="n">×${qty}</td></tr>`;
+        for (const [name, qty] of Object.entries(rewardItems)) {
+            const rp = getSellPriceWithBoosts(name);
+            const priceStr = rp.price > 0 ? `<td class="n">${ci}${(rp.price * qty).toLocaleString()}</td>` : '<td class="n"></td>';
+            html += `<tr><td class="item">${pItemIcon(name)}${escapeHtml(name)}</td><td class="n">×${qty}</td>${priceStr}</tr>`;
         }
         html += '</tbody></table>';
         html += `<div class="sfl-note" style="margin-top:4px">Streak ${todayRewardRecord.streakCount} · ${todayRewardRecord.tier} tier</div>`;
@@ -2080,11 +2103,11 @@ function getCurrentChapterName() {
             return name;
         }
     }
-    return 'Ascension Age'; // fallback to latest
+    return 'Cave Dwellers'; // fallback to latest
 }
 
 function getCurrentArtefactName() {
-    return CHAPTER_ARTEFACT_MAP[getCurrentChapterName()] || 'Otter Pebble';
+    return CHAPTER_ARTEFACT_MAP[getCurrentChapterName()] || 'Clover Coin';
 }
 
 // =============================================================================
@@ -2446,6 +2469,18 @@ function getIconForFormationItem(itemName) {
         'cow skull': 'sand.webp', 'scarab': 'sand.webp', 'ancient clock': 'sand.webp',
         'broken pillar': 'sand.webp', 'coprolite': 'sand.webp', 'moon crystal': 'sand.webp',
         'ammonite shell': 'sand.webp',
+        'clover coin': 'clover_coin.webp',
+        // Reward / prize items
+        'pirate bounty': 'pirate_bounty.webp',
+        'sand shovel': 'sand_shovel.png',
+        'sand drill': 'sand_drill.png',
+        'radish cake': 'radish_cake.png',
+        'wheat cake': 'wheat_cake.png',
+        'pirate cake': 'pirate_cake.webp',
+        'prize ticket': 'prize_ticket.png',
+        'rare key': 'rare_key.png',
+        'treasure key': 'treasure_key.png',
+        'shroom syrup': 'shroom_syrup.png',
     };
     let key = itemName.toLowerCase().trim();
     // Dynamic artefact resolution — resolve "Seasonal Artefact" to the current chapter's actual item
@@ -2471,7 +2506,7 @@ function renderMiniGrid(plots) {
             const itemName = plotMap[`${c},${r}`];
             if (itemName) {
                 const icon = getIconForFormationItem(itemName);
-                html += `<div class="sfl-mcell on"><img src="${chrome.runtime.getURL('ITEMS/' + icon)}" title="${itemName}" alt=""></div>`;
+                html += `<div class="sfl-mcell on"><img src="${chrome.runtime.getURL('ITEMS/' + icon)}" title="${escapeHtml(itemName)}" alt=""></div>`;
             } else {
                 html += '<div class="sfl-mcell"></div>';
             }
@@ -2535,7 +2570,7 @@ function buildFormationCard(patName, isCompleted) {
     const textDecor = isCompleted ? 'line-through' : 'none';
 
     return `<div style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px;text-align:center;display:flex;flex-direction:column;justify-content:center;opacity:${opacity};">
-        <div style="font-size:12px;font-weight:bold;color:${textColor};text-decoration:${textDecor};margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div>
+        <div style="font-size:12px;font-weight:bold;color:${textColor};text-decoration:${textDecor};margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(name)}</div>
         ${gridHTML}
     </div>`;
 }
@@ -2712,7 +2747,7 @@ function buildTreasureStatHTML() {
 
     // ── Section 1: Exchange Rates ──
     let html = '<section class="sfl-block sfl-block-ruled">';
-    html += '<div class="sfl-sec">Exchange Rates <svg class="sfl-pen-icon" id="sfl-rate-edit-btn" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="cursor:pointer;opacity:0.7;margin-left:6px;vertical-align:middle"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>' + (isCustomRate ? '<span class="sfl-custom-badge">custom</span>' : '') + '</div>';
+    html += '<div class="sfl-sec" style="display:flex;align-items:center;gap:6px">Exchange Rates <svg id="sfl-rate-edit-btn" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="cursor:pointer;opacity:0.55;flex:none"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>' + (isCustomRate ? '<span class="sfl-custom-badge">custom</span>' : '') + '</div>';
     html += '<table class="sfl-tbl"><thead><tr><th class="item">Pair</th><th class="n">Rate</th></tr></thead><tbody>';
     html += `<tr><td class="item">${ci}${COINS_PER_FLOWER.toLocaleString(undefined, {maximumFractionDigits: 2})} Coins</td><td class="n">= 1 ${fi}$flower</td></tr>`;
     html += '</tbody></table></section>';
@@ -2751,6 +2786,20 @@ function buildTreasureStatHTML() {
         }
     }
     treasureRows.sort((a, b) => b.sum - a.sum);
+
+    // Add digging reward value to total if it was a sellable confirmed reward
+    // Always includes +1 season artefact (guaranteed on streak claim)
+    let rewardCoinsBonus = 0;
+    if (todayRewardRecord && todayRewardRecord.status === 'confirmed' && todayRewardRecord.items) {
+        const rewardItemsForCalc = { ...todayRewardRecord.items };
+        const artefactForCalc = getCurrentArtefactName();
+        rewardItemsForCalc[artefactForCalc] = (rewardItemsForCalc[artefactForCalc] || 0) + 1;
+        for (const [itemName, qty] of Object.entries(rewardItemsForCalc)) {
+            const rp = getSellPriceWithBoosts(itemName);
+            if (rp.price > 0) rewardCoinsBonus += rp.price * qty;
+        }
+        if (rewardCoinsBonus > 0) totalCoins += rewardCoinsBonus;
+    }
 
     const totalDigs = flat.length;
 
@@ -2837,7 +2886,7 @@ function buildTreasureStatHTML() {
     html += '<section class="sfl-block"><div class="sfl-sec">Treasures found</div>';
     html += '<table class="sfl-tbl"><thead><tr><th class="item">Item</th><th class="n">#</th><th class="n">Each</th><th class="n">Sum</th></tr></thead><tbody>';
     for (const row of treasureRows) {
-        html += `<tr><td class="item">${pItemIcon(row.item)}${row.item}</td><td class="n">${row.count}</td>` +
+        html += `<tr><td class="item">${pItemIcon(row.item)}${escapeHtml(row.item)}</td><td class="n">${row.count}</td>` +
             `<td class="n">${ci}${row.price}</td><td class="n">${ci}${row.sum.toLocaleString()}</td></tr>`;
     }
     html += '</tbody></table></section>';
@@ -2851,6 +2900,7 @@ function buildTreasureStatHTML() {
 function removeTreasureStatPanel() {
     const el = document.getElementById('sfl-treasure-stat-panel');
     animateOutAndRemove(el, 'down');
+    closeCoinRateModal();
 }
 
 function updateTreasureStatPanel() {
@@ -2906,137 +2956,237 @@ function escapeHtml(str) {
     return div.innerHTML;
 }
 
-function openCoinRateModal() {
-    // Remove existing modal if any
+function closeCoinRateModal() {
     const existing = document.getElementById('sfl-rate-modal-overlay');
     if (existing) existing.remove();
+}
+
+function openCoinRateModal() {
+    closeCoinRateModal();
 
     const rate = getEffectiveCoinRate();
     const isCustom = coinRateSettings.mode === 'custom';
     const liveRate = liveCoinRate || COINS_PER_FLOWER_DEFAULT;
+    const coinsUrl = chrome.runtime.getURL('ITEMS/coins.webp');
+    const flowerUrl = chrome.runtime.getURL('ITEMS/flower.webp');
 
     const overlay = document.createElement('div');
     overlay.id = 'sfl-rate-modal-overlay';
     Object.assign(overlay.style, {
-        position: 'fixed', top: '0', left: '0', right: '0', bottom: '0',
-        background: 'rgba(0,0,0,0.55)',
+        position: 'fixed',
+        top: '0',
+        left: '0',
+        right: '0',
+        bottom: '0',
+        background: 'rgba(0,0,0,0.4)',
         zIndex: '999999',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         fontFamily: 'monospace'
     });
 
-    // ── Block ALL clicks / pointerdowns from reaching the game canvas ──
-    overlay.addEventListener('pointerdown', e => e.stopPropagation(), true);
-    overlay.addEventListener('mousedown',   e => e.stopPropagation(), true);
-    overlay.addEventListener('click',       e => e.stopPropagation(), true);
+    // ── Prevent click-through to game canvas ──
+    ['pointerdown', 'mousedown', 'pointerup', 'mouseup'].forEach(evt => {
+        overlay.addEventListener(evt, e => e.stopPropagation());
+    });
 
     overlay.innerHTML = `
+    <style>
+      #sfl-rate-input:-webkit-autofill,
+      #sfl-rate-input:-webkit-autofill:hover,
+      #sfl-rate-input:-webkit-autofill:focus {
+        -webkit-box-shadow: 0 0 0 1000px rgba(15,23,42,0.9) inset !important;
+        -webkit-text-fill-color: #ffffff !important;
+        caret-color: #ffffff !important;
+      }
+      .sfl-rate-tab:hover { color: #ffffff !important; }
+      #sfl-rate-save:hover { background: rgba(255,255,255,0.2) !important; border-color: rgba(255,255,255,0.35) !important; }
+      #sfl-rate-close:hover { opacity: 1 !important; color: #ffffff !important; }
+      #sfl-rate-reset:hover { color: #ffffff !important; }
+      #sfl-rate-use-live:hover { color: #ffffff !important; }
+    </style>
     <div id="sfl-rate-modal" style="
-        background: rgba(15,23,42,0.92);
-        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(15, 23, 42, 0.65);
+        -webkit-backdrop-filter: blur(16px) saturate(140%);
+        backdrop-filter: blur(16px) saturate(140%);
+        border: 1px solid rgba(255,255,255,0.14);
         border-radius: 12px;
-        width: 310px; max-width: 90vw;
-        padding: 0;
-        color: #e2e8f0;
+        width: 360px;
+        max-width: 90vw;
+        padding: 14px 16px;
+        color: #fff;
         font-family: monospace;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.4), 0 12px 40px rgba(0,0,0,0.25);
+        box-shadow:
+            0 0 0 0.5px rgba(255, 255, 255, 0.2) inset,
+            0 1px 4px rgba(255, 255, 255, 0.1) inset,
+            0 4px 16px rgba(0, 0, 0, 0.4),
+            0 12px 40px rgba(0, 0, 0, 0.25);
     ">
       <!-- Header -->
-      <div style="display:flex;align-items:center;padding:14px 16px 10px;gap:8px">
-        <span style="font-size:18px">🪙</span>
-        <span style="font-weight:700;font-size:14px;color:#fbbf24">Coin Rate Settings</span>
-        <span id="sfl-rate-close" style="margin-left:auto;cursor:pointer;opacity:0.5;font-size:16px;line-height:1">&times;</span>
+      <div style="display:flex;align-items:center;margin-bottom:12px;gap:8px">
+        <img src="${coinsUrl}" style="width:16px;height:16px;image-rendering:pixelated;flex:none" />
+        <span style="font-weight:700;font-size:13px;color:#ffffff">Coin Rate Settings</span>
+        <span id="sfl-rate-close" style="margin-left:auto;cursor:pointer;opacity:0.5;font-size:16px;line-height:1;padding:2px 4px">&times;</span>
       </div>
 
-      <!-- Tabs -->
-      <div style="display:flex;margin:0 14px 12px;border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,0.12)">
-        <button id="sfl-rate-tab-auto" class="sfl-rate-tab" data-tab="auto" style="
-            flex:1;padding:6px;border:none;font-weight:600;font-size:11px;font-family:monospace;cursor:pointer;
-            ${!isCustom ? 'background:#059669;color:white' : 'background:transparent;color:#a1a1aa'}
-        ">● AUTO (MARKET BEST)</button>
-        <button id="sfl-rate-tab-custom" class="sfl-rate-tab" data-tab="custom" style="
-            flex:1;padding:6px;border:none;font-weight:600;font-size:11px;font-family:monospace;cursor:pointer;
-            ${isCustom ? 'background:#059669;color:white' : 'background:transparent;color:#a1a1aa'}
-        ">● CUSTOM RATE</button>
+      <!-- Segmented Tabs -->
+      <div style="display:flex;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:2px;margin-bottom:12px;gap:2px">
+        <button id="sfl-rate-tab-auto" class="sfl-rate-tab" data-tab="auto" type="button" style="
+            flex:1;padding:6px 8px;border:none;font-weight:${!isCustom ? '700' : '500'};font-size:11px;font-family:monospace;cursor:pointer;border-radius:4px;transition:all 0.15s;
+            background:${!isCustom ? 'rgba(255,255,255,0.14)' : 'transparent'};color:${!isCustom ? '#ffffff' : '#a1a1aa'}
+        ">Auto (Market)</button>
+        <button id="sfl-rate-tab-custom" class="sfl-rate-tab" data-tab="custom" type="button" style="
+            flex:1;padding:6px 8px;border:none;font-weight:${isCustom ? '700' : '500'};font-size:11px;font-family:monospace;cursor:pointer;border-radius:4px;transition:all 0.15s;
+            background:${isCustom ? 'rgba(255,255,255,0.14)' : 'transparent'};color:${isCustom ? '#ffffff' : '#a1a1aa'}
+        ">Custom Rate</button>
       </div>
 
       <!-- AUTO view -->
-      <div id="sfl-rate-auto-view" style="padding:0 16px 14px;${isCustom ? 'display:none' : ''}">
-        <div style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div id="sfl-rate-auto-view" style="${isCustom ? 'display:none' : ''}">
+        <div style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:12px 14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
             <span style="font-size:10px;font-weight:600;letter-spacing:0.5px;color:#a1a1aa">LIVE MARKET RATE</span>
-            <span style="background:#059669;color:white;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px">ACTIVE</span>
+            <span style="border:1px solid rgba(74,222,128,0.3);background:rgba(74,222,128,0.12);color:#4ade80;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px">Active</span>
           </div>
-          <div style="font-size:22px;font-weight:700;color:#fbbf24">${liveRate.toLocaleString(undefined, {maximumFractionDigits:2})} <span style="font-size:12px">🌸</span></div>
-          <div style="text-align:right;font-size:11px;color:#a1a1aa">/ 1 🌸</div>
-          <div style="font-size:10px;color:#a1a1aa;margin-top:6px">Uses the live exchange rate from sfl.world.</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:22px;font-weight:700;color:#ffffff">${liveRate.toLocaleString(undefined, {maximumFractionDigits:2})}</span>
+              <img src="${coinsUrl}" style="width:18px;height:18px;image-rendering:pixelated" />
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;font-size:12px;color:#d4d4d8">
+              <span style="color:#a1a1aa">/ 1</span>
+              <img src="${flowerUrl}" style="width:15px;height:15px;image-rendering:pixelated" />
+            </div>
+          </div>
+          <div style="font-size:10px;color:#71717a;border-top:1px solid rgba(255,255,255,0.06);padding-top:6px">Live exchange rate from sfl.world</div>
         </div>
       </div>
 
-      <!-- CUSTOM view (simplified — no presets) -->
-      <div id="sfl-rate-custom-view" style="padding:0 16px;${!isCustom ? 'display:none' : ''}">
-        <div style="font-size:10px;font-weight:600;color:#a1a1aa;margin-bottom:6px">COIN RATE <span style="color:#64748b">Coins / 1 🌸</span></div>
-        <div style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px;display:flex;align-items:center;gap:8px">
-          <input id="sfl-rate-input" type="number" min="1" step="0.01" value="${coinRateSettings.customRate || liveRate}" style="
-              flex:1;background:transparent;border:none;color:#fbbf24;font-size:18px;font-weight:700;font-family:monospace;outline:none;width:80px
-          " />
-          <span style="font-size:12px">🌸</span>
+      <!-- CUSTOM view -->
+      <div id="sfl-rate-custom-view" style="${!isCustom ? 'display:none' : ''}">
+        <div style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:12px 14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:10px;font-weight:600;letter-spacing:0.5px;color:#a1a1aa">CUSTOM COIN RATE</span>
+            <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:#a1a1aa">
+              <span>Coins / 1</span>
+              <img src="${flowerUrl}" style="width:14px;height:14px;image-rendering:pixelated" />
+            </div>
+          </div>
+          <div id="sfl-rate-input-box" style="
+              background: rgba(0,0,0,0.35);
+              border: 1px solid rgba(255,255,255,0.16);
+              border-radius: 5px;
+              padding: 6px 10px;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+          ">
+            <input
+              id="sfl-rate-input"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              spellcheck="false"
+              value="${coinRateSettings.customRate || liveRate}"
+              style="
+                flex: 1;
+                background: transparent !important;
+                border: none !important;
+                outline: none !important;
+                box-shadow: none !important;
+                color: #ffffff !important;
+                -webkit-text-fill-color: #ffffff !important;
+                font-size: 16px;
+                font-weight: 700;
+                font-family: monospace;
+                padding: 0;
+                margin: 0;
+                caret-color: #ffffff;
+                width: 100%;
+              "
+            />
+            <img src="${coinsUrl}" style="width:16px;height:16px;image-rendering:pixelated;flex:none" />
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+            <button id="sfl-rate-use-live" type="button" style="background:none;border:none;color:#a1a1aa;font-size:10px;font-family:monospace;cursor:pointer;padding:0;text-decoration:underline">Use live rate (${Math.round(liveRate)})</button>
+            <div id="sfl-rate-error" style="color:#f87171;font-size:10px;min-height:14px"></div>
+          </div>
         </div>
-        <div style="margin-top:6px">
-          <button id="sfl-rate-use-live" style="
-              background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.08);border-radius:6px;
-              padding:3px 10px;font-size:10px;font-family:monospace;color:#4ade80;cursor:pointer;
-          ">● Use Live (${Math.round(liveRate)})</button>
-        </div>
-        <div id="sfl-rate-error" style="color:#f87171;font-size:10px;margin-top:4px;min-height:14px"></div>
       </div>
 
       <!-- Footer -->
-      <div style="display:flex;justify-content:flex-end;gap:12px;padding:14px 16px;align-items:center">
-        <span id="sfl-rate-reset" style="font-size:10px;color:#a1a1aa;cursor:pointer;${!isCustom ? 'display:none' : ''}">Reset to Auto</span>
-        <button id="sfl-rate-save" style="
-            background:#f59e0b;color:#0f172a;border:none;border-radius:6px;
-            padding:6px 16px;font-weight:700;font-size:11px;font-family:monospace;cursor:pointer;
-        ">${isCustom ? 'SAVE RATE' : 'CLOSE ▲'}</button>
+      <div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:12px">
+        <span id="sfl-rate-reset" style="font-size:10px;color:#a1a1aa;cursor:pointer;text-decoration:underline;${!isCustom ? 'display:none' : ''}">Reset to Auto</span>
+        <button id="sfl-rate-save" type="button" style="
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.22);
+            color: #ffffff;
+            border-radius: 5px;
+            padding: 6px 14px;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: monospace;
+            cursor: pointer;
+            transition: all 0.15s;
+        ">${isCustom ? 'Save Rate' : 'Close'}</button>
       </div>
     </div>`;
 
     document.body.appendChild(overlay);
 
-    // ── Modal event handlers ──
-    overlay.addEventListener('click', (e) => {
-        const t = e.target;
-        if (t.id === 'sfl-rate-modal-overlay') { overlay.remove(); return; }
-        if (t.id === 'sfl-rate-close') { overlay.remove(); return; }
+    // Focus input on custom view
+    if (isCustom) {
+        setTimeout(() => {
+            const inp = document.getElementById('sfl-rate-input');
+            if (inp) inp.select();
+        }, 50);
+    }
 
-        // Tab switching
-        if (t.dataset.tab === 'auto') {
+    // ── Click handler ──
+    overlay.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const t = e.target;
+        if (t.id === 'sfl-rate-modal-overlay' || t.id === 'sfl-rate-close' || t.closest('#sfl-rate-close')) {
+            closeCoinRateModal();
+            return;
+        }
+
+        // Tab: Auto
+        if (t.dataset.tab === 'auto' || t.closest('#sfl-rate-tab-auto')) {
             document.getElementById('sfl-rate-auto-view').style.display = '';
             document.getElementById('sfl-rate-custom-view').style.display = 'none';
-            document.getElementById('sfl-rate-tab-auto').style.background = '#059669';
-            document.getElementById('sfl-rate-tab-auto').style.color = 'white';
-            document.getElementById('sfl-rate-tab-custom').style.background = 'transparent';
-            document.getElementById('sfl-rate-tab-custom').style.color = '#a1a1aa';
-            document.getElementById('sfl-rate-save').textContent = 'CLOSE ▲';
+            const tabA = document.getElementById('sfl-rate-tab-auto');
+            const tabC = document.getElementById('sfl-rate-tab-custom');
+            tabA.style.background = 'rgba(255,255,255,0.14)'; tabA.style.color = '#ffffff'; tabA.style.fontWeight = '700';
+            tabC.style.background = 'transparent'; tabC.style.color = '#a1a1aa'; tabC.style.fontWeight = '500';
+            document.getElementById('sfl-rate-save').textContent = 'Close';
             document.getElementById('sfl-rate-reset').style.display = 'none';
             coinRateSettings.mode = 'auto';
+            return;
         }
-        if (t.dataset.tab === 'custom') {
+
+        // Tab: Custom
+        if (t.dataset.tab === 'custom' || t.closest('#sfl-rate-tab-custom')) {
             document.getElementById('sfl-rate-auto-view').style.display = 'none';
             document.getElementById('sfl-rate-custom-view').style.display = '';
-            document.getElementById('sfl-rate-tab-custom').style.background = '#059669';
-            document.getElementById('sfl-rate-tab-custom').style.color = 'white';
-            document.getElementById('sfl-rate-tab-auto').style.background = 'transparent';
-            document.getElementById('sfl-rate-tab-auto').style.color = '#a1a1aa';
-            document.getElementById('sfl-rate-save').textContent = 'SAVE RATE';
+            const tabA = document.getElementById('sfl-rate-tab-auto');
+            const tabC = document.getElementById('sfl-rate-tab-custom');
+            tabC.style.background = 'rgba(255,255,255,0.14)'; tabC.style.color = '#ffffff'; tabC.style.fontWeight = '700';
+            tabA.style.background = 'transparent'; tabA.style.color = '#a1a1aa'; tabA.style.fontWeight = '500';
+            document.getElementById('sfl-rate-save').textContent = 'Save Rate';
             document.getElementById('sfl-rate-reset').style.display = '';
             coinRateSettings.mode = 'custom';
+            const inp = document.getElementById('sfl-rate-input');
+            if (inp) { inp.focus(); inp.select(); }
+            return;
         }
 
         // Use Live rate button
-        if (t.id === 'sfl-rate-use-live') {
+        if (t.id === 'sfl-rate-use-live' || t.closest('#sfl-rate-use-live')) {
             const inp = document.getElementById('sfl-rate-input');
-            if (inp) inp.value = liveRate;
+            if (inp) { inp.value = liveRate; inp.focus(); }
+            return;
         }
 
         // Reset to auto
@@ -3045,42 +3195,52 @@ function openCoinRateModal() {
             coinRateSettings.customRate = null;
             saveCoinRateSettings();
             updateTreasureStatPanel();
-            overlay.remove();
+            closeCoinRateModal();
+            return;
         }
 
-        // Save
-        if (t.id === 'sfl-rate-save') {
+        // Save / Close button
+        if (t.id === 'sfl-rate-save' || t.closest('#sfl-rate-save')) {
             if (coinRateSettings.mode === 'auto') {
                 saveCoinRateSettings();
                 updateTreasureStatPanel();
-                overlay.remove();
+                closeCoinRateModal();
                 return;
             }
             const input = document.getElementById('sfl-rate-input');
-            const val = parseFloat(input.value);
+            const rawVal = input ? input.value.trim().replace(/,/g, '') : '';
+            const val = parseFloat(rawVal);
             const errEl = document.getElementById('sfl-rate-error');
             if (!val || val <= 0 || !isFinite(val)) {
-                errEl.textContent = 'Enter a valid positive number';
+                if (errEl) errEl.textContent = 'Invalid number';
                 return;
             }
             if (val > 100000) {
-                errEl.textContent = 'Rate seems too high (max 100,000)';
+                if (errEl) errEl.textContent = 'Max 100,000';
                 return;
             }
             coinRateSettings.customRate = val;
             saveCoinRateSettings();
             updateTreasureStatPanel();
-            overlay.remove();
+            closeCoinRateModal();
+            return;
         }
     });
 }
 
 // Event delegation for pen icon click (panels re-render via innerHTML)
 document.addEventListener('click', (e) => {
-    if (e.target.closest('#sfl-rate-edit-btn')) {
+    const pen = e.target.closest('#sfl-rate-edit-btn');
+    if (pen) {
+        e.stopPropagation();
         openCoinRateModal();
     }
 });
+document.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('#sfl-rate-edit-btn')) {
+        e.stopPropagation();
+    }
+}, true);
 
 // =============================================================================
 // VIEWPORT FIT — positions fixed panels relative to the grid wrapper rect

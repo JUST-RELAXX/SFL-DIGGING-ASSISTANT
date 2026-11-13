@@ -14,24 +14,30 @@ INCLUDE = [
     "content.js",
     "sidepanel.html",
     "sidepanel.js",
+    "digging-solver.js",
     "overlay.css",
     "grid-themes.css",
     "custom-engine.css",
     "panels.css",
     "sand_shovel.png",
     "sand_drill.png",
+    "icon16.png",
+    "icon48.png",
+    "icon128.png",
     "PRIVACY.md",
 ]
 
 # ITEMS/ files that are actually referenced
 ITEMS_INCLUDE = [
-    "camel_bone.webp", "Cheer.webp", "clam_shell.webp", "cockle_shell.webp",
+    "camel_bone.webp", "Cheer.webp", "clam_shell.webp", "clover_coin.webp", "cockle_shell.webp",
     "coins.webp", "coral.png", "crab.png", "flower.webp", "happy.png",
     "hieroglyph.webp", "old_bottle.png", "otter_pebble.webp", "pearl.webp",
-    "pipi.webp", "pirate_bounty.webp", "salt_dino_egg.webp", "sand.webp",
-    "seaweed.webp", "sea_cucumber.png", "starfish.png", "stone.png",
-    "stopwatch.png", "vase.webp", "wood.png", "wooden_compass.webp",
-    "README.txt",
+    "pipi.webp", "pirate_bounty.webp", "pirate_cake.webp", "prize_ticket.png",
+    "radish_cake.png", "rare_key.png", "salt_dino_egg.webp", "sand.webp",
+    "sand_drill.png", "sand_shovel.png", "seaweed.webp", "sea_cucumber.png",
+    "shroom_syrup.png", "starfish.png", "stone.png", "stopwatch.png",
+    "treasure_key.png", "vase.webp", "wheat_cake.png", "wood.png",
+    "wooden_compass.webp",
 ]
 
 def build():
