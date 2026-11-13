@@ -24,7 +24,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return true;
         }
         const url = `https://api.sunflower-land.com/community/farms/${request.farmId}`;
-        console.log(`[SFL BG] Fetching farm ${request.farmId} → ${url}`);
+        console.log(`[SFL BG] Fetching farm ${request.farmId}`);
 
         const doFetch = (attempt = 1) => {
             fetch(url, {
@@ -39,9 +39,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 const bodyText = await res.text().catch(() => '(unreadable)');
                 const headerObj = {};
                 res.headers.forEach((v, k) => { headerObj[k] = v; });
-                console.error(`[SFL BG] API error: HTTP ${res.status} ${res.statusText}`);
-                console.error(`[SFL BG] Response headers:`, headerObj);
-                console.error(`[SFL BG] Response body:`, bodyText);
+                console.warn(`[SFL BG] API error: HTTP ${res.status}`);
 
                 // Retry once on 429 (rate limit) after a delay
                 if (res.status === 429 && attempt < 2) {

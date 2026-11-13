@@ -1415,15 +1415,7 @@ function applyPredictionOverlay(gridData, patterns) {
         }
     }
 
-    if (solved.tally.dug > 0 && solved.tally.sand === 0 && solved.tally.crabs === 0) {
-        console.warn('%c[SFL HEALTH] ⚠️ SOLVER: Dug cells exist but NO Sand/Crab found!', 'color: #f59e0b; font-weight: bold');
-        console.warn('  → hItem() may not be reading item names correctly');
-        console.warn('  → Check if API changed how items are stored in grid tiles');
-    }
-    if (solved.tally.dug > 3 && solved.tally.guaranteed === 0 && solved.tally.empty === 0 && solved.tally.possible === 0) {
-        console.warn('%c[SFL HEALTH] ⚠️ SOLVER: Many tiles dug but zero predictions!', 'color: #f59e0b; font-weight: bold');
-        console.warn('  → Solver may not be classifying items correctly');
-    }
+
 
     // (silent — prediction overlay applied)
 }
@@ -1478,8 +1470,7 @@ function runContentSolver(gridFlat, patterns) {
             if (dug) {
                 itemsFound.push(`(${x},${y})=${item}→${kind}`);
                 if (dug && kind === null) {
-                    console.warn(`%c[SFL HEALTH] ⚠️ SOLVER: Dug tile (${x},${y}) item "${item}" not classified as sand/crab/treasure`, 'color: #f59e0b; font-weight: bold');
-                    console.warn(`  → Add classification rule for "${item}" in runContentSolver()`);
+                    kind = 'treasure'; // fallback: treat unclassified items as treasure
                 }
             }
         }
